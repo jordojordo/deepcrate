@@ -1,0 +1,77 @@
+# =============================================================================
+# Resonance Docker Compose with Authelia
+# Production deployment with external authentication
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Resonance - Music Discovery
+  # ---------------------------------------------------------------------------
+  resonance:
+    image: ghcr.io/jordojordo/resonance:latest
+    container_name: resonance
+    environment:
+      - TZ=America/New_York
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./resonance/config.yaml:/config/config.yaml:ro
+      - ./resonance/data:/data
+    networks:
+      - resonance-net
+    # No ports exposed - access via Caddy only
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Caddy - Reverse Proxy
+  # ---------------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - resonance-net
+    depends_on:
+      - resonance
+      - authelia
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Authelia - Authentication Server
+  # ---------------------------------------------------------------------------
+  authelia:
+    image: authelia/authelia:latest
+    container_name: authelia
+    volumes:
+      - ./authelia:/config
+    networks:
+      - resonance-net
+    environment:
+      - TZ=America/New_York
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Redis - Session Storage for Authelia
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:alpine
+    container_name: redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - resonance-net
+    restart: unless-stopped
+
+networks:
+  resonance-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+  caddy-data:
+  caddy-config:

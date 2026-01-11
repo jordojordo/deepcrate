@@ -1,0 +1,119 @@
+# =============================================================================
+# Resonance Configuration Example
+# Copy this file to config.yaml and fill in your values
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# ListenBrainz Discovery
+# Recommendations based on your listening history (scrobbles)
+# -----------------------------------------------------------------------------
+listenbrainz:
+  # Your ListenBrainz username
+  username: "your_username"
+
+  # API token from https://listenbrainz.org/settings/
+  token: "your_listenbrainz_token"
+
+  # Approval mode: "auto" or "manual"
+  # auto:   Adds directly to wishlist for immediate download
+  # manual: Adds to pending queue for review in Web UI (recommended)
+  approval_mode: "manual"
+
+# Recommendation mode: "album" or "track"
+# album: Resolve recommended tracks to their parent albums (recommended)
+# track: Download individual tracks only
+mode: "album"
+
+# Minimum recommendation score (0-1)
+# 0 = accept all recommendations
+min_score: 0
+
+# Number of recommendations to fetch per run
+fetch_count: 100
+
+# -----------------------------------------------------------------------------
+# slskd Connection (Required)
+# Soulseek client for downloading music
+# Get slskd from: https://github.com/slskd/slskd
+# -----------------------------------------------------------------------------
+slskd:
+  # slskd API URL
+  host: "http://localhost:5030"
+
+  # API key from slskd.yml:
+  # web:
+  #   authentication:
+  #     api_keys:
+  #       resonance:
+  #         key: "your_api_key"
+  #         role: readwrite
+  api_key: "your_slskd_api_key"
+
+  # URL base path (usually "/")
+  url_base: "/"
+
+  # Search timeout in milliseconds
+  search_timeout: 15000
+
+  # Minimum tracks to consider a valid album result
+  min_album_tracks: 3
+
+# -----------------------------------------------------------------------------
+# Catalog Discovery (Optional)
+# Find new artists similar to ones you already own via Last.fm
+# -----------------------------------------------------------------------------
+catalog_discovery:
+  # Enable catalog discovery
+  enabled: true
+
+  # Navidrome connection (Subsonic API)
+  # Works with any Subsonic-compatible server
+  navidrome:
+    host: "http://localhost:4533"
+    username: "your_navidrome_username"
+    password: "your_navidrome_password"
+
+  # Last.fm API
+  # Get a free API key from: https://www.last.fm/api/account/create
+  lastfm:
+    api_key: "your_lastfm_api_key"
+
+  # Maximum new artists to discover per run
+  max_artists_per_run: 10
+
+  # Minimum similarity score (0-1)
+  # Higher = safer bets, lower = more adventurous
+  # 0.3 is a good balance
+  min_similarity: 0.3
+
+  # Number of similar artists to fetch per library artist
+  similar_artist_limit: 10
+
+  # Number of albums to queue per discovered artist
+  albums_per_artist: 3
+
+  # Approval mode: "auto" or "manual"
+  mode: "manual"
+
+# -----------------------------------------------------------------------------
+# Web UI Settings
+# -----------------------------------------------------------------------------
+ui:
+  auth:
+    # Enable authentication (recommended)
+    enabled: true
+
+    # Auth type: "basic", "api_key", or "none"
+    # Use "none" if using external auth (Authelia, etc.)
+    type: "basic"
+
+    # For type: "basic" - HTTP Basic Authentication
+    username: "admin"
+    password: "changeme"  # CHANGE THIS!
+
+    # For type: "api_key" - Bearer token authentication
+    # api_key: "your_secret_api_key"
+
+  # UI customization (optional)
+  # title: "Resonance"
+  # theme: "dark"  # "light" or "dark"

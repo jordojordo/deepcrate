@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+pnpm-debug.log*
+.pnpm-store/
+pnpm-lock.yaml
+
+# Build artifacts
+frontend/dist/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config and secrets (use examples/)
+config.yaml
+*.env
+!.env.example
+
+# Data directory
+data/
+
+# Docker
+.docker/
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/

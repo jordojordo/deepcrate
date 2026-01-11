@@ -1,0 +1,39 @@
+# =============================================================================
+# Resonance Docker Compose Example
+# Basic deployment without external authentication
+# =============================================================================
+
+services:
+  resonance:
+    image: ghcr.io/jordojordo/resonance:latest
+    container_name: resonance
+    environment:
+      # Timezone
+      - TZ=America/New_York
+
+      # Discovery intervals (optional, these are defaults)
+      # - LB_FETCH_INTERVAL=21600      # 6 hours
+      # - CATALOG_INTERVAL=604800      # 7 days
+      # - SLSKD_INTERVAL=3600          # 1 hour
+
+      # Log level
+      - LOG_LEVEL=INFO
+    volumes:
+      # Configuration (required)
+      - ./config.yaml:/config/config.yaml:ro
+
+      # Data directory for state files (required)
+      - ./data:/data
+    ports:
+      # Web UI port
+      - "8080:8080"
+    restart: unless-stopped
+
+    # Optional: Add to existing networks
+    # networks:
+    #   - your-network
+
+# Optional: Define external networks
+# networks:
+#   your-network:
+#     external: true
