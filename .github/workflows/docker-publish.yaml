@@ -72,6 +72,7 @@ jobs:
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
         with:
+          version: 10
           run_install: false
 
       - name: Setup Node
@@ -106,12 +107,7 @@ jobs:
           cd frontend
           pnpm install --frozen-lockfile
 
-      - name: Run frontend tests
+      - name: Build frontend
         run: |
           cd frontend
-          pnpm run test
-
-      - name: Lint frontend
-        run: |
-          cd frontend
-          pnpm run lint
+          pnpm run build

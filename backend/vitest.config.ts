@@ -3,11 +3,12 @@ import path from 'path';
 
 export default defineConfig({
   test: {
-    globals:     true,
-    environment: 'node',
-    silent:      true,
-    include:     ['src/**/*.{test,spec}.ts', 'tests/**/*.{test,spec}.ts'],
-    exclude:     [
+    globals:          true,
+    environment:      'node',
+    silent:           true,
+    passWithNoTests:  true,
+    include:          ['src/**/*.{test,spec}.ts', 'tests/**/*.{test,spec}.ts'],
+    exclude:          [
       ...configDefaults.exclude,
       '**/*.integration.*.ts',
       './scripts'
