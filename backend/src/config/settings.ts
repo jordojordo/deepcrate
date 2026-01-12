@@ -37,12 +37,14 @@ const NavidromeSettingsSchema = z.object({
 const LastFmSettingsSchema = z.object({ api_key: z.string() });
 
 const CatalogDiscoverySettingsSchema = z.object({
-  enabled:             z.boolean(),
-  navidrome:           NavidromeSettingsSchema.optional(),
-  lastfm:              LastFmSettingsSchema.optional(),
-  max_artists_per_run: z.number().int().positive(),
-  min_similarity:      z.number().min(0).max(1),
-  mode:                z.enum(['auto', 'manual']),
+  enabled:              z.boolean(),
+  navidrome:            NavidromeSettingsSchema.optional(),
+  lastfm:               LastFmSettingsSchema.optional(),
+  max_artists_per_run:  z.number().int().positive(),
+  min_similarity:       z.number().min(0).max(1),
+  similar_artist_limit: z.number().int().positive().optional(),
+  albums_per_artist:    z.number().int().positive().optional(),
+  mode:                 z.enum(['auto', 'manual']),
 });
 
 const ConfigSchema = z.object({
