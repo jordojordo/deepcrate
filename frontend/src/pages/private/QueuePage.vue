@@ -1,26 +1,42 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
-import { useQueueStore } from '@/stores/queue'
+import { useQueue } from '@/composables/useQueue'
+
+import Message from 'primevue/message'
+import Button from 'primevue/button'
 import QueueFilters from '@/components/queue/QueueFilters.vue'
 import QueueList from '@/components/queue/QueueList.vue'
 
-const queueStore = useQueueStore()
+const {
+  items,
+  total,
+  loading,
+  error,
+  filters,
+  hasMore,
+  fetchPending,
+  approveItems,
+  rejectItems,
+  updateFilters,
+  loadMore: loadMoreItems,
+  reset,
+} = useQueue()
 
 onMounted(() => {
-  queueStore.fetchPending()
+  fetchPending()
 })
 
 watch(
-  () => [queueStore.filters.source, queueStore.filters.sort, queueStore.filters.order],
+  () => [filters.value.source, filters.value.sort, filters.value.order],
   () => {
-    queueStore.reset()
-    queueStore.fetchPending()
+    reset()
+    fetchPending()
   }
 )
 
 async function handleApprove(mbids: string[]) {
   try {
-    await queueStore.approve(mbids)
+    await approveItems(mbids)
   } catch {
     // Error is already handled in the store
   }
@@ -28,63 +44,41 @@ async function handleApprove(mbids: string[]) {
 
 async function handleReject(mbids: string[]) {
   try {
-    await queueStore.reject(mbids)
+    await rejectItems(mbids)
   } catch {
     // Error is already handled in the store
   }
-}
-
-function loadMore() {
-  queueStore.loadMore()
 }
 </script>
 
 <template>
   <div>
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Queue</h1>
-      <p class="mt-1 text-gray-600 dark:text-gray-400">
-        Review and manage pending music recommendations
-      </p>
+      <h1 class="text-2xl font-bold text-color">Queue</h1>
+      <p class="mt-1 text-muted">Review and manage pending music recommendations</p>
     </div>
 
     <!-- Error Message -->
-    <div
-      v-if="queueStore.error"
-      class="mb-6 p-4 text-sm text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 rounded-xl"
-    >
-      {{ queueStore.error }}
-    </div>
+    <Message v-if="error" severity="error" class="mb-6" :closable="false">
+      {{ error }}
+    </Message>
 
     <!-- Filters -->
     <div class="mb-6">
-      <QueueFilters
-        :model-value="queueStore.filters"
-        @update:model-value="queueStore.setFilters($event)"
-      />
+      <QueueFilters :model-value="filters" @update:model-value="updateFilters($event)" />
     </div>
 
     <!-- Total Count -->
-    <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-      {{ queueStore.total }} pending item{{ queueStore.total === 1 ? '' : 's' }}
+    <div class="mb-4 text-sm text-muted">
+      {{ total }} pending item{{ total === 1 ? '' : 's' }}
     </div>
 
     <!-- Queue List -->
-    <QueueList
-      :items="queueStore.items"
-      :loading="queueStore.loading"
-      @approve="handleApprove"
-      @reject="handleReject"
-    />
+    <QueueList :items="items" :loading="loading" @approve="handleApprove" @reject="handleReject" />
 
     <!-- Load More Button -->
-    <div v-if="queueStore.hasMore && !queueStore.loading" class="mt-6 text-center">
-      <button
-        @click="loadMore"
-        class="px-6 py-2.5 text-sm font-medium text-indigo-700 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 rounded-lg transition-colors"
-      >
-        Load More
-      </button>
+    <div v-if="hasMore && !loading" class="mt-6 text-center">
+      <Button label="Load More" outlined @click="loadMoreItems" />
     </div>
   </div>
 </template>
