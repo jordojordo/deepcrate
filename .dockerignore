@@ -63,7 +63,6 @@ server/discovery/setup.sh
 server/discovery/README.md
 server/discovery/docs/
 
-# Legacy Python server (migrated to Node.js)
 server/api/
 server/discovery/
 server/requirements*.txt
