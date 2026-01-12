@@ -80,32 +80,26 @@ jobs:
           cache: pnpm
           cache-dependency-path: '**/pnpm-lock.yaml'
 
-      - name: Install backend dependencies
+      - name: Install server dependencies
         run: |
-          cd backend
-          pnpm install --frozen-lockfile
+          pnpm --filter server install --frozen-lockfile
 
-      - name: Build backend
+      - name: Build server
         run: |
-          cd backend
-          pnpm run build
+          pnpm --filter server run build
 
-      - name: Run backend tests
+      - name: Run server tests
         run: |
-          cd backend
-          pnpm run test
+          pnpm --filter server run test
 
-      - name: Lint backend
+      - name: Lint server
         run: |
-          cd backend
-          pnpm run lint
+          pnpm --filter server run lint
 
-      - name: Install frontend dependencies
+      - name: Install ui dependencies
         run: |
-          cd frontend
-          pnpm install --frozen-lockfile
+          pnpm --filter ui install --frozen-lockfile
 
-      - name: Build frontend
+      - name: Build ui
         run: |
-          cd frontend
-          pnpm run build
+          pnpm --filter ui run build

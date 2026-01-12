@@ -1,4 +1,4 @@
-# Resonance Frontend
+# Resonance UI
 
 Modern web UI for managing music discovery queue, built with Vue 3 and PrimeVue.
 

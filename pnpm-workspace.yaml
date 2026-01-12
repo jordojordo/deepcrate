@@ -1,0 +1,4 @@
+packages:
+  - ui
+  - server
+injectWorkspacePackages: true

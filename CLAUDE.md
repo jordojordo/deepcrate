@@ -7,10 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Monorepo (from root)
 ```bash
 pnpm install           # Install all workspace dependencies
-pnpm run dev           # Start both backend and frontend in dev mode
+pnpm run dev           # Start both server and ui in dev mode
 ```
 
-### Backend (from `/backend`)
+### Server (from `/server`)
 ```bash
 pnpm install           # Install dependencies
 pnpm run dev           # Dev server with hot reload (http://localhost:8080)
@@ -23,10 +23,10 @@ pnpm run test:run      # Run tests once
 pnpm run test:coverage # Run tests with coverage
 ```
 
-### Frontend (from `/frontend`)
+### UI (from `/ui`)
 ```bash
 pnpm install           # Install dependencies
-pnpm run dev           # Vite dev server (http://localhost:5173, proxies API to backend)
+pnpm run dev           # Vite dev server (http://localhost:5173, proxies API to server)
 pnpm run build         # Production build to dist/
 ```
 
@@ -38,9 +38,9 @@ docker run -v ./config.yaml:/config/config.yaml -v ./data:/data -p 8080:8080 res
 
 ## Architecture
 
-Resonance is a music discovery pipeline with a Node.js/TypeScript backend and Vue 3 frontend.
+Resonance is a music discovery pipeline with a Node.js/TypeScript server and Vue 3 ui.
 
-### Backend (`/backend/src`)
+### Server (`/server/src`)
 
 **Entry point:** `server.ts` - initializes DB, starts Express server, schedules background jobs.
 
@@ -58,7 +58,7 @@ Resonance is a music discovery pipeline with a Node.js/TypeScript backend and Vu
 
 **Path alias:** `@server/*` maps to `./src/*` (configured in tsconfig.json)
 
-### Frontend (`/frontend/src`)
+### UI (`/ui/src`)
 
 Vue 3 + TypeScript + Pinia + PrimeVue 4.
 
@@ -97,8 +97,8 @@ SQLite via Sequelize 7 alpha. DB file at `$DATA_PATH/resonance.sqlite` (default 
 
 ## Code Style
 
-- Backend uses `@stylistic/eslint-plugin` with specific formatting: 2-space indent, single quotes, aligned object values
-- Frontend uses Vue 3 Composition API with `<script setup lang="ts">`
+- Server uses `@stylistic/eslint-plugin` with specific formatting: 2-space indent, single quotes, aligned object values
+- UI uses Vue 3 Composition API with `<script setup lang="ts">`
 - Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`
 
 ## Configuration
@@ -107,4 +107,4 @@ App config is YAML at `$CONFIG_PATH` (default `/config/config.yaml`). See `confi
 
 ## Testing
 
-Backend tests use Vitest. Test files: `*.test.ts` or `*.spec.ts` in `src/` or `tests/`. Uses `nock` for HTTP mocking, `supertest` for API testing.
+Server tests use Vitest. Test files: `*.test.ts` or `*.spec.ts` in `src/` or `tests/`. Uses `nock` for HTTP mocking, `supertest` for API testing.

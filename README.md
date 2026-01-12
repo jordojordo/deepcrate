@@ -231,7 +231,7 @@ Resonance runs as a single Node.js process with background jobs scheduled via no
 | catalog-discovery | Weekly | Last.fm similar artists |
 | slskd-downloader | Every hour | Process wishlist via slskd |
 
-The web interface is served by Express with a Vue 3 frontend.
+The web interface is served by Express with a Vue 3 ui.
 
 See [docs/architecture.md](docs/architecture.md) for technical details.
 
@@ -285,21 +285,21 @@ docker build -t resonance .
 ### Running locally
 
 ```bash
-# Backend
-cd backend
+# Server
+cd server
 pnpm install
 pnpm run dev    # Starts on http://localhost:8080 with hot reload
 
-# Frontend (separate terminal)
-cd frontend
+# UI (separate terminal)
+cd ui
 pnpm install
-pnpm run dev    # Starts on http://localhost:5173, proxies to backend
+pnpm run dev    # Starts on http://localhost:5173, proxies to server
 ```
 
 ### Production build
 
 ```bash
-cd backend
+cd server
 pnpm install
 pnpm run build
 pnpm start
@@ -312,8 +312,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 - [x] ListenBrainz recommendations (lb-fetch)
 - [x] Catalog-based discovery (Last.fm similar artists)
 - [x] Unified pending queue with manual approval
-- [x] Web UI with Vue 3 frontend
-- [x] Node.js/TypeScript backend migration
+- [x] Web UI with Vue 3 ui
+- [x] Node.js/TypeScript server migration
 - [ ] Download status dashboard
 - [ ] Library duplicate checking
 - [ ] Real-time WebSocket updates

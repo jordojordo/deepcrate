@@ -145,8 +145,8 @@ Each service is defined in `/etc/s6-overlay/s6-rc.d/`:
 ### Web UI
 
 **Stack:**
-- **Backend:** FastAPI (Python 3.12)
-- **Frontend:** Vue 3 + Tailwind CSS
+- **Server:** FastAPI (Python 3.12)
+- **UI:** Vue 3 + Tailwind CSS
 - **Build:** Vite
 
 **Purpose:**

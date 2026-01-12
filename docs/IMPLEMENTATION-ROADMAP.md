@@ -7,8 +7,8 @@ This document outlines the implementation plan for Resonance, broken into phases
 **Status: Completed ✅**
 
 The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
-- Backend: Node.js + Express + TypeScript + Sequelize (SQLite)
-- Frontend: Vue 3 + Vite + Tailwind CSS + Pinia
+- Server: Node.js + Express + TypeScript + Sequelize (SQLite)
+- UI: Vue 3 + Vite + Tailwind CSS + Pinia
 - Discovery jobs: Integrated as scheduled background jobs (node-cron)
 - Single container deployment with Docker
 
@@ -18,7 +18,7 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 
 **Goal:** View and manage pending queue via web interface
 
-### Backend ✅
+### Server ✅
 - [x] Express application with TypeScript
 - [x] SQLite database with Sequelize 7
 - [x] API endpoints:
@@ -30,7 +30,7 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 - [x] QueueService and WishlistService
 - [x] Config loader (YAML with env var overrides)
 
-### Frontend ✅
+### UI ✅
 - [x] Vue 3 + Vite + TypeScript
 - [x] Tailwind CSS
 - [x] Pinia state management
@@ -39,7 +39,7 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 - [x] Components: QueueItem, Layout, Common utilities
 
 ### Infrastructure ✅
-- [x] Multi-stage Dockerfile (frontend build → backend build → runtime)
+- [x] Multi-stage Dockerfile (ui build → server build → runtime)
 - [x] Docker Compose example
 - [x] GitHub Actions CI/CD
 - [x] Docker image publishing to ghcr.io
@@ -91,7 +91,7 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 
 **Goal:** Trigger actions from UI
 
-### Backend Tasks
+### Server Tasks
 - [ ] **Manual trigger endpoints**
   - [ ] `POST /api/v1/actions/lb-fetch` - Trigger ListenBrainz fetch
   - [ ] `POST /api/v1/actions/catalog` - Trigger catalog discovery
@@ -102,7 +102,7 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
   - [ ] `POST /api/v1/wishlist` - Add manual entries
   - [ ] `GET /api/v1/search/musicbrainz` - Search for albums/artists
 
-### Frontend Tasks
+### UI Tasks
 - [ ] **Actions panel on dashboard**
   - [ ] Trigger discovery jobs buttons
   - [ ] Job status indicators
@@ -117,7 +117,7 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 
 **Goal:** Monitor download pipeline
 
-### Backend Tasks
+### Server Tasks
 - [ ] **slskd integration endpoints**
   - [ ] `GET /api/v1/downloads/active`
   - [ ] `GET /api/v1/downloads/completed`
@@ -125,7 +125,7 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
   - [ ] `POST /api/v1/downloads/retry`
   - [ ] `GET /api/v1/wishlist`
 
-### Frontend Tasks
+### UI Tasks
 - [ ] **Downloads view**
   - [ ] Active downloads with progress
   - [ ] Completed downloads
@@ -138,13 +138,13 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 
 **Goal:** Avoid downloading what you already own
 
-### Backend Tasks
+### Server Tasks
 - [ ] **Library checking**
   - [ ] Check if album exists in Navidrome library
   - [ ] Mark duplicates in queue
   - [ ] Optional: auto-reject duplicates
 
-### Frontend Tasks
+### UI Tasks
 - [ ] **UI indicators**
   - [ ] "Already in library" badge on queue items
   - [ ] Library stats on dashboard
@@ -155,13 +155,13 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 
 **Goal:** Live updates without refresh
 
-### Backend Tasks
+### Server Tasks
 - [ ] **WebSocket support**
   - [ ] `WS /api/v1/ws/logs` - Live log streaming
   - [ ] `WS /api/v1/ws/downloads` - Download progress
   - [ ] `WS /api/v1/ws/queue` - Queue updates
 
-### Frontend Tasks
+### UI Tasks
 - [ ] WebSocket connection manager
 - [ ] Auto-reconnect logic
 - [ ] Real-time UI updates
@@ -169,15 +169,15 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 
 ---
 
-## Phase 7: Frontend Restructure & PrimeVue Migration
+## Phase 7: UI Restructure & PrimeVue Migration
 
-**Goal:** Align frontend with bastion project structure and upgrade to PrimeVue
+**Goal:** Align ui with bastion project structure and upgrade to PrimeVue
 
-### Frontend Structure Refactor
+### UI Structure Refactor
 Migrate from current structure to match `bastion` project patterns:
 
 ```
-frontend/src/
+ui/src/
 ├── App.vue
 ├── main.ts
 ├── assets/
@@ -249,8 +249,8 @@ frontend/src/
   - [ ] Video walkthrough
 
 - [ ] **Testing**
-  - [ ] Backend unit tests (vitest)
-  - [ ] Frontend component tests
+  - [ ] Server unit tests (vitest)
+  - [ ] UI component tests
   - [ ] Integration tests
   - [ ] E2E tests
 
@@ -286,7 +286,7 @@ frontend/src/
 
 ## Technical Stack
 
-### Backend
+### Server
 - **Runtime:** Node.js 24
 - **Framework:** Express 5
 - **Language:** TypeScript
@@ -296,7 +296,7 @@ frontend/src/
 - **Validation:** Zod
 - **Testing:** Vitest + Supertest + Nock
 
-### Frontend
+### UI
 - **Framework:** Vue 3 (Composition API)
 - **Build:** Vite
 - **Language:** TypeScript
@@ -320,17 +320,17 @@ frontend/src/
 # Install dependencies
 pnpm install
 
-# Backend dev server (with hot reload)
-cd backend && pnpm run dev
+# Server dev server (with hot reload)
+cd server && pnpm run dev
 
-# Frontend dev server (proxies API to backend)
-cd frontend && pnpm run dev
+# UI dev server (proxies API to server)
+cd ui && pnpm run dev
 
 # Run tests
-cd backend && pnpm run test
+cd server && pnpm run test
 
 # Lint and format
-cd backend && pnpm run lint:fix
+cd server && pnpm run lint:fix
 ```
 
 ### Building for Production
@@ -339,14 +339,14 @@ cd backend && pnpm run lint:fix
 docker build -t resonance .
 
 # Or build individually
-cd backend && pnpm run build
-cd frontend && pnpm run build
+cd server && pnpm run build
+cd ui && pnpm run build
 ```
 
 ### Project Structure
 ```
 resonance/
-├── backend/
+├── server/
 │   ├── src/
 │   │   ├── config/         # DB, logger, settings, jobs
 │   │   ├── jobs/           # Background discovery jobs
@@ -359,7 +359,7 @@ resonance/
 │   │   └── server.ts       # Entry point
 │   └── package.json
 │
-├── frontend/
+├── ui/
 │   ├── src/
 │   │   ├── views/          # Page components
 │   │   ├── components/     # Reusable components

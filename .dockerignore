@@ -30,10 +30,10 @@ env
 
 # Node
 **/node_modules
-frontend/.vite
-frontend/dist
-backend/dist
-backend/tests
+ui/.vite
+ui/dist
+server/dist
+server/tests
 *.test.ts
 *.spec.ts
 
@@ -54,19 +54,19 @@ htmlcov
 
 # Examples and test data
 examples/
-backend/discovery/data/
-backend/discovery/config.yaml
-backend/discovery/docker-compose.yaml
-backend/discovery/Dockerfile
-backend/discovery/entrypoint.sh
-backend/discovery/setup.sh
-backend/discovery/README.md
-backend/discovery/docs/
+server/discovery/data/
+server/discovery/config.yaml
+server/discovery/docker-compose.yaml
+server/discovery/Dockerfile
+server/discovery/entrypoint.sh
+server/discovery/setup.sh
+server/discovery/README.md
+server/discovery/docs/
 
-# Legacy Python backend (migrated to Node.js)
-backend/api/
-backend/discovery/
-backend/requirements*.txt
+# Legacy Python server (migrated to Node.js)
+server/api/
+server/discovery/
+server/requirements*.txt
 
 # Legacy s6-overlay
 s6-overlay/

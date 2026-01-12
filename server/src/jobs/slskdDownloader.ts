@@ -8,7 +8,7 @@ import { WishlistService } from '@server/services/WishlistService';
  * Reads the wishlist.txt file and sends download requests to slskd.
  * Tracks downloaded items to avoid re-submitting the same searches.
  *
- * Based on: backend/discovery/slskd_downloader.py
+ * Based on: server/discovery/slskd_downloader.py
  *
  * TODO: Implement full slskd downloader logic
  */

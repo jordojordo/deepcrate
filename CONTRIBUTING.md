@@ -20,17 +20,17 @@ git clone https://github.com/jordonet/resonance.git
 cd resonance
 ```
 
-2. **Install backend dependencies (Node.js/TypeScript)**
+2. **Install server dependencies (Node.js/TypeScript)**
 
 ```bash
-cd backend
+cd server
 pnpm install
 ```
 
-3. **Install frontend dependencies (Vue 3)**
+3. **Install ui dependencies (Vue 3)**
 
 ```bash
-cd ../frontend
+cd ../ui
 pnpm install
 ```
 
@@ -44,10 +44,10 @@ cp examples/config.yaml.example config.yaml
 
 ## Running Locally
 
-### Backend (Express + background jobs)
+### Server (Express + background jobs)
 
 ```bash
-cd backend
+cd server
 pnpm run dev    # Starts on http://localhost:8080 with hot reload
 ```
 
@@ -60,26 +60,26 @@ curl -X POST http://localhost:8080/api/v1/actions/lb-fetch
 curl -X POST http://localhost:8080/api/v1/actions/catalog
 ```
 
-### Frontend (Vue 3)
+### UI (Vue 3)
 
 ```bash
-cd frontend
-pnpm run dev    # Starts on http://localhost:5173, proxies to backend
+cd ui
+pnpm run dev    # Starts on http://localhost:5173, proxies to server
 ```
 
-(When running both, leave the backend running in one terminal and the frontend in another.)
+(When running both, leave the server running in one terminal and the ui in another.)
 
 ## Running Tests
 
 Run tests from each workspace:
 
 ```bash
-# Backend tests
-cd backend
+# Server tests
+cd server
 pnpm run test
 
-# Frontend tests
-cd ../frontend
+# UI tests
+cd ../ui
 pnpm run test
 ```
 
@@ -88,13 +88,13 @@ pnpm run test
 Script names can vary—use the repo's package.json as the source of truth—but these are the typical targets:
 
 ```bash
-# Backend
-cd backend
+# Server
+cd server
 pnpm run lint
 pnpm run typecheck
 
-# Frontend
-cd ../frontend
+# UI
+cd ../ui
 pnpm run lint
 pnpm run typecheck
 ```
@@ -108,16 +108,16 @@ docker run -v ./config.yaml:/config/config.yaml -v ./data:/data -p 8080:8080 res
 
 ## Project Structure
 
-The backend is Node.js/TypeScript and the frontend is Vue 3. Local development is typically two processes (backend on :8080, frontend on :5173).
+The server is Node.js/TypeScript and the ui is Vue 3. Local development is typically two processes (server on :8080, ui on :5173).
 
 ```
 resonance/
-├── backend/
+├── server/
 │   ├── src/                  # Node.js/TypeScript server code (Express + jobs)
-│   ├── tests/                # Backend tests
+│   ├── tests/                # Server tests
 │   └── package.json
 │
-├── frontend/
+├── ui/
 │   ├── src/
 │   │   ├── components/        # Vue components
 │   │   ├── views/             # Page components
@@ -165,16 +165,16 @@ refactor: extract queue service
 
 ### PR Checklist
 
-- [ ] Backend tests pass (`pnpm -C backend run test`)
-- [ ] Frontend tests pass (`pnpm -C frontend run test`)
-- [ ] Linting passes (`pnpm -C backend run lint` and `pnpm -C frontend run lint`)
+- [ ] Server tests pass (`pnpm -C server run test`)
+- [ ] UI tests pass (`pnpm -C ui run test`)
+- [ ] Linting passes (`pnpm -C server run lint` and `pnpm -C ui run lint`)
 - [ ] Documentation updated if needed
 - [ ] Commit messages follow convention
 - [ ] PR description explains the change
 
 ## Development Guidelines
 
-### TypeScript/Node.js (Backend)
+### TypeScript/Node.js (Server)
 
 - Prefer small, single-purpose modules
 - Use async/await for I/O
@@ -194,7 +194,7 @@ export async function approve(req: Request, res: Response) {
 }
 ```
 
-### TypeScript/Vue (Frontend)
+### TypeScript/Vue (UI)
 
 - Use Composition API with `<script setup>`
 - Use TypeScript for type safety

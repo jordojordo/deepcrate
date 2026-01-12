@@ -20,7 +20,7 @@ pnpm-debug.log*
 .pnpm-store/
 
 # Build artifacts
-frontend/dist/
+ui/dist/
 *.log
 
 # IDE

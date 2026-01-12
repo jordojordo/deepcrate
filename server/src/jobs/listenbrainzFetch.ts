@@ -13,7 +13,7 @@ import ProcessedRecording from '@server/models/ProcessedRecording';
  * - Track mode: Adds tracks directly
  * - Album mode: Resolves tracks to parent albums for de-duplication
  *
- * Based on: backend/discovery/lb_fetch.py
+ * Based on: server/discovery/lb_fetch.py
  */
 export async function listenbrainzFetchJob(): Promise<void> {
   const config = getConfig();

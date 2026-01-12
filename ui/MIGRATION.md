@@ -1,4 +1,4 @@
-# Frontend Migration: Tailwind CSS → PrimeVue 4
+# UI Migration: Tailwind CSS → PrimeVue 4
 
 This document describes the migration from Tailwind CSS v4 to PrimeVue 4, completed in 6 incremental phases.
 
@@ -142,7 +142,7 @@ import { ROUTE_PATHS, ROUTE_NAMES } from '@/constants/routes'
 - Updated QueuePage → Message + Button + useQueue
 - Replaced all SVG icons with PrimeIcons
 - Updated CLAUDE.md documentation
-- Created frontend README.md
+- Created ui README.md
 - Created this MIGRATION.md
 
 ## Key Patterns
@@ -274,6 +274,6 @@ After migration, verify:
 ## Support
 
 For questions about the migration:
-- Frontend README: `frontend/README.md`
+- UI README: `ui/README.md`
 - PrimeVue Docs: https://primevue.org
 - Theme System: https://primevue.org/theming

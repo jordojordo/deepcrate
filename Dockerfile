@@ -1,12 +1,12 @@
 # =============================================================================
 # Resonance Dockerfile (Node.js Migration)
-# Multi-stage build: Frontend → Backend → Production Runtime
+# Multi-stage build: UI → Server → Production Runtime
 # =============================================================================
 
 # =============================================================================
-# Stage 1: Build Frontend
+# Stage 1: Build UI
 # =============================================================================
-FROM node:24-alpine AS frontend-builder
+FROM node:24-alpine AS ui-builder
 
 WORKDIR /build
 
@@ -17,21 +17,21 @@ ENV CI=true
 RUN corepack enable
 
 # Copy package files first for layer caching
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
+COPY ui/package.json ui/pnpm-lock.yaml ./
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy source files
-COPY frontend/ .
+COPY ui/ .
 
 # Build production bundle
 RUN pnpm run build
 
 # =============================================================================
-# Stage 2: Build Backend
+# Stage 2: Build Server
 # =============================================================================
-FROM node:24-alpine AS backend-builder
+FROM node:24-alpine AS server-builder
 
 WORKDIR /build
 
@@ -45,7 +45,7 @@ RUN corepack enable
 RUN apk add --no-cache python3 make g++ sqlite-dev
 
 # Copy package files first for layer caching
-COPY backend/package.json backend/pnpm-lock.yaml ./
+COPY server/package.json server/pnpm-lock.yaml ./
 
 # Install dependencies (including devDependencies for build)
 RUN pnpm install --frozen-lockfile
@@ -56,9 +56,9 @@ RUN cd /build/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3 && \
     ls -la build/ && \
     echo "SQLite3 build complete"
 
-# Copy backend source
-COPY backend/src ./src
-COPY backend/tsconfig.json backend/tsconfig.build.json ./
+# Copy server source
+COPY server/src ./src
+COPY server/tsconfig.json server/tsconfig.build.json ./
 
 # Build TypeScript to JavaScript
 RUN pnpm run build
@@ -80,7 +80,7 @@ RUN corepack enable
 RUN apk add --no-cache curl su-exec python3 make g++ sqlite-dev
 
 # Copy package files
-COPY backend/package.json backend/pnpm-lock.yaml ./
+COPY server/package.json server/pnpm-lock.yaml ./
 
 # Install production dependencies (this will rebuild native modules for runtime image)
 RUN pnpm install --prod --frozen-lockfile
@@ -91,11 +91,11 @@ RUN cd /app/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3 && \
     ls -la build/ && \
     echo "SQLite3 production build complete"
 
-# Copy built backend from builder
-COPY --from=backend-builder /build/dist ./dist
+# Copy built server from builder
+COPY --from=server-builder /build/dist ./dist
 
-# Copy built frontend to static directory
-COPY --from=frontend-builder /build/dist ./static
+# Copy built ui to static directory
+COPY --from=ui-builder /build/dist ./static
 
 # Clean up build tools to reduce image size
 RUN apk del python3 make g++
