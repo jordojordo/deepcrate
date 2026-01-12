@@ -1,0 +1,10 @@
+{
+  "name": "resonance-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.27.0",
+  "scripts": {
+    "deps:check": "pnpm list -r",
+    "deps:update": "pnpm -r up --latest --interactive",
+    "dev": "pnpm --filter backend --filter frontend dev"
+  }
+}

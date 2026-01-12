@@ -1,0 +1,10 @@
+packages:
+  - frontend
+  - backend
+
+injectWorkspacePackages: true
+
+onlyBuiltDependencies:
+  - better-sqlite3
+  - esbuild
+  - sqlite3

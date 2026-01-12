@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "@resonance/frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/node": "^24.10.1",
+    "@types/node": "^25.0.6",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.23",
