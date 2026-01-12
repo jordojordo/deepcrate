@@ -6,8 +6,8 @@ Thank you for your interest in contributing to Resonance! This document provides
 
 ### Prerequisites
 
-- Python 3.12+
 - Node.js 20+
+- pnpm
 - Docker (for testing)
 - Git
 
@@ -16,80 +16,90 @@ Thank you for your interest in contributing to Resonance! This document provides
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/jordojordo/resonance.git
+git clone https://github.com/jordonet/resonance.git
 cd resonance
 ```
 
-2. **Set up Python environment**
+2. **Install backend dependencies (Node.js/TypeScript)**
 
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+pnpm install
 ```
 
-3. **Set up Node environment**
+3. **Install frontend dependencies (Vue 3)**
 
 ```bash
-cd frontend
+cd ../frontend
 pnpm install
 ```
 
 4. **Create config for development**
 
 ```bash
+cd ..
 cp examples/config.yaml.example config.yaml
 # Edit config.yaml with your test credentials
 ```
 
-### Running Locally
+## Running Locally
 
-**Backend (FastAPI):**
+### Backend (Express + background jobs)
 
 ```bash
 cd backend
-uvicorn api.main:app --reload --port 8080
+pnpm run dev    # Starts on http://localhost:8080 with hot reload
 ```
 
-**Frontend (Vue):**
+Resonance runs as a single Node.js process. Background jobs (lb-fetch, catalog-discovery, slskd-downloader) are scheduled via node-cron.
+
+You can also trigger jobs via the API actions endpoints (useful for local testing):
+
+```bash
+curl -X POST http://localhost:8080/api/v1/actions/lb-fetch
+curl -X POST http://localhost:8080/api/v1/actions/catalog
+```
+
+### Frontend (Vue 3)
 
 ```bash
 cd frontend
-pnpm run dev
+pnpm run dev    # Starts on http://localhost:5173, proxies to backend
 ```
 
-**Discovery scripts:**
+(When running both, leave the backend running in one terminal and the frontend in another.)
 
-```bash
-cd backend
-python -m discovery.lb_fetch
-python -m discovery.catalog_discovery
-python -m discovery.slskd_downloader
-```
+## Running Tests
 
-### Running Tests
+Run tests from each workspace:
 
 ```bash
 # Backend tests
 cd backend
-pytest
-
-# Frontend tests
-cd frontend
 pnpm run test
 
-# Linting
-cd backend
-ruff check .
-mypy .
-
-cd frontend
-pnpm run lint
+# Frontend tests
+cd ../frontend
+pnpm run test
 ```
 
-### Building Docker Image
+## Linting / Formatting / Typechecks
+
+Script names can vary—use the repo's package.json as the source of truth—but these are the typical targets:
+
+```bash
+# Backend
+cd backend
+pnpm run lint
+pnpm run typecheck
+
+# Frontend
+cd ../frontend
+pnpm run lint
+pnpm run typecheck
+```
+
+## Building and Running with Docker
 
 ```bash
 docker build -t resonance:dev .
@@ -98,38 +108,32 @@ docker run -v ./config.yaml:/config/config.yaml -v ./data:/data -p 8080:8080 res
 
 ## Project Structure
 
+The backend is Node.js/TypeScript and the frontend is Vue 3. Local development is typically two processes (backend on :8080, frontend on :5173).
+
 ```
 resonance/
 ├── backend/
-│   ├── discovery/          # Discovery scripts
-│   │   ├── lb_fetch.py
-│   │   ├── catalog_discovery.py
-│   │   ├── slskd_downloader.py
-│   │   └── shared/         # Shared utilities
-│   │
-│   ├── api/                # FastAPI application
-│   │   ├── main.py
-│   │   ├── routers/        # API route handlers
-│   │   ├── services/       # Business logic
-│   │   └── models/         # Pydantic schemas
-│   │
-│   ├── tests/
-│   └── requirements.txt
+│   ├── src/                  # Node.js/TypeScript server code (Express + jobs)
+│   ├── tests/                # Backend tests
+│   └── package.json
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/     # Vue components
-│   │   ├── views/          # Page components
-│   │   ├── stores/         # Pinia stores
-│   │   └── api/            # API client
-│   │
+│   │   ├── components/        # Vue components
+│   │   ├── views/             # Page components
+│   │   ├── stores/            # Pinia stores
+│   │   └── api/               # API client
 │   └── package.json
 │
-├── s6-overlay/             # Process supervisor config
-├── docs/                   # Documentation
-├── examples/               # Example configs
+├── s6-overlay/                # Process supervisor config
+├── docs/                      # Documentation
+├── examples/                  # Example configs
 └── Dockerfile
 ```
+
+### Data Directory
+
+All state is stored in `/data` (mounted as a volume in Docker), including the SQLite DB and logs.
 
 ## Making Changes
 
@@ -161,38 +165,33 @@ refactor: extract queue service
 
 ### PR Checklist
 
-- [ ] Tests pass (`pytest` and `pnpm run test`)
-- [ ] Linting passes (`ruff` and `pnpm run lint`)
+- [ ] Backend tests pass (`pnpm -C backend run test`)
+- [ ] Frontend tests pass (`pnpm -C frontend run test`)
+- [ ] Linting passes (`pnpm -C backend run lint` and `pnpm -C frontend run lint`)
 - [ ] Documentation updated if needed
 - [ ] Commit messages follow convention
 - [ ] PR description explains the change
 
 ## Development Guidelines
 
-### Python (Backend)
+### TypeScript/Node.js (Backend)
 
-- Use type hints everywhere
-- Follow PEP 8 (enforced by ruff)
-- Use async/await for I/O operations
-- Write docstrings for public functions
-- Keep functions small and focused
+- Prefer small, single-purpose modules
+- Use async/await for I/O
+- Validate and sanitize external inputs at the edges (routes/controllers)
+- Keep route handlers thin; move logic into services
+- Add tests for bug fixes and new behavior
 
-```python
-async def get_pending_items(
-    source: str | None = None,
-    limit: int = 50
-) -> list[QueueItem]:
-    """
-    Retrieve pending items from the queue.
+```ts
+// Example: keep handlers thin and logic in services
+import type { Request, Response } from "express";
+import { approveQueueItems } from "../services/queue.js";
 
-    Args:
-        source: Filter by source ('listenbrainz', 'catalog', or None for all)
-        limit: Maximum items to return
-
-    Returns:
-        List of pending queue items
-    """
-    ...
+export async function approve(req: Request, res: Response) {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+  const result = await approveQueueItems(ids);
+  res.json({ ok: true, ...result });
+}
 ```
 
 ### TypeScript/Vue (Frontend)
@@ -204,11 +203,11 @@ async def get_pending_items(
 
 ```vue
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useQueueStore } from '@/stores/queue'
+import { computed } from "vue";
+import { useQueueStore } from "@/stores/queue";
 
-const store = useQueueStore()
-const pending = computed(() => store.pendingItems)
+const store = useQueueStore();
+const pending = computed(() => store.pendingItems);
 </script>
 ```
 
@@ -217,14 +216,14 @@ const pending = computed(() => store.pendingItems)
 - Follow REST conventions
 - Use meaningful HTTP status codes
 - Return consistent error format
-- Document with OpenAPI
+- Keep endpoints stable and documented
 
 ### Testing
 
 - Write unit tests for business logic
 - Write integration tests for API endpoints
 - Use fixtures for test data
-- Mock external services
+- Mock external services where appropriate
 
 ## Areas for Contribution
 
@@ -244,16 +243,9 @@ Look for issues labeled `good first issue`:
 - Album deduplication against library
 - Statistics and analytics dashboard
 
-### Documentation
-
-- Tutorials and guides
-- Translation/localization
-- Video walkthroughs
-- Blog posts
-
 ## Questions?
 
-- Open a [GitHub Discussion](https://github.com/jordojordo/resonance/discussions)
+- Open a [GitHub Discussion](https://github.com/jordonet/resonance/discussions)
 - Check existing issues for similar questions
 - Read the [documentation](docs/)
 

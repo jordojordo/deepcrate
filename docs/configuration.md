@@ -222,7 +222,7 @@ slskd:
 ```yaml
 services:
   resonance:
-    image: ghcr.io/jordojordo/resonance:latest
+    image: ghcr.io/jordonet/resonance:latest
     environment:
       - TZ=America/New_York
       - LB_FETCH_INTERVAL=21600

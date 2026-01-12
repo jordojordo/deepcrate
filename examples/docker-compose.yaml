@@ -5,7 +5,7 @@
 
 services:
   resonance:
-    image: ghcr.io/jordojordo/resonance:latest
+    image: ghcr.io/jordonet/resonance:latest
     container_name: resonance
     environment:
       # Timezone

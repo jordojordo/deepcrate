@@ -290,7 +290,7 @@ services:
       - TZ=America/New_York
 
   resonance:
-    image: ghcr.io/jordojordo/resonance:latest
+    image: ghcr.io/jordonet/resonance:latest
     volumes:
       - ./resonance/config.yaml:/config/config.yaml:ro
       - ./resonance/data:/data
@@ -340,7 +340,7 @@ services:
       - TZ=America/New_York
 
   resonance:
-    image: ghcr.io/jordojordo/resonance:latest
+    image: ghcr.io/jordonet/resonance:latest
     volumes:
       - ./resonance/config.yaml:/config/config.yaml:ro
       - ./resonance/data:/data
@@ -362,7 +362,7 @@ If using Traefik:
 
 services:
   resonance:
-    image: ghcr.io/jordojordo/resonance:latest
+    image: ghcr.io/jordonet/resonance:latest
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.resonance.rule=Host(`resonance.example.com`)"
