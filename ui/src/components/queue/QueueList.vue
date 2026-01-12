@@ -1,50 +1,52 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import Button from 'primevue/button'
-import Tag from 'primevue/tag'
-import ProgressSpinner from 'primevue/progressspinner'
-import type { QueueItem } from '@/types'
+import { ref } from 'vue';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import Button from 'primevue/button';
+import Tag from 'primevue/tag';
+import ProgressSpinner from 'primevue/progressspinner';
+import type { QueueItem } from '@/types';
 
-const props = defineProps<{
-  items: QueueItem[] | undefined
-  loading: boolean
-}>()
+defineProps<{
+  items:   QueueItem[] | undefined;
+  loading: boolean;
+}>();
 
 const emit = defineEmits<{
-  approve: [mbids: string[]]
-  reject: [mbids: string[]]
-}>()
+  approve: [mbids: string[]];
+  reject:  [mbids: string[]];
+}>();
 
-const selectedItems = ref<QueueItem[]>([])
+const selectedItems = ref<QueueItem[]>([]);
 
 function approveSelected() {
-  const mbids = selectedItems.value.map(item => item.mbid)
-  emit('approve', mbids)
-  selectedItems.value = []
+  const mbids = selectedItems.value.map(item => item.mbid);
+
+  emit('approve', mbids);
+  selectedItems.value = [];
 }
 
 function rejectSelected() {
-  const mbids = selectedItems.value.map(item => item.mbid)
-  emit('reject', mbids)
-  selectedItems.value = []
+  const mbids = selectedItems.value.map(item => item.mbid);
+
+  emit('reject', mbids);
+  selectedItems.value = [];
 }
 
 function approveItem(item: QueueItem) {
-  emit('approve', [item.mbid])
+  emit('approve', [item.mbid]);
 }
 
 function rejectItem(item: QueueItem) {
-  emit('reject', [item.mbid])
+  emit('reject', [item.mbid]);
 }
 
 function getSourceSeverity(source: string) {
-  return source === 'listenbrainz' ? 'info' : 'secondary'
+  return source === 'listenbrainz' ? 'info' : 'secondary';
 }
 
 function getDefaultCover() {
-  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"%3E%3Cpath stroke="%236b7280" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/%3E%3C/svg%3E'
+  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"%3E%3Cpath stroke="%236b7280" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/%3E%3C/svg%3E';
 }
 </script>
 

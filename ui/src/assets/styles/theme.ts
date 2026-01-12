@@ -1,5 +1,5 @@
-import { definePreset } from '@primeuix/themes'
-import Aura from '@primeuix/themes/aura'
+import { definePreset } from '@primeuix/themes';
+import Aura from '@primeuix/themes/aura';
 
 export const ResonancePreset = definePreset(Aura, {
   semantic: {
@@ -84,16 +84,16 @@ export const ResonancePreset = definePreset(Aura, {
     colorScheme: {
       light: {
         primary: {
-          color: '{primary.600}',
+          color:         '{primary.600}',
           contrastColor: '#ffffff',
-          hoverColor: '{primary.700}',
-          activeColor: '{primary.800}',
+          hoverColor:    '{primary.700}',
+          activeColor:   '{primary.800}',
         },
         highlight: {
-          background: '{primary.50}',
+          background:      '{primary.50}',
           focusBackground: '{primary.100}',
-          color: '{primary.700}',
-          focusColor: '{primary.800}',
+          color:           '{primary.700}',
+          focusColor:      '{primary.800}',
         },
         surface: {
           0:   '#ffffff',
@@ -112,16 +112,16 @@ export const ResonancePreset = definePreset(Aura, {
       },
       dark: {
         primary: {
-          color: '{primary.500}',
+          color:         '{primary.500}',
           contrastColor: '#ffffff',
-          hoverColor: '{primary.400}',
-          activeColor: '{primary.300}',
+          hoverColor:    '{primary.400}',
+          activeColor:   '{primary.300}',
         },
         highlight: {
-          background: 'color-mix(in srgb, {primary.500}, transparent 84%)',
+          background:      'color-mix(in srgb, {primary.500}, transparent 84%)',
           focusBackground: 'color-mix(in srgb, {primary.500}, transparent 76%)',
-          color: '{primary.400}',
-          focusColor: '{primary.300}',
+          color:           '{primary.400}',
+          focusColor:      '{primary.300}',
         },
         surface: {
           0:   '#ffffff',
@@ -140,4 +140,4 @@ export const ResonancePreset = definePreset(Aura, {
       },
     },
   },
-})
+});

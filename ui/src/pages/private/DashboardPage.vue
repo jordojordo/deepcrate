@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
-import ProgressSpinner from 'primevue/progressspinner'
-import Message from 'primevue/message'
-import Button from 'primevue/button'
-import StatsCard from '@/components/common/StatsCard.vue'
-import { useStats } from '@/composables/useStats'
-import { ROUTE_PATHS } from '@/constants/routes'
+import { RouterLink } from 'vue-router';
+import ProgressSpinner from 'primevue/progressspinner';
+import Message from 'primevue/message';
+import Button from 'primevue/button';
+import StatsCard from '@/components/common/StatsCard.vue';
+import { useStats } from '@/composables/useStats';
+import { ROUTE_PATHS } from '@/constants/routes';
 
-const { stats, loading, error } = useStats()
+const { stats, loading, error } = useStats();
 </script>
 
 <template>

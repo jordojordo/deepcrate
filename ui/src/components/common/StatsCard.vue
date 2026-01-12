@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import Card from 'primevue/card'
+import Card from 'primevue/card';
 
 defineProps<{
-  title: string
-  value: number | string | undefined
-  color?: 'blue' | 'green' | 'purple' | 'orange'
-}>()
+  title:  string;
+  value:  number | string | undefined;
+  color?: 'blue' | 'green' | 'purple' | 'orange';
+}>();
 </script>
 
 <template>

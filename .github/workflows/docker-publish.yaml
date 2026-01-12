@@ -53,7 +53,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -99,6 +99,14 @@ jobs:
       - name: Install ui dependencies
         run: |
           pnpm --filter ui install --frozen-lockfile
+
+      - name: Build ui
+        run: |
+          pnpm --filter ui run build
+
+      - name: Lint ui
+        run: |
+          pnpm --filter ui run lint
 
       - name: Build ui
         run: |

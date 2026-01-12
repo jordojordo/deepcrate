@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import { RouterLink, useRoute } from 'vue-router'
-import { computed } from 'vue'
-import { ROUTE_PATHS } from '@/constants/routes'
+import { RouterLink, useRoute } from 'vue-router';
+import { computed } from 'vue';
+import { ROUTE_PATHS } from '@/constants/routes';
 
-const route = useRoute()
+const route = useRoute();
 
 const navItems = [
-  { name: 'Dashboard', path: ROUTE_PATHS.DASHBOARD, icon: 'pi pi-home' },
-  { name: 'Queue', path: ROUTE_PATHS.QUEUE, icon: 'pi pi-list' },
-]
+  {
+    name: 'Dashboard', path: ROUTE_PATHS.DASHBOARD, icon: 'pi pi-home' 
+  },
+  {
+    name: 'Queue', path: ROUTE_PATHS.QUEUE, icon: 'pi pi-list' 
+  },
+];
 
 const isActive = computed(() => (path: string) => {
-  return route.path === path
-})
+  return route.path === path;
+});
 </script>
 
 <template>

@@ -1,32 +1,33 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import Card from 'primevue/card'
-import InputText from 'primevue/inputtext'
-import Password from 'primevue/password'
-import Button from 'primevue/button'
-import Message from 'primevue/message'
-import { useAuth } from '@/composables/useAuth'
+import { ref } from 'vue';
+import Card from 'primevue/card';
+import InputText from 'primevue/inputtext';
+import Password from 'primevue/password';
+import Button from 'primevue/button';
+import Message from 'primevue/message';
+import { useAuth } from '@/composables/useAuth';
 
-const { login } = useAuth()
+const { login } = useAuth();
 
-const username = ref('')
-const password = ref('')
-const error = ref('')
-const loading = ref(false)
+const username = ref('');
+const password = ref('');
+const error = ref('');
+const loading = ref(false);
 
 async function handleSubmit() {
-  error.value = ''
-  loading.value = true
+  error.value = '';
+  loading.value = true;
 
   try {
-    const success = await login(username.value, password.value)
+    const success = await login(username.value, password.value);
+
     if (!success) {
-      error.value = 'Invalid username or password'
+      error.value = 'Invalid username or password';
     }
   } catch {
-    error.value = 'An error occurred. Please try again.'
+    error.value = 'An error occurred. Please try again.';
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>

@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import Card from 'primevue/card'
-import Select from 'primevue/select'
-import Button from 'primevue/button'
-import type { QueueFilters } from '@/types'
-import { SORT_OPTIONS } from '@/constants/queue'
+import Card from 'primevue/card';
+import Select from 'primevue/select';
+import Button from 'primevue/button';
+import type { QueueFilters } from '@/types';
+import { SORT_OPTIONS } from '@/constants/queue';
 
-const sortOptions = [...SORT_OPTIONS]
+const sortOptions = [...SORT_OPTIONS];
 
 const props = defineProps<{
-  modelValue: QueueFilters
-}>()
+  modelValue: QueueFilters;
+}>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: QueueFilters]
-}>()
+  'update:modelValue': [value: QueueFilters];
+}>();
 
 const sourceOptions = [
   { label: 'All Sources', value: 'all' },
   { label: 'ListenBrainz', value: 'listenbrainz' },
   { label: 'Catalog', value: 'catalog' },
-]
+];
 
 function updateFilter<K extends keyof QueueFilters>(key: K, value: QueueFilters[K]) {
-  emit('update:modelValue', { ...props.modelValue, [key]: value })
+  emit('update:modelValue', { ...props.modelValue, [key]: value });
 }
 
 function toggleOrder() {
-  updateFilter('order', props.modelValue.order === 'asc' ? 'desc' : 'asc')
+  updateFilter('order', props.modelValue.order === 'asc' ? 'desc' : 'asc');
 }
 </script>
 

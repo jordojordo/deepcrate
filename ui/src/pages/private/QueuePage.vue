@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
-import { useQueue } from '@/composables/useQueue'
+import { onMounted, watch } from 'vue';
+import { useQueue } from '@/composables/useQueue';
 
-import Message from 'primevue/message'
-import Button from 'primevue/button'
-import QueueFilters from '@/components/queue/QueueFilters.vue'
-import QueueList from '@/components/queue/QueueList.vue'
+import Message from 'primevue/message';
+import Button from 'primevue/button';
+import QueueFilters from '@/components/queue/QueueFilters.vue';
+import QueueList from '@/components/queue/QueueList.vue';
 
 const {
   items,
@@ -20,23 +20,23 @@ const {
   updateFilters,
   loadMore: loadMoreItems,
   reset,
-} = useQueue()
+} = useQueue();
 
 onMounted(() => {
-  fetchPending()
-})
+  fetchPending();
+});
 
 watch(
   () => [filters.value.source, filters.value.sort, filters.value.order],
   () => {
-    reset()
-    fetchPending()
+    reset();
+    fetchPending();
   }
-)
+);
 
 async function handleApprove(mbids: string[]) {
   try {
-    await approveItems(mbids)
+    await approveItems(mbids);
   } catch {
     // Error is already handled in the store
   }
@@ -44,7 +44,7 @@ async function handleApprove(mbids: string[]) {
 
 async function handleReject(mbids: string[]) {
   try {
-    await rejectItems(mbids)
+    await rejectItems(mbids);
   } catch {
     // Error is already handled in the store
   }

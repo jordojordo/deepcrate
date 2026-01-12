@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { ROUTE_PATHS } from '@/constants/routes'
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+import { ROUTE_PATHS } from '@/constants/routes';
 
-import Button from 'primevue/button'
+import Button from 'primevue/button';
 
-const authStore = useAuthStore()
-const router = useRouter()
+const authStore = useAuthStore();
+const router = useRouter();
 
 function handleLogout() {
-  authStore.logout()
-  router.push(ROUTE_PATHS.LOGIN)
+  authStore.logout();
+  router.push(ROUTE_PATHS.LOGIN);
 }
 </script>
 

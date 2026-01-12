@@ -1,26 +1,28 @@
-import { computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
-import { ROUTE_PATHS } from '@/constants/routes'
+import { computed } from 'vue';
+import { useAuthStore } from '@/stores/auth';
+import { useRouter } from 'vue-router';
+import { ROUTE_PATHS } from '@/constants/routes';
 
 export function useAuth() {
-  const store = useAuthStore()
-  const router = useRouter()
+  const store = useAuthStore();
+  const router = useRouter();
 
-  const isAuthenticated = computed(() => store.isAuthenticated)
-  const username = computed(() => store.username)
+  const isAuthenticated = computed(() => store.isAuthenticated);
+  const username = computed(() => store.username);
 
   async function login(user: string, password: string) {
-    const success = await store.login(user, password)
+    const success = await store.login(user, password);
+
     if (success) {
-      await router.push(ROUTE_PATHS.DASHBOARD)
+      await router.push(ROUTE_PATHS.DASHBOARD);
     }
-    return success
+
+    return success;
   }
 
   async function logout() {
-    store.logout()
-    await router.push(ROUTE_PATHS.LOGIN)
+    store.logout();
+    await router.push(ROUTE_PATHS.LOGIN);
   }
 
   return {
@@ -28,5 +30,5 @@ export function useAuth() {
     username,
     login,
     logout,
-  }
+  };
 }

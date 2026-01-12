@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { RouterView } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import AppLayout from '@/components/layout/AppLayout.vue'
-import Toast from 'primevue/toast'
+import { onMounted } from 'vue';
+import { RouterView } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+import AppLayout from '@/components/layout/AppLayout.vue';
+import Toast from 'primevue/toast';
 
-const authStore = useAuthStore()
+const authStore = useAuthStore();
 
 onMounted(() => {
-  authStore.initialize()
-})
+  authStore.initialize();
+});
 </script>
 
 <template>

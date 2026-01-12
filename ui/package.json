@@ -6,7 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --build",
+    "lint:oxlint": "oxlint . -D correctness --ignore-path .gitignore",
+    "lint:oxlint:fix": "oxlint . --fix -D correctness --ignore-path .gitignore",
+    "lint:eslint": "eslint . --cache",
+    "lint:eslint:fix": "eslint . --fix --cache",
+    "lint": "run-s lint:*",
+    "lint:fix": "run-s lint:*:fix",
+    "format": "prettier --write src/"
   },
   "dependencies": {
     "@primeuix/themes": "^2.0.2",
@@ -18,9 +26,21 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@prettier/plugin-oxc": "^0.1.3",
+    "@stylistic/eslint-plugin": "^5.7.0",
     "@types/node": "^25.0.6",
     "@vitejs/plugin-vue": "^6.0.3",
+    "@vitest/eslint-plugin": "^1.6.6",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.6.0",
     "@vue/tsconfig": "^0.8.1",
+    "eslint": "^9.39.2",
+    "eslint-plugin-cypress": "^5.2.1",
+    "eslint-plugin-oxlint": "^1.39.0",
+    "eslint-plugin-vue": "^10.6.2",
+    "npm-run-all2": "^8.0.4",
+    "oxlint": "^1.39.0",
+    "prettier": "^3.7.4",
     "typescript": "~5.9.3",
     "vite": "^7.3.1",
     "vue-tsc": "^3.2.2"

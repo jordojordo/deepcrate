@@ -1,7 +1,7 @@
-import { useToast as usePrimeToast } from 'primevue/usetoast'
+import { useToast as usePrimeToast } from 'primevue/usetoast';
 
 export function useToast() {
-  const toast = usePrimeToast()
+  const toast = usePrimeToast();
 
   function showSuccess(message: string, detail?: string) {
     toast.add({
@@ -9,7 +9,7 @@ export function useToast() {
       summary:  message,
       detail,
       life:     3000,
-    })
+    });
   }
 
   function showError(message: string, detail?: string) {
@@ -18,7 +18,7 @@ export function useToast() {
       summary:  message,
       detail,
       life:     5000,
-    })
+    });
   }
 
   function showInfo(message: string, detail?: string) {
@@ -27,12 +27,12 @@ export function useToast() {
       summary:  message,
       detail,
       life:     3000,
-    })
+    });
   }
 
   return {
     showSuccess,
     showError,
     showInfo,
-  }
+  };
 }
