@@ -1,4 +1,6 @@
+import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
+import { JOB_NAMES } from '@server/constants/jobs';
 import { getConfig } from '@server/config/settings';
 import { NavidromeClient } from '@server/services/clients/NavidromeClient';
 import { LastFmClient } from '@server/services/clients/LastFmClient';
@@ -7,7 +9,7 @@ import { CoverArtArchiveClient } from '@server/services/clients/CoverArtArchiveC
 import { QueueService } from '@server/services/QueueService';
 import CatalogArtist from '@server/models/CatalogArtist';
 import DiscoveredArtist from '@server/models/DiscoveredArtist';
-import { Op } from '@sequelize/core';
+import { isJobCancelled } from '@server/plugins/jobs';
 
 interface SimilarArtistScore {
   name:        string;
@@ -59,6 +61,12 @@ export async function catalogDiscoveryJob(): Promise<void> {
   const queueService = new QueueService();
 
   try {
+    // Check for cancellation before starting
+    if (isJobCancelled(JOB_NAMES.CATALOGD)) {
+      logger.info('Job cancelled before syncing library');
+      throw new Error('Job cancelled');
+    }
+
     // Step 1: Sync library artists from Navidrome
     logger.info('Syncing library artists from Navidrome...');
     const libraryArtists = await navidromeClient.getArtists();
@@ -85,6 +93,12 @@ export async function catalogDiscoveryJob(): Promise<void> {
     let processedCount = 0;
 
     for (const [_nameLower, artist] of Object.entries(libraryArtists)) { // eslint-disable-line
+      // Check for cancellation
+      if (isJobCancelled(JOB_NAMES.CATALOGD)) {
+        logger.info('Job cancelled while fetching similar artists');
+        throw new Error('Job cancelled');
+      }
+
       processedCount++;
 
       // Rate limiting for Last.fm (5 requests/second max, we'll do 1/second to be safe)
@@ -158,6 +172,12 @@ export async function catalogDiscoveryJob(): Promise<void> {
     let addedCount = 0;
 
     for (const artist of candidateArtists) {
+      // Check for cancellation
+      if (isJobCancelled(JOB_NAMES.CATALOGD)) {
+        logger.info('Job cancelled while processing candidate artists');
+        throw new Error('Job cancelled');
+      }
+
       logger.info(`  Discovering: ${ artist.name } (score: ${ artist.score.toFixed(2) }, sources: ${ artist.sourceCount })`);
 
       // Rate limiting for MusicBrainz (1 request/second)

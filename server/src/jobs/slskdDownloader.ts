@@ -1,6 +1,8 @@
 import logger from '@server/config/logger';
+import { JOB_NAMES } from '@server/constants/jobs';
 import { getConfig } from '@server/config/settings';
 import { WishlistService } from '@server/services/WishlistService';
+import { isJobCancelled } from '@server/plugins/jobs';
 
 /**
  * slskd Downloader Job
@@ -24,6 +26,12 @@ export async function slskdDownloaderJob(): Promise<void> {
   logger.info('Starting slskd downloader job');
 
   try {
+    // Check for cancellation before starting
+    if (isJobCancelled(JOB_NAMES.SLSKD)) {
+      logger.info('Job cancelled before processing wishlist');
+      throw new Error('Job cancelled');
+    }
+
     const wishlistService = new WishlistService();
 
     // Read wishlist entries

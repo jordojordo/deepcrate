@@ -1,10 +1,12 @@
 import logger from '@server/config/logger';
+import { JOB_NAMES } from '@server/constants/jobs';
 import { getConfig } from '@server/config/settings';
 import { ListenBrainzClient } from '@server/services/clients/ListenBrainzClient';
 import { MusicBrainzClient } from '@server/services/clients/MusicBrainzClient';
 import { CoverArtArchiveClient } from '@server/services/clients/CoverArtArchiveClient';
 import { QueueService } from '@server/services/QueueService';
 import ProcessedRecording from '@server/models/ProcessedRecording';
+import { isJobCancelled } from '@server/plugins/jobs';
 
 /**
  * ListenBrainz Fetch Job
@@ -35,6 +37,12 @@ export async function listenbrainzFetchJob(): Promise<void> {
   const coverClient = new CoverArtArchiveClient();
   const queueService = new QueueService();
 
+  // Check for cancellation before starting
+  if (isJobCancelled(JOB_NAMES.LB_FETCH)) {
+    logger.info('Job cancelled before fetching recommendations');
+    throw new Error('Job cancelled');
+  }
+
   // Fetch recommendations
   const recs = await lbClient.fetchRecommendations(lb.username, lb.token, fetchCount);
 
@@ -50,6 +58,12 @@ export async function listenbrainzFetchJob(): Promise<void> {
   const seenAlbums = new Set<string>(); // For album mode de-duplication within this run
 
   for (const rec of recs) {
+    // Check for cancellation at each iteration
+    if (isJobCancelled(JOB_NAMES.LB_FETCH)) {
+      logger.info('Job cancelled during processing');
+      throw new Error('Job cancelled');
+    }
+
     const mbid = rec.recording_mbid;
     const score = rec.score;
 
@@ -143,7 +157,7 @@ export async function listenbrainzFetchJob(): Promise<void> {
         }
 
         // Get cover art URL
-        const coverUrl = await coverClient.getCoverUrl(albumMbid);
+        const coverUrl = coverClient.getCoverUrl(albumMbid);
 
         // Add to queue
         if (approvalMode === 'manual') {
