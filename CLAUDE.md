@@ -60,13 +60,29 @@ Resonance is a music discovery pipeline with a Node.js/TypeScript backend and Vu
 
 ### Frontend (`/frontend/src`)
 
-Vue 3 + TypeScript + Pinia + Tailwind CSS.
+Vue 3 + TypeScript + Pinia + PrimeVue 4.
 
-- `views/` - Page components: Dashboard, Queue, Login
-- `components/` - Reusable UI components in `common/`, `layout/`, `queue/`
-- `stores/` - Pinia state management
-- `api/` - Axios API client
+**Key directories:**
+- `pages/private/` - Authenticated page components: DashboardPage, QueuePage
+- `pages/public/` - Public page components: LoginPage
+- `components/` - Reusable UI components:
+  - `common/` - LoadingSpinner, StatsCard
+  - `layout/` - AppLayout, AppHeader, AppNav
+  - `queue/` - QueueFilters, QueueList
+- `stores/` - Pinia state management (source of truth for state)
+- `composables/` - Reusable composition functions: useQueue, useAuth, useToast, useStats
+- `services/` - API clients (Axios): api.ts (base client), queue.ts
+- `types/` - TypeScript type definitions organized by feature: queue.ts, auth.ts, api.ts
+- `utils/` - Utility functions: formatters.ts, validation.ts
+- `constants/` - Static constants: queue.ts, routes.ts
+- `assets/styles/` - Theme preset (theme.ts) and global styles (index.css)
 - `router/` - Vue Router configuration
+
+**Path alias:** `@/*` maps to `./src/*` (configured in vite.config.ts and tsconfig.app.json)
+
+**Theme:** Custom Resonance preset extending PrimeVue Aura base theme with indigo primary colors and dark mode optimized surfaces. See `assets/styles/theme.ts`.
+
+**Composables Pattern:** Composables wrap Pinia stores for convenient access and don't duplicate state. Always use composables in page components for better separation of concerns.
 
 ### Data Flow
 

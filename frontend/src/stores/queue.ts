@@ -1,7 +1,10 @@
+import type { QueueItem, QueueFilters } from '@/types'
+
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { QueueItem, QueueFilters } from '../types'
-import * as queueApi from '../api/queue'
+
+import * as queueApi from '@/services/queue'
+import { useToast } from '@/composables/useToast'
 
 export const useQueueStore = defineStore('queue', () => {
   const items = ref<QueueItem[]>([])
@@ -40,14 +43,17 @@ export const useQueueStore = defineStore('queue', () => {
   async function approve(mbids: string[]) {
     loading.value = true
     error.value = null
+    const { showSuccess, showError } = useToast()
 
     try {
       await queueApi.approve({ mbids })
       // Remove approved items from the list
       items.value = items.value.filter((item) => !mbids.includes(item.mbid))
       total.value = Math.max(0, total.value - mbids.length)
+      showSuccess('Items approved', `${mbids.length} item(s) added to wishlist`)
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to approve items'
+      showError('Failed to approve items')
       throw e
     } finally {
       loading.value = false
@@ -62,14 +68,17 @@ export const useQueueStore = defineStore('queue', () => {
   async function reject(mbids: string[]) {
     loading.value = true
     error.value = null
+    const { showSuccess, showError } = useToast()
 
     try {
       await queueApi.reject({ mbids })
       // Remove rejected items from the list
       items.value = items.value.filter((item) => !mbids.includes(item.mbid))
       total.value = Math.max(0, total.value - mbids.length)
+      showSuccess('Items rejected')
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to reject items'
+      showError('Failed to reject items')
       throw e
     } finally {
       loading.value = false

@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import QueueItemComponent from './QueueItem.vue'
-import LoadingSpinner from '../common/LoadingSpinner.vue'
-import type { QueueItem } from '../../types'
+import { ref } from 'vue'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import Button from 'primevue/button'
+import Tag from 'primevue/tag'
+import ProgressSpinner from 'primevue/progressspinner'
+import type { QueueItem } from '@/types'
 
 const props = defineProps<{
   items: QueueItem[] | undefined
@@ -14,133 +17,152 @@ const emit = defineEmits<{
   reject: [mbids: string[]]
 }>()
 
-const selectedMbids = ref<Set<string>>(new Set())
-
-const hasSelection = computed(() => selectedMbids.value.size > 0)
-const allSelected = computed(
-  () => props.items && props.items.length > 0 && selectedMbids.value.size === props.items.length
-)
-
-function toggleSelect(mbid: string) {
-  if (selectedMbids.value.has(mbid)) {
-    selectedMbids.value.delete(mbid)
-  } else {
-    selectedMbids.value.add(mbid)
-  }
-}
-
-function toggleSelectAll() {
-  if (allSelected.value) {
-    selectedMbids.value.clear()
-  } else {
-    selectedMbids.value = new Set(props.items?.map((item) => item.mbid) ?? [])
-  }
-}
+const selectedItems = ref<QueueItem[]>([])
 
 function approveSelected() {
-  emit('approve', Array.from(selectedMbids.value))
-  selectedMbids.value.clear()
+  const mbids = selectedItems.value.map(item => item.mbid)
+  emit('approve', mbids)
+  selectedItems.value = []
 }
 
 function rejectSelected() {
-  emit('reject', Array.from(selectedMbids.value))
-  selectedMbids.value.clear()
+  const mbids = selectedItems.value.map(item => item.mbid)
+  emit('reject', mbids)
+  selectedItems.value = []
 }
 
-function approveItem(mbid: string) {
-  emit('approve', [mbid])
-  selectedMbids.value.delete(mbid)
+function approveItem(item: QueueItem) {
+  emit('approve', [item.mbid])
 }
 
-function rejectItem(mbid: string) {
-  emit('reject', [mbid])
-  selectedMbids.value.delete(mbid)
+function rejectItem(item: QueueItem) {
+  emit('reject', [item.mbid])
+}
+
+function getSourceSeverity(source: string) {
+  return source === 'listenbrainz' ? 'info' : 'secondary'
+}
+
+function getDefaultCover() {
+  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"%3E%3Cpath stroke="%236b7280" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/%3E%3C/svg%3E'
 }
 </script>
 
 <template>
   <div>
-    <!-- Bulk Actions -->
-    <div
-      v-if="items && items.length > 0"
-      class="mb-4 flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3"
-    >
-      <div class="flex items-center gap-3">
-        <input
-          type="checkbox"
-          :checked="allSelected"
-          :indeterminate="hasSelection && !allSelected"
-          @change="toggleSelectAll"
-          class="w-4 h-4 text-indigo-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500 focus:ring-2"
-        />
-        <span class="text-sm text-gray-600 dark:text-gray-400">
-          {{ selectedMbids.size }} of {{ items?.length }} selected
+    <!-- Bulk Actions Bar -->
+    <div v-if="selectedItems.length > 0" class="mb-4 p-3 surface-card border-round-lg">
+      <div class="flex align-items-center justify-content-between">
+        <span class="text-sm text-muted">
+          {{ selectedItems.length }} of {{ items?.length }} selected
         </span>
-      </div>
-
-      <div v-if="hasSelection" class="flex items-center gap-2">
-        <button
-          @click="approveSelected"
-          class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-        >
-          Approve Selected
-        </button>
-        <button
-          @click="rejectSelected"
-          class="px-3 py-1.5 text-sm font-medium text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg transition-colors"
-        >
-          Reject Selected
-        </button>
+        <div class="flex gap-2">
+          <Button
+            label="Approve Selected"
+            icon="pi pi-check"
+            severity="success"
+            size="small"
+            @click="approveSelected"
+          />
+          <Button
+            label="Reject Selected"
+            icon="pi pi-times"
+            severity="danger"
+            size="small"
+            outlined
+            @click="rejectSelected"
+          />
+        </div>
       </div>
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading && items?.length === 0" class="py-12">
-      <LoadingSpinner size="lg" />
+    <div v-if="loading && !items?.length" class="flex justify-content-center py-6">
+      <ProgressSpinner style="width: 64px; height: 64px" />
     </div>
 
     <!-- Empty State -->
     <div
-      v-else-if="!items || items?.length === 0"
-      class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center"
+      v-else-if="!items || items.length === 0"
+      class="surface-card border-round-lg p-8 text-center"
     >
-      <svg
-        class="w-12 h-12 mx-auto text-gray-400 dark:text-gray-600"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="1.5"
-          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-        />
-      </svg>
-      <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-        No pending items
-      </h3>
-      <p class="mt-2 text-gray-500 dark:text-gray-400">
-        The queue is empty. Check back later for new recommendations.
-      </p>
+      <i class="pi pi-inbox text-6xl text-muted mb-4"></i>
+      <h3 class="text-xl font-semibold mb-2">No pending items</h3>
+      <p class="text-muted">The queue is empty. Check back later for new recommendations.</p>
     </div>
 
-    <!-- Items List -->
-    <div v-else class="space-y-3">
-      <QueueItemComponent
-        v-for="item in items"
-        :key="item.mbid"
-        :item="item"
-        :selected="selectedMbids.has(item.mbid)"
-        @select="toggleSelect(item.mbid)"
-        @approve="approveItem(item.mbid)"
-        @reject="rejectItem(item.mbid)"
-      />
-    </div>
+    <!-- DataTable -->
+    <DataTable
+      v-else
+      :value="items"
+      v-model:selection="selectedItems"
+      data-key="mbid"
+      :loading="loading"
+      striped-rows
+      responsive-layout="scroll"
+    >
+      <Column selection-mode="multiple" header-style="width: 3rem"></Column>
+
+      <Column field="cover_url" header="Cover" style="width: 100px">
+        <template #body="{ data }">
+          <img
+            :src="data.cover_url || getDefaultCover()"
+            :alt="`${data.album || data.title} cover`"
+            class="w-16 h-16 border-round object-cover"
+            @error="($event.target as HTMLImageElement).src = getDefaultCover()"
+          />
+        </template>
+      </Column>
+
+      <Column field="album" header="Album/Title">
+        <template #body="{ data }">
+          <div>
+            <div class="font-semibold">{{ data.album || data.title }}</div>
+            <div class="text-sm text-muted">{{ data.artist }}</div>
+            <div v-if="data.year" class="text-sm text-muted mt-1">{{ data.year }}</div>
+          </div>
+        </template>
+      </Column>
+
+      <Column field="source" header="Source" style="width: 150px">
+        <template #body="{ data }">
+          <Tag
+            :value="data.source === 'listenbrainz' ? 'ListenBrainz' : 'Catalog'"
+            :severity="getSourceSeverity(data.source)"
+          />
+        </template>
+      </Column>
+
+      <Column field="score" header="Score" style="width: 100px">
+        <template #body="{ data }">
+          {{ data.score?.toFixed(1) || 'N/A' }}
+        </template>
+      </Column>
+
+      <Column header="Actions" style="width: 200px">
+        <template #body="{ data }">
+          <div class="flex gap-2">
+            <Button
+              icon="pi pi-check"
+              severity="success"
+              size="small"
+              @click="approveItem(data)"
+            />
+            <Button
+              icon="pi pi-times"
+              severity="danger"
+              size="small"
+              outlined
+              @click="rejectItem(data)"
+            />
+          </div>
+        </template>
+      </Column>
+    </DataTable>
 
     <!-- Loading More Indicator -->
-    <div v-if="loading && items && items.length > 0" class="py-6">
-      <LoadingSpinner />
+    <div v-if="loading && items && items.length > 0" class="flex justify-content-center py-4">
+      <ProgressSpinner style="width: 48px; height: 48px" />
     </div>
   </div>
 </template>

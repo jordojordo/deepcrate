@@ -1,25 +1,26 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore } from '@/stores/auth'
+import { ROUTE_PATHS, ROUTE_NAMES } from '@/constants/routes'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/',
-      name: 'dashboard',
-      component: () => import('../views/DashboardView.vue'),
+      path: ROUTE_PATHS.DASHBOARD,
+      name: ROUTE_NAMES.DASHBOARD,
+      component: () => import('@/pages/private/DashboardPage.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/queue',
-      name: 'queue',
-      component: () => import('../views/QueueView.vue'),
+      path: ROUTE_PATHS.QUEUE,
+      name: ROUTE_NAMES.QUEUE,
+      component: () => import('@/pages/private/QueuePage.vue'),
       meta: { requiresAuth: true },
     },
     {
-      path: '/login',
-      name: 'login',
-      component: () => import('../views/LoginView.vue'),
+      path: ROUTE_PATHS.LOGIN,
+      name: ROUTE_NAMES.LOGIN,
+      component: () => import('@/pages/public/LoginPage.vue'),
     },
   ],
 })
