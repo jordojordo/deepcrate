@@ -117,6 +117,12 @@ defineProps<{
           <span class="shell__sidebar-link-label">
             {{ item.label }}
           </span>
+          <span
+            v-if="item.badge !== undefined && !sidebarCollapsed"
+            class="shell__sidebar-badge"
+          >
+            {{ item.badge }}
+          </span>
         </a>
       </RouterLink>
     </li>
@@ -223,5 +229,17 @@ defineProps<{
 
 .shell__sidebar-link:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+.shell__sidebar-badge {
+  margin-left: auto;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--primary-500, #2b2bee);
+  color: white;
+  border-radius: 9999px;
+  min-width: 1.25rem;
+  text-align: center;
 }
 </style>

@@ -39,15 +39,17 @@ function handleLogout(): void {
         to="/"
         class="sidebar__header-logo"
       >
-        <!-- TODO: Make logo -->
-        <img
-          src="@/assets/images/bars.png"
-          alt="Resonance logo"
-          class="sidebar__logo"
-        >
-        <span class="sidebar__title">
-          Resonance
-        </span>
+        <div class="sidebar__logo-container">
+          <img
+            src="@/assets/images/bars.png"
+            alt="Resonance logo"
+            class="sidebar__logo"
+          >
+        </div>
+        <div class="sidebar__branding">
+          <span class="sidebar__title">Resonance</span>
+          <span class="sidebar__version">v2.4.0</span>
+        </div>
       </RouterLink>
     </template>
 
@@ -79,19 +81,45 @@ function handleLogout(): void {
   &__header-logo {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     text-decoration: none;
     color: inherit;
   }
 
+  &__logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--primary-500, #2b2bee) 0%, #6366f1 100%);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(43, 43, 238, 0.3);
+  }
+
   &__logo {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+
+  &__branding {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
   }
 
   &__title {
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1.125rem;
+  }
+
+  &__version {
+    font-size: 0.6875rem;
+    color: var(--surface-400, #9d9db9);
+    font-weight: 500;
+    letter-spacing: 0.025em;
   }
 }
 </style>

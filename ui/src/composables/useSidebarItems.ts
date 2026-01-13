@@ -2,10 +2,12 @@ import type { SidebarItem } from '@/components/layout/AppShell.vue';
 
 import { computed } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+import { useStats } from '@/composables/useStats';
 import { ROUTE_PATHS, ROUTE_NAMES } from '@/constants/routes';
 
 export const useSidebarItems = () => {
   const authStore = useAuthStore();
+  const { stats } = useStats();
   const isAuthed = computed(() => authStore.isAuthenticated);
 
   const sidebarTopItems = computed<SidebarItem[]>(() => {
@@ -30,9 +32,17 @@ export const useSidebarItems = () => {
       },
       {
         key:   ROUTE_NAMES.QUEUE,
-        label: 'Queue',
+        label: 'Pending Queue',
         to:    ROUTE_PATHS.QUEUE,
         icon:  'pi-list',
+        badge: stats.value?.pending ?? undefined,
+      },
+      {
+        key:   ROUTE_NAMES.DOWNLOADS,
+        label: 'Downloads',
+        to:    ROUTE_PATHS.DOWNLOADS,
+        icon:  'pi-cloud-download',
+        // TODO: Add active downloads count badge when downloads page is implemented
       },
     ];
   });
@@ -50,28 +60,13 @@ export const useSidebarItems = () => {
     }
 
     return [
-      // TODO: Make settings page for authenticated
-      // {
-      //   key:   'settings',
-      //   label: 'Settings',
-      //   to:    { name: 'settings-general' },
-      //   icon:  'pi-cog',
-      //   // You can also add children to settings if needed
-      //   // children: [
-      //   //   {
-      //   //     key:   'profile',
-      //   //     label: 'Profile',
-      //   //     to:    { name: 'settings-profile' },
-      //   //     icon:  'pi-user',
-      //   //   },
-      //   //   {
-      //   //     key:   'security',
-      //   //     label: 'Security',
-      //   //     to:    { name: 'settings-security' },
-      //   //     icon:  'pi-lock',
-      //   //   },
-      //   // ],
-      // },
+      {
+        key:   ROUTE_NAMES.SETTINGS,
+        label: 'Settings',
+        to:    ROUTE_PATHS.SETTINGS,
+        icon:  'pi-cog',
+        // TODO: Implement settings page with configuration options
+      },
     ];
   });
 

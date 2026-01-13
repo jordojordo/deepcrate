@@ -32,6 +32,18 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/private/QueuePage.vue'),
     meta:      { requiresAuth: true },
   },
+  {
+    path:      ROUTE_PATHS.DOWNLOADS,
+    name:      ROUTE_NAMES.DOWNLOADS,
+    component: () => import('@/pages/private/DownloadsPage.vue'),
+    meta:      { requiresAuth: true },
+  },
+  {
+    path:      ROUTE_PATHS.SETTINGS,
+    name:      ROUTE_NAMES.SETTINGS,
+    component: () => import('@/pages/private/SettingsPage.vue'),
+    meta:      { requiresAuth: true },
+  },
 
   // 404
   {

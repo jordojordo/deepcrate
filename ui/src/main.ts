@@ -17,7 +17,15 @@ const pinia = createPinia();
 
 app.use(pinia);
 app.use(router);
-app.use(PrimeVue, { theme: { preset: ResonancePreset } });
+app.use(PrimeVue, {
+  theme: {
+    preset:  ResonancePreset,
+    options: {
+      darkModeSelector: '.dark',
+      cssLayer:         false,
+    },
+  },
+});
 app.use(ToastService);
 app.directive('tooltip', Tooltip);
 

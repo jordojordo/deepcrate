@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useStats } from '@/composables/useStats';
 import { ROUTE_PATHS } from '@/constants/routes';
@@ -7,57 +8,249 @@ import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
 import Button from 'primevue/button';
 
-import StatsCard from '@/components/common/StatsCard.vue';
+import DashboardStatsCard from '@/components/dashboard/DashboardStatsCard.vue';
+import DiscoverySourcesChart from '@/components/dashboard/DiscoverySourcesChart.vue';
+import RecentActivityFeed, { type ActivityItem } from '@/components/dashboard/RecentActivityFeed.vue';
 import ActionsPanel from '@/components/actions/ActionsPanel.vue';
 
 const { stats, loading, error } = useStats();
+
+// Discovery sources data (mock for now - will come from API)
+const discoverySources = computed(() => [
+  {
+    label: 'ListenBrainz', value: 45, color: 'var(--primary-500)'
+  },
+  {
+    label: 'Catalog', value: 30, color: 'var(--purple-500)'
+  },
+  {
+    label: 'Manual Import', value: 15, color: 'var(--teal-400)'
+  },
+  {
+    label: 'Other', value: 10, color: 'rgba(255, 255, 255, 0.2)'
+  },
+]);
+
+// Recent activity (mock for now - will come from API)
+const recentActivity = computed<ActivityItem[]>(() => [
+  {
+    id:          '1',
+    title:       'New album discovered',
+    description: 'From ListenBrainz recommendations',
+    timestamp:   '2 mins ago',
+    type:        'queued',
+  },
+  {
+    id:          '2',
+    title:       'System Scan',
+    description: 'Completed successfully',
+    timestamp:   '1 hr ago',
+    type:        'system',
+  },
+  {
+    id:          '3',
+    title:       'Album approved',
+    description: 'Sent to wishlist',
+    timestamp:   '3 hrs ago',
+    type:        'approved',
+  },
+]);
+
+// Trend bars data (mock)
+const artistTrendBars = [40, 60, 30, 80, 50, 90, 75];
+
+// Active downloads (mock - will come from slskd API)
+const activeDownloads = [
+  { name: 'Radiohead - OK Computer', percent: 85 },
+  { name: 'Daft Punk - Discovery', percent: 32 },
+];
+
+const handleViewAllActivity = () => {
+  // TODO: Navigate to activity log page when implemented
+  console.log('View all activity clicked');
+};
 </script>
 
 <template>
-  <div>
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold text-color">Dashboard</h1>
-      <p class="mt-1 text-muted">Overview of your music queue activity</p>
-    </div>
+  <div class="dashboard">
+    <!-- Page Header -->
+    <header class="dashboard__header">
+      <div>
+        <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight mb-2">
+          Dashboard
+        </h1>
+        <p class="text-white/50 text-lg">System overview and library status</p>
+      </div>
+      <div class="flex align-items-center gap-3">
+        <Button
+          label="Scan Library"
+          icon="pi pi-refresh"
+          class="dashboard__action-btn"
+          outlined
+        />
+        <RouterLink :to="ROUTE_PATHS.QUEUE" class="no-underline">
+          <Button
+            label="Review Queue"
+            icon="pi pi-list"
+            class="dashboard__action-btn--primary"
+          />
+        </RouterLink>
+      </div>
+    </header>
 
+    <!-- Loading State -->
     <div v-if="loading" class="flex justify-content-center py-8">
       <ProgressSpinner style="width: 64px; height: 64px" />
     </div>
 
+    <!-- Error State -->
     <Message v-else-if="error" severity="error" :closable="false">{{ error }}</Message>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <StatsCard title="Pending Items" :value="stats.pending" color="orange">
-        <template #icon>
-          <i class="pi pi-clock text-2xl text-orange-500"></i>
-        </template>
-      </StatsCard>
+    <!-- Main Content -->
+    <template v-else>
+      <!-- Stats Grid -->
+      <div class="dashboard__stats-grid">
+        <!-- Pending Approvals (Actionable) -->
+        <DashboardStatsCard
+          title="Pending Approvals"
+          :value="stats.pending"
+          subtitle="Items awaiting review"
+          color="orange"
+          icon="pi-list-check"
+          :show-pulse="(stats.pending ?? 0) > 0"
+          action-label="Review Queue"
+          :action-route="ROUTE_PATHS.QUEUE"
+        />
 
-      <StatsCard title="Approved Today" :value="stats.approvedToday" color="green">
-        <template #icon>
-          <i class="pi pi-check-circle text-2xl text-green-500"></i>
-        </template>
-      </StatsCard>
+        <!-- Active Downloads (Progress) -->
+        <DashboardStatsCard
+          title="Active Downloads"
+          :value="activeDownloads.length"
+          speed="4.2 MB/s"
+          color="primary"
+          icon="pi-cloud-download"
+          :downloads="activeDownloads"
+        />
 
-      <StatsCard title="Total Processed" :value="stats.totalProcessed" color="blue">
-        <template #icon>
-          <i class="pi pi-chart-bar text-2xl text-blue-500"></i>
-        </template>
-      </StatsCard>
-    </div>
+        <!-- Artists Discovered (Trend) -->
+        <DashboardStatsCard
+          title="Artists Discovered"
+          :value="stats.totalProcessed || 0"
+          color="green"
+          icon="pi-users"
+          :trend="{ value: '+5 this week', positive: true }"
+          :trend-bars="artistTrendBars"
+        />
 
-    <div class="mt-6">
-      <!-- <h2 class="text-lg font-semibold text-color mb-4">Jobs</h2> -->
-      <ActionsPanel />
-    </div>
-
-    <div class="mt-6">
-      <h2 class="text-lg font-semibold text-color mb-4">Quick Actions</h2>
-      <div class="flex flex-wrap gap-3">
-        <RouterLink :to="ROUTE_PATHS.QUEUE">
-          <Button label="Review Queue" icon="pi pi-list" />
-        </RouterLink>
+        <!-- Library Storage (Capacity) -->
+        <DashboardStatsCard
+          title="Library Storage"
+          value="2.4"
+          unit="TB"
+          subtitle="Total used space"
+          color="purple"
+          icon="pi-database"
+          :progress="{ value: 85, label: '85% Capacity' }"
+        />
       </div>
-    </div>
+
+      <!-- Main Content Row -->
+      <div class="dashboard__content-row">
+        <!-- Discovery Sources Chart -->
+        <div class="dashboard__chart-section">
+          <DiscoverySourcesChart :sources="discoverySources" />
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div class="dashboard__activity-section">
+          <RecentActivityFeed
+            :activities="recentActivity"
+            @view-all="handleViewAllActivity"
+          />
+        </div>
+      </div>
+
+      <!-- Actions Panel -->
+      <div class="mt-8">
+        <h2 class="text-xl font-bold text-white mb-4">Discovery Jobs</h2>
+        <ActionsPanel />
+      </div>
+    </template>
   </div>
 </template>
+
+<style scoped>
+.dashboard {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.dashboard__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard__stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard__stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.dashboard__content-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .dashboard__content-row {
+    grid-template-columns: 1.5fr 1fr;
+  }
+}
+
+.dashboard__chart-section,
+.dashboard__activity-section {
+  min-height: 400px;
+}
+
+/* Button styling */
+:deep(.dashboard__action-btn) {
+  background: color-mix(in srgb, var(--surface-700) 70%, transparent);
+  border: 1px solid var(--border-subtle);
+  color: white;
+}
+
+:deep(.dashboard__action-btn:hover) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+:deep(.dashboard__action-btn--primary) {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+  color: white;
+  box-shadow: 0 0 15px rgba(43, 43, 238, 0.25);
+}
+
+:deep(.dashboard__action-btn--primary:hover) {
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+}
+</style>
