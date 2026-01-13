@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
+import { useStats } from '@/composables/useStats';
+import { ROUTE_PATHS } from '@/constants/routes';
+
 import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
 import Button from 'primevue/button';
+
 import StatsCard from '@/components/common/StatsCard.vue';
-import { useStats } from '@/composables/useStats';
-import { ROUTE_PATHS } from '@/constants/routes';
+import ActionsPanel from '@/components/actions/ActionsPanel.vue';
 
 const { stats, loading, error } = useStats();
 </script>
@@ -17,15 +20,12 @@ const { stats, loading, error } = useStats();
       <p class="mt-1 text-muted">Overview of your music queue activity</p>
     </div>
 
-    <!-- Loading State -->
     <div v-if="loading" class="flex justify-content-center py-8">
       <ProgressSpinner style="width: 64px; height: 64px" />
     </div>
 
-    <!-- Error State -->
     <Message v-else-if="error" severity="error" :closable="false">{{ error }}</Message>
 
-    <!-- Stats Grid -->
     <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <StatsCard title="Pending Items" :value="stats.pending" color="orange">
         <template #icon>
@@ -46,7 +46,11 @@ const { stats, loading, error } = useStats();
       </StatsCard>
     </div>
 
-    <!-- Quick Actions -->
+    <div class="mt-6">
+      <!-- <h2 class="text-lg font-semibold text-color mb-4">Jobs</h2> -->
+      <ActionsPanel />
+    </div>
+
     <div class="mt-6">
       <h2 class="text-lg font-semibold text-color mb-4">Quick Actions</h2>
       <div class="flex flex-wrap gap-3">

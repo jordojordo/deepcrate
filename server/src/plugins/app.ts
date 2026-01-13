@@ -7,6 +7,9 @@ import logger from '@server/config/logger';
 import { authMiddleware } from '@server/middleware/auth';
 import healthRoutes from '@server/routes/api/v1/health';
 import queueRoutes from '@server/routes/api/v1/queue';
+import jobsRoutes from '@server/routes/api/v1/jobs';
+import searchRoutes from '@server/routes/api/v1/search';
+import wishlistRoutes from '@server/routes/api/v1/wishlist';
 
 const app = express();
 
@@ -31,6 +34,9 @@ app.use('/api', authMiddleware);
 
 // API routes
 app.use('/api/v1/queue', queueRoutes);
+app.use('/api/v1/jobs', jobsRoutes);
+app.use('/api/v1/search', searchRoutes);
+app.use('/api/v1/wishlist', wishlistRoutes);
 
 // Serve static files in production
 const staticPath = path.join(process.cwd(), 'static');

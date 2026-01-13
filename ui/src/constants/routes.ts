@@ -1,5 +1,5 @@
 export const ROUTE_PATHS = {
-  DASHBOARD: '/',
+  DASHBOARD: '/dashboard',
   QUEUE:     '/queue',
   LOGIN:     '/login',
 } as const;

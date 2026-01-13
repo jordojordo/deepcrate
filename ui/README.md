@@ -55,7 +55,7 @@ src/
 
 ### Prerequisites
 
-- Node.js 18+ and pnpm 8+
+- Node.js 24+ and pnpm 10+
 
 ### Setup
 
