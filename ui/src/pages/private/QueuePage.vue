@@ -23,7 +23,6 @@ const {
   reset,
 } = useQueue();
 
-// View mode state (grid or list)
 const viewMode = ref<ViewMode>('grid');
 
 onMounted(() => {
@@ -56,13 +55,14 @@ async function handleReject(mbids: string[]) {
 
 function handlePreview(item: unknown) {
   // TODO: Implement preview functionality
+  //       This will need to include a media player to preview songs/albums/artists
+  //       Should this fetch from listenbrainz? last.fm? tbd...
   console.log('Preview item:', item);
 }
 </script>
 
 <template>
   <div class="queue-page">
-    <!-- Page Header -->
     <header class="queue-page__header">
       <div>
         <h1 class="queue-page__title">
@@ -88,12 +88,10 @@ function handlePreview(item: unknown) {
       </div>
     </header>
 
-    <!-- Error Message -->
     <Message v-if="error" severity="error" class="mb-6" :closable="false">
       {{ error }}
     </Message>
 
-    <!-- Filters -->
     <div class="queue-page__filters">
       <QueueFilters
         :model-value="filters"
@@ -103,7 +101,6 @@ function handlePreview(item: unknown) {
       />
     </div>
 
-    <!-- Queue Content -->
     <div class="queue-page__content">
       <!-- Grid View -->
       <QueueGrid
@@ -125,7 +122,6 @@ function handlePreview(item: unknown) {
       />
     </div>
 
-    <!-- Load More Button -->
     <div v-if="hasMore && !loading" class="queue-page__load-more">
       <Button
         label="Load More"
@@ -136,9 +132,7 @@ function handlePreview(item: unknown) {
       />
     </div>
 
-    <!-- Footer info -->
     <div class="queue-page__footer">
-      <p>Resonance v2.4.0 &bull; Connected to discovery sources</p>
       <p>{{ items.length }} albums displayed</p>
     </div>
   </div>

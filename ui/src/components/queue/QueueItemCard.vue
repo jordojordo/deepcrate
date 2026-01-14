@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import type { QueueItem } from '@/types/queue';
+
+import { computed } from 'vue';
+
 import Button from 'primevue/button';
 
 interface Props {
@@ -15,20 +17,22 @@ const emit = defineEmits<{
   preview: [item: QueueItem];
 }>();
 
-// Get display title (album or track title)
 const displayTitle = computed(() => props.item.album || props.item.title || 'Unknown');
 
-// Get match score color class
 const scoreColorClass = computed(() => {
   const score = props.item.score ?? 0;
 
-  if (score >= 90) return 'queue-card__score--high';
-  if (score >= 70) return 'queue-card__score--medium';
+  if (score >= 90) {
+    return 'queue-card__score--high';
+  }
+
+  if (score >= 70) {
+    return 'queue-card__score--medium';
+  }
 
   return 'queue-card__score--low';
 });
 
-// Get source tag info
 const sourceTag = computed(() => {
   const tags = {
     listenbrainz: {
@@ -46,7 +50,6 @@ const sourceTag = computed(() => {
   return tags[props.item.source];
 });
 
-// Get similar artist tag if available
 const similarTag = computed(() => {
   if (props.item.similar_to && props.item.similar_to.length > 0) {
     return `Similar to ${ props.item.similar_to[0] }`;
@@ -55,7 +58,6 @@ const similarTag = computed(() => {
   return null;
 });
 
-// Default cover placeholder
 const getDefaultCover = () => {
   return 'data:image/svg+xml,' + encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
@@ -81,7 +83,6 @@ const handlePreview = () => {
 
 <template>
   <div class="queue-card group">
-    <!-- Album Cover -->
     <div class="queue-card__cover">
       <img
         :src="item.cover_url || getDefaultCover()"
@@ -90,7 +91,6 @@ const handlePreview = () => {
         @error="($event.target as HTMLImageElement).src = getDefaultCover()"
       />
 
-      <!-- Hover Overlay -->
       <div class="queue-card__overlay">
         <button
           class="queue-card__play-btn"
@@ -101,15 +101,12 @@ const handlePreview = () => {
         </button>
       </div>
 
-      <!-- Score Badge -->
       <div v-if="item.score" class="queue-card__score" :class="scoreColorClass">
         {{ item.score }}% Match
       </div>
     </div>
 
-    <!-- Content -->
     <div class="queue-card__content">
-      <!-- Title & Artist -->
       <div class="queue-card__info">
         <h3 class="queue-card__title">{{ displayTitle }}</h3>
         <p class="queue-card__artist">
@@ -118,7 +115,6 @@ const handlePreview = () => {
         </p>
       </div>
 
-      <!-- Tags -->
       <div class="queue-card__tags">
         <span class="queue-card__tag" :class="sourceTag.class">
           <i :class="['pi', sourceTag.icon]"></i>
@@ -130,7 +126,6 @@ const handlePreview = () => {
         </span>
       </div>
 
-      <!-- Actions -->
       <div class="queue-card__actions">
         <Button
           label="Approve"

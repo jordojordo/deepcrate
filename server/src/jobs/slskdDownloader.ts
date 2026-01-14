@@ -26,7 +26,6 @@ export async function slskdDownloaderJob(): Promise<void> {
   logger.info('Starting slskd downloader job');
 
   try {
-    // Check for cancellation before starting
     if (isJobCancelled(JOB_NAMES.SLSKD)) {
       logger.info('Job cancelled before processing wishlist');
       throw new Error('Job cancelled');
@@ -34,7 +33,6 @@ export async function slskdDownloaderJob(): Promise<void> {
 
     const wishlistService = new WishlistService();
 
-    // Read wishlist entries (raw strings for slskd)
     const entries = wishlistService.readAllRaw();
 
     if (entries.length === 0) {

@@ -8,7 +8,7 @@ This document outlines the implementation plan for Resonance, broken into phases
 
 The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 - Server: Node.js + Express + TypeScript + Sequelize (SQLite)
-- UI: Vue 3 + Vite + Tailwind CSS + Pinia
+- UI: Vue 3 + Vite + Primevue components + Pinia
 - Discovery jobs: Integrated as scheduled background jobs (node-cron)
 - Single container deployment with Docker
 
@@ -87,29 +87,29 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 
 ---
 
-## Phase 3: Manual Controls (IN PROGRESS)
+## Phase 3: Manual Controls ✅ COMPLETED
 
 **Goal:** Trigger actions from UI
 
 ### Server Tasks
-- [ ] **Manual trigger endpoints**
-  - [ ] `POST /api/v1/actions/lb-fetch` - Trigger ListenBrainz fetch
-  - [ ] `POST /api/v1/actions/catalog` - Trigger catalog discovery
-  - [ ] `POST /api/v1/actions/downloader` - Trigger slskd downloader
-  - [ ] `GET /api/v1/actions/status` - Get job status
+- [x] **Manual trigger endpoints**
+  - [x] `POST /api/v1/actions/lb-fetch` - Trigger ListenBrainz fetch
+  - [x] `POST /api/v1/actions/catalog` - Trigger catalog discovery
+  - [x] `POST /api/v1/actions/downloader` - Trigger slskd downloader
+  - [x] `GET /api/v1/actions/status` - Get job status
 
-- [ ] **Manual additions**
-  - [ ] `POST /api/v1/wishlist` - Add manual entries
-  - [ ] `GET /api/v1/search/musicbrainz` - Search for albums/artists
+- [x] **Manual additions**
+  - [x] `POST /api/v1/wishlist` - Add manual entries
+  - [x] `GET /api/v1/search/musicbrainz` - Search for albums/artists
 
 ### UI Tasks
-- [ ] **Actions panel on dashboard**
-  - [ ] Trigger discovery jobs buttons
-  - [ ] Job status indicators
+- [x] **Actions panel on dashboard**
+  - [x] Trigger discovery jobs buttons
+  - [x] Job status indicators
 
-- [ ] **Manual add functionality**
-  - [ ] Search modal for MusicBrainz
-  - [ ] Add to queue or wishlist
+- [x] **Manual add functionality**
+  - [x] Search modal for MusicBrainz
+  - [x] Add to queue or wishlist
 
 ---
 
@@ -169,7 +169,7 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 
 ---
 
-## Phase 7: UI Restructure & PrimeVue Migration
+## Phase 7: UI Restructure & PrimeVue Migration ✅ COMPLETED
 
 **Goal:** Align ui with bastion project structure and upgrade to PrimeVue
 
@@ -202,29 +202,29 @@ ui/src/
 ```
 
 ### Tasks
-- [ ] **PrimeVue Migration**
-  - [ ] Install PrimeVue 4 and dependencies (`primevue`, `primeicons`, `@primeuix/themes`)
-  - [ ] Create custom theme preset (dark mode first)
-  - [ ] Replace Tailwind components with PrimeVue equivalents
-  - [ ] Set up ToastService for notifications
-  - [ ] Add Tooltip directive
+- [x] **PrimeVue Migration**
+  - [x] Install PrimeVue 4 and dependencies (`primevue`, `primeicons`, `@primeuix/themes`)
+  - [x] Create custom theme preset (dark mode first)
+  - [x] Replace Tailwind components with PrimeVue equivalents
+  - [x] Set up ToastService for notifications
+  - [x] Add Tooltip directive
 
-- [ ] **Structure Refactor**
-  - [ ] Add `@/` path alias to vite.config.ts
-  - [ ] Create `composables/` directory with useQueue, useAuth, etc.
-  - [ ] Create `types/` directory for centralized TypeScript types
-  - [ ] Create `utils/` directory for formatters and helpers
-  - [ ] Create `constants/` directory for static data
-  - [ ] Reorganize components by feature (Queue/, Dashboard/, Settings/)
-  - [ ] Reorganize views by feature
+- [x] **Structure Refactor**
+  - [x] Add `@/` path alias to vite.config.ts
+  - [x] Create `composables/` directory with useQueue, useAuth, etc.
+  - [x] Create `types/` directory for centralized TypeScript types
+  - [x] Create `utils/` directory for formatters and helpers
+  - [x] Create `constants/` directory for static data
+  - [x] Reorganize components by feature (Queue/, Dashboard/, Settings/)
+  - [x] Reorganize views by feature
 
-- [ ] **Component Upgrades**
-  - [ ] DataTable for queue list (sorting, filtering, pagination)
-  - [ ] Card components for stats
-  - [ ] Button components with loading states
-  - [ ] Dialog/Modal components
-  - [ ] Toast notifications
-  - [ ] Skeleton loaders
+- [x] **Component Upgrades**
+  - [x] DataTable for queue list (sorting, filtering, pagination)
+  - [x] Card components for stats
+  - [x] Button components with loading states
+  - [x] Dialog/Modal components
+  - [x] Toast notifications
+  - [x] Skeleton loaders
 
 ---
 
@@ -349,23 +349,30 @@ resonance/
 ├── server/
 │   ├── src/
 │   │   ├── config/         # DB, logger, settings, jobs
+│   │   ├── controllers/    # Express controllers
+│   │   ├── constants/      # Constants
 │   │   ├── jobs/           # Background discovery jobs
-│   │   ├── services/       # Business logic + API clients
-│   │   ├── models/         # Sequelize models
-│   │   ├── routes/         # Express routes
 │   │   ├── middleware/     # Auth, error handling
+│   │   ├── models/         # Sequelize models
 │   │   ├── plugins/        # App setup, job scheduler
+│   │   ├── routes/         # Express routes
+│   │   ├── services/       # Business logic + API clients
 │   │   ├── types/          # TypeScript types
+│   │   ├── utils/          # Utility functions
 │   │   └── server.ts       # Entry point
 │   └── package.json
 │
 ├── ui/
 │   ├── src/
-│   │   ├── views/          # Page components
+│   │   ├── pages/          # Page components
 │   │   ├── components/     # Reusable components
+│   │   ├── composables/    # Composables
+│   │   ├── constants/      # Constants
+│   │   ├── router/         # Vue Router
 │   │   ├── stores/         # Pinia stores
-│   │   ├── api/            # API client
-│   │   └── router/         # Vue Router
+│   │   ├── services/       # Business logic + API clients
+│   │   ├── types/          # TypeScript types
+│   │   └── utils/          # Utility functions
 │   └── package.json
 │
 ├── docs/                   # Documentation

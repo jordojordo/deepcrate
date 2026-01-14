@@ -7,14 +7,13 @@ import * as jobsApi from '@/services/jobs';
 import { useToast } from '@/composables/useToast';
 
 export const useJobsStore = defineStore('jobs', () => {
+  const { showSuccess, showError } = useToast();
+
   const jobs = ref<JobStatus[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
   const triggeringJob = ref<string | null>(null);
   const cancellingJob = ref<string | null>(null);
-
-  // Call useToast at store setup level, not inside async functions
-  const { showSuccess, showError } = useToast();
 
   async function fetchStatus() {
     loading.value = true;

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
+import type { HealthResponse } from '@server/types/responses';
 
 import { BaseController } from '@server/controllers/BaseController';
-import type { HealthResponse } from '@server/types/responses';
 
 /**
  * Health check controller

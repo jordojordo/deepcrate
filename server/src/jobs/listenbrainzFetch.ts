@@ -100,7 +100,7 @@ export async function listenbrainzFetchJob(): Promise<void> {
             title:  trackInfo.title,
             mbid:   trackInfo.mbid,
             type:   'track',
-            score:  score ? Math.round(score * 100) / 100 : undefined,
+            score:  normalizeToPercent(score),
             source: 'listenbrainz',
           });
 
@@ -166,7 +166,7 @@ export async function listenbrainzFetchJob(): Promise<void> {
             album:       albumInfo.title,
             mbid:        albumMbid,
             type:        'album',
-            score:       score ? Math.round(score * 100) / 100 : undefined,
+            score:       normalizeToPercent(score),
             source:      'listenbrainz',
             sourceTrack: albumInfo.trackTitle,
             coverUrl:    coverUrl || undefined,
@@ -202,4 +202,18 @@ export async function listenbrainzFetchJob(): Promise<void> {
  */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Normalize scores to a 0-100 percent scale.
+ * ListenBrainz typically returns 0-1, but guard against already-percent values.
+ */
+function normalizeToPercent(score?: number): number | undefined {
+  if (score === undefined || score === null) {
+    return undefined;
+  }
+
+  const asPercent = score <= 1 ? score * 100 : score;
+
+  return Math.round(asPercent * 100) / 100;
 }

@@ -16,7 +16,6 @@ function goToDashboard() {
 <template>
   <div class="not-found-page">
     <div class="not-found-card">
-      <!-- 404 Illustration -->
       <div class="error-illustration">
         <div class="orbital-container">
           <div class="orbital-ring ring-1" />
@@ -31,7 +30,6 @@ function goToDashboard() {
         </div>
       </div>
 
-      <!-- Message -->
       <h1 class="error-title">
         Oops! We can't find that page.
       </h1>
@@ -39,7 +37,6 @@ function goToDashboard() {
         The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
       </p>
 
-      <!-- Actions -->
       <div class="error-actions">
         <Button
           label="Go to Dashboard"
@@ -54,20 +51,6 @@ function goToDashboard() {
           outlined
           @click="goBack"
         />
-      </div>
-
-      <!-- Support Link -->
-      <div class="error-support">
-        <i class="pi pi-question-circle" />
-        Need assistance?
-        <a
-          href="https://support.endernet.io"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="support-link"
-        >
-          Contact Support
-        </a>
       </div>
     </div>
   </div>

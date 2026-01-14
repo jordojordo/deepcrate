@@ -29,7 +29,7 @@ export interface QueueItemAttributes {
   mbid:         string;         // MusicBrainz ID (unique - release-group or recording)
   type:         QueueItemType;  // 'album' or 'track'
   status:       QueueItemStatus;
-  score?:       number;         // Recommendation score (0-1)
+  score?:       number;         // Recommendation score (0-100%)
   source:       QueueItemSource;
   similarTo?:   string[];       // For catalog: list of library artists this is similar to
   sourceTrack?: string;        // For albums: the track that led to this recommendation
@@ -105,7 +105,7 @@ QueueItem.init(
     score: {
       type:      DataTypes.DOUBLE,
       allowNull: true,
-      comment:   'Recommendation score (0-1)',
+      comment:   'Recommendation score (0-100%)',
     },
     source: {
       type:      DataTypes.STRING(50),

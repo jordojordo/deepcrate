@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
+
 import { useStats } from '@/composables/useStats';
+import { useDownloads } from '@/composables/useDownloads';
 import { ROUTE_PATHS } from '@/constants/routes';
 
 import ProgressSpinner from 'primevue/progressspinner';
@@ -14,8 +16,9 @@ import RecentActivityFeed, { type ActivityItem } from '@/components/dashboard/Re
 import ActionsPanel from '@/components/actions/ActionsPanel.vue';
 
 const { stats, loading, error } = useStats();
+const { stats: downloadStats, activeDownloads } = useDownloads();
 
-// Discovery sources data (mock for now - will come from API)
+// TODO: Discovery sources data (mock for now - will come from API)
 const discoverySources = computed(() => [
   {
     label: 'ListenBrainz', value: 45, color: 'var(--primary-500)'
@@ -31,7 +34,7 @@ const discoverySources = computed(() => [
   },
 ]);
 
-// Recent activity (mock for now - will come from API)
+// TODO: Recent activity (mock for now - will come from API)
 const recentActivity = computed<ActivityItem[]>(() => [
   {
     id:          '1',
@@ -56,14 +59,8 @@ const recentActivity = computed<ActivityItem[]>(() => [
   },
 ]);
 
-// Trend bars data (mock)
+// TODO: Trend bars data (mock)
 const artistTrendBars = [40, 60, 30, 80, 50, 90, 75];
-
-// Active downloads (mock - will come from slskd API)
-const activeDownloads = [
-  { name: 'Radiohead - OK Computer', percent: 85 },
-  { name: 'Daft Punk - Discovery', percent: 32 },
-];
 
 const handleViewAllActivity = () => {
   // TODO: Navigate to activity log page when implemented
@@ -73,7 +70,6 @@ const handleViewAllActivity = () => {
 
 <template>
   <div class="dashboard">
-    <!-- Page Header -->
     <header class="dashboard__header">
       <div>
         <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight mb-2">
@@ -98,17 +94,13 @@ const handleViewAllActivity = () => {
       </div>
     </header>
 
-    <!-- Loading State -->
     <div v-if="loading" class="flex justify-content-center py-8">
       <ProgressSpinner style="width: 64px; height: 64px" />
     </div>
 
-    <!-- Error State -->
     <Message v-else-if="error" severity="error" :closable="false">{{ error }}</Message>
 
-    <!-- Main Content -->
     <template v-else>
-      <!-- Stats Grid -->
       <div class="dashboard__stats-grid">
         <!-- Pending Approvals (Actionable) -->
         <DashboardStatsCard
@@ -125,24 +117,26 @@ const handleViewAllActivity = () => {
         <!-- Active Downloads (Progress) -->
         <DashboardStatsCard
           title="Active Downloads"
-          :value="activeDownloads.length"
-          speed="4.2 MB/s"
+          :value="downloadStats?.active ?? 0"
+          :speed="downloadStats?.totalBandwidth ?? 0"
           color="primary"
           icon="pi-cloud-download"
           :downloads="activeDownloads"
         />
 
         <!-- Artists Discovered (Trend) -->
-        <DashboardStatsCard
+        <!-- TODO: Implement artist discovered trend API -->
+        <!--       What does this even mean? Artists suggested? New artists actually downloaded? -->
+         <DashboardStatsCard
           title="Artists Discovered"
           :value="stats.totalProcessed || 0"
           color="green"
           icon="pi-users"
-          :trend="{ value: '+5 this week', positive: true }"
           :trend-bars="artistTrendBars"
         />
 
         <!-- Library Storage (Capacity) -->
+        <!-- TODO: Implement library storage capacity API -->
         <DashboardStatsCard
           title="Library Storage"
           value="2.4"
@@ -154,14 +148,11 @@ const handleViewAllActivity = () => {
         />
       </div>
 
-      <!-- Main Content Row -->
       <div class="dashboard__content-row">
-        <!-- Discovery Sources Chart -->
         <div class="dashboard__chart-section">
           <DiscoverySourcesChart :sources="discoverySources" />
         </div>
 
-        <!-- Recent Activity Feed -->
         <div class="dashboard__activity-section">
           <RecentActivityFeed
             :activities="recentActivity"
@@ -170,7 +161,6 @@ const handleViewAllActivity = () => {
         </div>
       </div>
 
-      <!-- Actions Panel -->
       <div class="mt-8">
         <h2 class="text-xl font-bold text-white mb-4">Discovery Jobs</h2>
         <ActionsPanel />

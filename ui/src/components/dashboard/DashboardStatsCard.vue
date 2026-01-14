@@ -1,12 +1,10 @@
 <script setup lang="ts">
+import type { ActiveDownload } from '@/types';
+
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
-import Button from 'primevue/button';
 
-interface DownloadProgress {
-  name:    string;
-  percent: number;
-}
+import Button from 'primevue/button';
 
 interface TrendData {
   value:    string;
@@ -21,13 +19,13 @@ interface Props {
   color?:       'primary' | 'green' | 'orange' | 'purple' | 'teal';
   icon?:        string;
   progress?:    { value: number; label?: string };
-  downloads?:   DownloadProgress[];
+  downloads?:   ActiveDownload[];
   trend?:       TrendData;
   trendBars?:   number[];
   actionLabel?: string;
   actionRoute?: string;
   showPulse?:   boolean;
-  speed?:       string;
+  speed?:       number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -71,15 +69,34 @@ const colorClasses = computed(() => {
 
   return colors[props.color];
 });
+
+const trendBadgeClass = computed(() => {
+  if (props.trend?.positive) {
+    return 'bg-green-500/20 text-green-400 border-green-500/30';
+  }
+
+  return  'bg-red-500/20 text-red-400 border-red-500/30';
+});
+
+// function trendBarClass(index: number) {
+//   if (props.trendBars && index === props.trendBars.length - 1) {
+//     return `${ colorClasses.value.bar } shadow-[0_0_10px_rgba(43,43,238,0.5)]`;
+//   }
+
+//   return 'bg-white/10 hover:bg-primary/50';
+// }
+
+function activeDownloadProgress(activeDownload: ActiveDownload) {
+  if (!activeDownload.progress) {
+    return 0;
+  }
+
+  return Math.round((activeDownload.progress.bytesTransferred! / activeDownload.progress.bytesTotal!) * 100);
+}
 </script>
 
 <template>
   <div class="dashboard-stats-card glass-panel glass-panel--hover p-6 relative overflow-hidden group">
-    <!-- Background icon watermark -->
-    <div class="dashboard-stats-card__watermark">
-      <i :class="['pi', icon]"></i>
-    </div>
-
     <div class="relative z-10">
       <!-- Header row -->
       <div class="flex align-items-center justify-content-between mb-4">
@@ -107,39 +124,37 @@ const colorClasses = computed(() => {
       <div v-if="trend" class="mb-4">
         <span
           class="px-2 py-1 rounded text-xs font-bold border"
-          :class="trend.positive
-            ? 'bg-green-500/20 text-green-400 border-green-500/30'
-            : 'bg-red-500/20 text-red-400 border-red-500/30'"
+          :class="trendBadgeClass"
         >
           {{ trend.value }}
         </span>
       </div>
 
       <!-- Mini bar chart for trends -->
-      <div v-if="trendBars && trendBars.length > 0" class="flex align-items-end gap-1 h-12 mt-auto mb-4">
+      <!-- TODO: Implement mini bar (or line) chart for trends -->
+      <!--       But what does trend mean? How is that useful? -->
+      <!-- <div v-if="trendBars && trendBars.length > 0" class="flex align-items-end gap-1 h-12 mt-auto mb-4">
         <div
           v-for="(bar, index) in trendBars"
           :key="index"
           class="flex-1 rounded-sm transition-colors"
-          :class="index === trendBars.length - 1
-            ? `${colorClasses.bar} shadow-[0_0_10px_rgba(43,43,238,0.5)]`
-            : 'bg-white/10 hover:bg-primary/50'"
+          :class="trendBarClass(index)"
           :style="{ height: `${bar}%` }"
         ></div>
-      </div>
+      </div> -->
 
       <!-- Download progress items -->
       <div v-if="downloads && downloads.length > 0" class="space-y-3 mb-4">
-        <div v-for="download in downloads" :key="download.name">
+        <div v-for="download in downloads" :key="download.id">
           <div class="flex justify-content-between text-xs text-white/70 mb-1">
-            <span class="truncate max-w-[180px]">{{ download.name }}</span>
-            <span>{{ download.percent }}%</span>
+            <span class="truncate max-w-[180px]">{{ download.artist }} - {{ download.album }}</span>
+            <span>{{ activeDownloadProgress(download) }}%</span>
           </div>
           <div class="h-1\.5 w-full bg-white/10 rounded-full overflow-hidden">
             <div
               class="h-full rounded-full transition-all"
               :class="colorClasses.bar"
-              :style="{ width: `${download.percent}%` }"
+              :style="{ width: `${ activeDownloadProgress(download) }%` }"
             ></div>
           </div>
         </div>

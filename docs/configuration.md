@@ -26,7 +26,7 @@ listenbrainz:
 # track: Download individual tracks only
 mode: "album"
 
-# Minimum recommendation score (0-1)
+# Minimum recommendation score (0-100)
 # 0 = accept all recommendations
 # Higher values = only highly-relevant recommendations
 min_score: 0
@@ -160,7 +160,7 @@ Note: Use double underscore `__` for nested keys.
 | Key | Type | Required | Default | Description |
 |-----|------|----------|---------|-------------|
 | `mode` | string | No | `album` | `album` or `track` |
-| `min_score` | float | No | `0` | Minimum recommendation score (0-1) |
+| `min_score` | float | No | `0` | Minimum recommendation score (0-100) |
 | `fetch_count` | int | No | `100` | Recommendations per run |
 
 ### slskd

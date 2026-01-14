@@ -34,3 +34,11 @@ export type {
   DownloadedItemAttributes,
   DownloadedItemCreationAttributes,
 } from './DownloadedItem';
+
+export { default as DownloadTask } from './DownloadTask';
+export type {
+  DownloadTaskAttributes,
+  DownloadTaskCreationAttributes,
+  DownloadTaskStatus,
+  DownloadTaskType,
+} from './DownloadTask';

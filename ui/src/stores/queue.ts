@@ -7,6 +7,8 @@ import * as queueApi from '@/services/queue';
 import { useToast } from '@/composables/useToast';
 
 export const useQueueStore = defineStore('queue', () => {
+  const { showSuccess, showError } = useToast();
+
   const items = ref<QueueItem[]>([]);
   const total = ref(0);
   const loading = ref(false);
@@ -33,6 +35,7 @@ export const useQueueStore = defineStore('queue', () => {
       } else {
         items.value = response.items;
       }
+
       total.value = response.total;
     } catch(e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch pending items';
@@ -44,16 +47,18 @@ export const useQueueStore = defineStore('queue', () => {
   async function approve(mbids: string[]) {
     loading.value = true;
     error.value = null;
-    const { showSuccess, showError } = useToast();
 
     try {
       await queueApi.approve({ mbids });
+
       // Remove approved items from the list
       items.value = items.value.filter((item) => !mbids.includes(item.mbid));
       total.value = Math.max(0, total.value - mbids.length);
+
       showSuccess('Items approved', `${ mbids.length } item(s) added to wishlist`);
     } catch(e) {
       error.value = e instanceof Error ? e.message : 'Failed to approve items';
+
       showError('Failed to approve items');
       throw e;
     } finally {
@@ -70,16 +75,18 @@ export const useQueueStore = defineStore('queue', () => {
   async function reject(mbids: string[]) {
     loading.value = true;
     error.value = null;
-    const { showSuccess, showError } = useToast();
 
     try {
       await queueApi.reject({ mbids });
+
       // Remove rejected items from the list
       items.value = items.value.filter((item) => !mbids.includes(item.mbid));
       total.value = Math.max(0, total.value - mbids.length);
+
       showSuccess('Items rejected');
     } catch(e) {
       error.value = e instanceof Error ? e.message : 'Failed to reject items';
+
       showError('Failed to reject items');
       throw e;
     } finally {
@@ -89,7 +96,7 @@ export const useQueueStore = defineStore('queue', () => {
 
   function setFilters(newFilters: Partial<QueueFilters>) {
     filters.value = {
-      ...filters.value, ...newFilters, offset: 0 
+      ...filters.value, ...newFilters, offset: 0
     };
   }
 

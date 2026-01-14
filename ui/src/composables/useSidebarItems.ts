@@ -42,7 +42,7 @@ export const useSidebarItems = () => {
         label: 'Downloads',
         to:    ROUTE_PATHS.DOWNLOADS,
         icon:  'pi-cloud-download',
-        // TODO: Add active downloads count badge when downloads page is implemented
+        badge: stats.value?.activeDownloads ?? undefined,
       },
     ];
   });

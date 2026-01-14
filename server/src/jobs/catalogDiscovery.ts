@@ -172,13 +172,15 @@ export async function catalogDiscoveryJob(): Promise<void> {
     let addedCount = 0;
 
     for (const artist of candidateArtists) {
+      const displayScore = normalizeCatalogScoreToPercent(artist.score, artist.sourceCount);
+
       // Check for cancellation
       if (isJobCancelled(JOB_NAMES.CATALOGD)) {
         logger.info('Job cancelled while processing candidate artists');
         throw new Error('Job cancelled');
       }
 
-      logger.info(`  Discovering: ${ artist.name } (score: ${ artist.score.toFixed(2) }, sources: ${ artist.sourceCount })`);
+      logger.info(`  Discovering: ${ artist.name } (avg match: ${ displayScore?.toFixed(2) ?? 'n/a' }%, sources: ${ artist.sourceCount })`);
 
       // Rate limiting for MusicBrainz (1 request/second)
       await sleep(1000);
@@ -220,7 +222,7 @@ export async function catalogDiscoveryJob(): Promise<void> {
             album:    album.title,
             mbid:     albumMbid,
             type:     'album',
-            score:    Math.round(artist.score * 100) / 100,
+            score:    displayScore,
             source:   'catalog',
             coverUrl: coverUrl || undefined,
             year,
@@ -254,4 +256,19 @@ export async function catalogDiscoveryJob(): Promise<void> {
  */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Normalize aggregated similarity scores to a percent scale for display.
+ * Uses average match (aggregate / sources) to keep values in 0-100.
+ */
+function normalizeCatalogScoreToPercent(score: number, sourceCount: number): number | undefined {
+  if (!sourceCount) {
+    return undefined;
+  }
+
+  const averageMatch = score / sourceCount;
+  const asPercent = averageMatch <= 1 ? averageMatch * 100 : averageMatch;
+
+  return Math.round(asPercent * 100) / 100;
 }

@@ -1,4 +1,6 @@
 import type { Request, Response } from 'express';
+import type { ActionResponse, PaginatedResponse } from '@server/types/responses';
+import type QueueItemModel from '@server/models/QueueItem';
 
 import { BaseController } from '@server/controllers/BaseController';
 import {
@@ -6,10 +8,8 @@ import {
   approveRequestSchema,
   rejectRequestSchema,
 } from '@server/types/queue';
-import type { ActionResponse, PaginatedResponse } from '@server/types/responses';
 import { sendValidationError } from '@server/utils/errorHandler';
 import { QueueService } from '@server/services/QueueService';
-import type QueueItemModel from '@server/models/QueueItem';
 
 /**
  * Queue controller for managing pending queue items
@@ -56,7 +56,7 @@ class QueueController extends BaseController {
       }
 
       const {
-        source, sort, order, limit, offset 
+        source, sort, order, limit, offset
       } = parseResult.data;
 
       // Get items from queue service

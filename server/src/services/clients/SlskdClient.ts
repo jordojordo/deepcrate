@@ -21,6 +21,27 @@ export interface SlskdSearchState {
   state: 'InProgress' | 'Completed' | 'Cancelled';
 }
 
+export interface SlskdTransferFile {
+  id:               string;
+  filename:         string;
+  size:             number;
+  state:            'Queued' | 'Initializing' | 'InProgress' | 'Completed' | 'Errored' | 'Cancelled' | 'TimedOut';
+  bytesTransferred: number;
+  averageSpeed?:    number;
+  remainingTime?:   number;
+}
+
+export interface SlskdTransferDirectory {
+  directory: string;
+  fileCount: number;
+  files:     SlskdTransferFile[];
+}
+
+export interface SlskdUserTransfers {
+  username:    string;
+  directories: SlskdTransferDirectory[];
+}
+
 /**
  * SlskdClient provides access to slskd (Soulseek) API for music downloads.
  * https://github.com/slskd/slskd
@@ -136,6 +157,65 @@ export class SlskdClient {
         logger.error(`Failed to enqueue downloads: ${ error.message }`);
       } else {
         logger.error(`Failed to enqueue downloads: ${ String(error) }`);
+      }
+
+      return false;
+    }
+  }
+
+  /**
+   * Get all active downloads
+   */
+  async getDownloads(): Promise<SlskdUserTransfers[]> {
+    try {
+      const response = await this.client.get('/api/v0/transfers/downloads');
+
+      return response.data || [];
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.error(`Failed to get downloads: ${ error.message }`);
+      } else {
+        logger.error(`Failed to get downloads: ${ String(error) }`);
+      }
+
+      return [];
+    }
+  }
+
+  /**
+   * Get downloads from a specific user
+   */
+  async getUserDownloads(username: string): Promise<SlskdUserTransfers | null> {
+    try {
+      const response = await this.client.get(`/api/v0/transfers/downloads/${ username }`);
+
+      return response.data as SlskdUserTransfers;
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.error(`Failed to get downloads for user ${ username }: ${ error.message }`);
+      } else {
+        logger.error(`Failed to get downloads for user ${ username }: ${ String(error) }`);
+      }
+
+      return null;
+    }
+  }
+
+  /**
+   * Cancel a download
+   */
+  async cancelDownload(username: string, fileId: string): Promise<boolean> {
+    try {
+      await this.client.delete(`/api/v0/transfers/downloads/${ username }/${ fileId }`);
+
+      logger.info(`Cancelled download: ${ username }/${ fileId }`);
+
+      return true;
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.error(`Failed to cancel download: ${ error.message }`);
+      } else {
+        logger.error(`Failed to cancel download: ${ String(error) }`);
       }
 
       return false;
