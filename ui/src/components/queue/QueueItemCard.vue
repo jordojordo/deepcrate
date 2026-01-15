@@ -51,8 +51,17 @@ const sourceTag = computed(() => {
 });
 
 const similarTag = computed(() => {
-  if (props.item.similar_to && props.item.similar_to.length > 0) {
-    return `Similar to ${ props.item.similar_to[0] }`;
+  const similarTo = props.item.similar_to;
+
+  if (similarTo && similarTo.length > 0) {
+    const first = similarTo[0];
+    const remaining = similarTo.length - 1;
+
+    if (remaining > 0) {
+      return `Similar to ${ first } (+${ remaining })`;
+    }
+
+    return `Similar to ${ first }`;
   }
 
   return null;

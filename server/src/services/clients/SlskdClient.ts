@@ -93,19 +93,95 @@ export class SlskdClient {
    * Get search state
    */
   async getSearchState(searchId: string): Promise<SlskdSearchState | null> {
-    try {
-      const response = await this.client.get(`/api/v0/searches/${ searchId }`);
+    const normalizeState = (value: unknown): SlskdSearchState['state'] | null => {
+      if (typeof value !== 'string') {
+        return null;
+      }
 
-      return response.data as SlskdSearchState;
-    } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to get search state: ${ error.message }`);
-      } else {
-        logger.error(`Failed to get search state: ${ String(error) }`);
+      // slskd sometimes returns a flags enum string like "Completed, TimedOut"
+      const flags = value
+        .split(',')
+        .map((part) => part.trim().toLowerCase())
+        .filter(Boolean);
+
+      if (flags.includes('cancelled') || flags.includes('canceled')) {
+        return 'Cancelled';
+      }
+
+      if (flags.includes('completed') || flags.includes('timedout') || flags.includes('timed out')) {
+        // Treat "TimedOut" as completed so we can still fetch whatever responses exist.
+        return 'Completed';
+      }
+
+      if (flags.includes('inprogress') || flags.includes('in progress')) {
+        return 'InProgress';
       }
 
       return null;
+    };
+
+    const encodedSearchId = encodeURIComponent(searchId);
+    const candidates = [
+      `/api/v0/searches/${ encodedSearchId }`,
+      `/api/v0/searches/${ encodedSearchId }/state`,
+      `/api/v0/searches/${ encodedSearchId }/status`,
+    ];
+
+    for (const endpoint of candidates) {
+      try {
+        const response = await this.client.get(endpoint);
+        const data = response.data as unknown;
+
+        if (typeof data === 'string') {
+          const normalized = normalizeState(data);
+
+          if (normalized) {
+            return { state: normalized };
+          }
+
+          logger.debug(`Unexpected search state string from ${ endpoint }: ${ data }`);
+
+          return null;
+        }
+
+        if (data && typeof data === 'object') {
+          const stateValue = (data as { state?: unknown; searchState?: unknown }).state
+            ?? (data as { searchState?: unknown }).searchState;
+
+          const normalized = normalizeState(stateValue);
+
+          if (normalized) {
+            return { state: normalized };
+          }
+
+          const isComplete = (data as { isComplete?: unknown }).isComplete;
+
+          if (isComplete === true) {
+            return { state: 'Completed' };
+          }
+        }
+
+        logger.debug(`Unexpected search state response from ${ endpoint }: ${ JSON.stringify(data) }`);
+
+        return null;
+      } catch(error) {
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 404) {
+            continue;
+          }
+
+          logger.error(`Failed to get search state (${ endpoint }): ${ error.message }`);
+        } else {
+          logger.error(`Failed to get search state (${ endpoint }): ${ String(error) }`);
+        }
+
+        return null;
+      }
     }
+
+    logger.error(`Failed to get search state: no matching endpoint for search ${ searchId }`);
+
+    return null;
   }
 
   /**
@@ -113,7 +189,7 @@ export class SlskdClient {
    */
   async getSearchResponses(searchId: string): Promise<SlskdSearchResponse[]> {
     try {
-      const response = await this.client.get(`/api/v0/searches/${ searchId }/responses`);
+      const response = await this.client.get(`/api/v0/searches/${ encodeURIComponent(searchId) }/responses`);
 
       return response.data || [];
     } catch(error) {
@@ -132,7 +208,7 @@ export class SlskdClient {
    */
   async deleteSearch(searchId: string): Promise<void> {
     try {
-      await this.client.delete(`/api/v0/searches/${ searchId }`);
+      await this.client.delete(`/api/v0/searches/${ encodeURIComponent(searchId) }`);
     } catch(error) {
       // Ignore errors when cleaning up searches
       logger.debug(`Failed to delete search ${ searchId }: ${ String(error) }`);
@@ -142,12 +218,12 @@ export class SlskdClient {
   /**
    * Enqueue files for download
    */
-  async enqueue(username: string, files: string[]): Promise<boolean> {
+  async enqueue(username: string, files: SlskdFile[]): Promise<boolean> {
     try {
-      await this.client.post('/api/v0/transfers/downloads', {
-        username,
-        files: files.map(filename => ({ filename })),
-      });
+      await this.client.post(`/api/v0/transfers/downloads/${ encodeURIComponent(username) }`, files.map(file => ({
+        filename: file.filename,
+        size:     file.size ?? 0,
+      })));
 
       logger.info(`Enqueued ${ files.length } files from ${ username }`);
 
@@ -187,7 +263,7 @@ export class SlskdClient {
    */
   async getUserDownloads(username: string): Promise<SlskdUserTransfers | null> {
     try {
-      const response = await this.client.get(`/api/v0/transfers/downloads/${ username }`);
+      const response = await this.client.get(`/api/v0/transfers/downloads/${ encodeURIComponent(username) }`);
 
       return response.data as SlskdUserTransfers;
     } catch(error) {
@@ -206,7 +282,7 @@ export class SlskdClient {
    */
   async cancelDownload(username: string, fileId: string): Promise<boolean> {
     try {
-      await this.client.delete(`/api/v0/transfers/downloads/${ username }/${ fileId }`);
+      await this.client.delete(`/api/v0/transfers/downloads/${ encodeURIComponent(username) }/${ encodeURIComponent(fileId) }`);
 
       logger.info(`Cancelled download: ${ username }/${ fileId }`);
 

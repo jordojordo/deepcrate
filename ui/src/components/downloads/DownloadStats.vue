@@ -12,7 +12,7 @@ defineProps<Props>();
 
 <template>
   <div class="download-stats">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="flex gap-4">
       <DashboardStatsCard
         title="Active"
         :value="stats?.active ?? 0"

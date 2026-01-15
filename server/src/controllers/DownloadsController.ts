@@ -4,6 +4,7 @@ import type DownloadTaskModel from '@server/models/DownloadTask';
 import type { ActiveDownload, DownloadStats } from '@server/types/downloads';
 
 import { BaseController } from '@server/controllers/BaseController';
+import logger from '@server/config/logger';
 import {
   getDownloadsQuerySchema,
   retryRequestSchema,
@@ -100,7 +101,11 @@ class DownloadsController extends BaseController {
         offset,
       });
 
-      console.log('Completed downloads fetched successfully', dbItems, total);
+      logger.debug('Fetched completed downloads', {
+        total,
+        limit,
+        offset,
+      });
 
       // Convert models to plain objects
       const items = dbItems.map((task) => this.modelToPlainObject(task));

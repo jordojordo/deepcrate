@@ -16,6 +16,7 @@ interface SimilarArtistScore {
   nameLower:   string;
   score:       number;
   sourceCount: number; // Number of library artists this is similar to
+  similarTo:   Set<string>;
 }
 
 /**
@@ -122,12 +123,14 @@ export async function catalogDiscoveryJob(): Promise<void> {
 
           existing.score += sim.match;
           existing.sourceCount++;
+          existing.similarTo.add(artist.name);
         } else {
           similarArtistMap.set(nameLower, {
             name:        sim.name,
             nameLower,
             score:       sim.match,
             sourceCount: 1,
+            similarTo:   new Set([artist.name]),
           });
         }
       }
@@ -146,7 +149,7 @@ export async function catalogDiscoveryJob(): Promise<void> {
     // Filter and sort
     const candidateArtists = Array.from(similarArtistMap.values())
       .filter((a) => !discoveredSet.has(a.nameLower))
-      .filter((a) => a.score >= minSimilarity)
+      .filter((a) => a.sourceCount > 0 && (a.score / a.sourceCount) >= minSimilarity)
       .sort((a, b) => {
         // Sort by source count first (artists similar to more library artists)
         if (b.sourceCount !== a.sourceCount) {
@@ -172,7 +175,12 @@ export async function catalogDiscoveryJob(): Promise<void> {
     let addedCount = 0;
 
     for (const artist of candidateArtists) {
-      const displayScore = normalizeCatalogScoreToPercent(artist.score, artist.sourceCount);
+      const avgMatchPercent = normalizeCatalogScoreToPercent(artist.score, artist.sourceCount);
+      const weightedScore = calculateWeightedCatalogScoreToPercent(
+        artist.score,
+        artist.sourceCount,
+        similarArtistLimit
+      );
 
       // Check for cancellation
       if (isJobCancelled(JOB_NAMES.CATALOGD)) {
@@ -180,7 +188,10 @@ export async function catalogDiscoveryJob(): Promise<void> {
         throw new Error('Job cancelled');
       }
 
-      logger.info(`  Discovering: ${ artist.name } (avg match: ${ displayScore?.toFixed(2) ?? 'n/a' }%, sources: ${ artist.sourceCount })`);
+      logger.info(
+        `  Discovering: ${ artist.name } (avg match: ${ avgMatchPercent?.toFixed(2) ?? 'n/a' }%, ` +
+        `weighted: ${ weightedScore?.toFixed(2) ?? 'n/a' }%, sources: ${ artist.sourceCount })`
+      );
 
       // Rate limiting for MusicBrainz (1 request/second)
       await sleep(1000);
@@ -218,13 +229,14 @@ export async function catalogDiscoveryJob(): Promise<void> {
         // Add to queue
         if (approvalMode === 'manual') {
           await queueService.addPending({
-            artist:   artist.name,
-            album:    album.title,
-            mbid:     albumMbid,
-            type:     'album',
-            score:    displayScore,
-            source:   'catalog',
-            coverUrl: coverUrl || undefined,
+            artist:    artist.name,
+            album:     album.title,
+            mbid:      albumMbid,
+            type:      'album',
+            score:     weightedScore,
+            source:    'catalog',
+            similarTo: Array.from(artist.similarTo).sort((a, b) => a.localeCompare(b)),
+            coverUrl:  coverUrl || undefined,
             year,
           });
 
@@ -271,4 +283,30 @@ function normalizeCatalogScoreToPercent(score: number, sourceCount: number): num
   const asPercent = averageMatch <= 1 ? averageMatch * 100 : averageMatch;
 
   return Math.round(asPercent * 100) / 100;
+}
+
+/**
+ * Calculate a weighted score that incorporates how many library artists suggested this candidate.
+ *
+ * Uses `avg_match_percent * (sources / similar_artist_limit)`, clamped to 0-100.
+ */
+function calculateWeightedCatalogScoreToPercent(
+  score: number,
+  sourceCount: number,
+  similarArtistLimit: number,
+): number | undefined {
+  const avgMatchPercent = normalizeCatalogScoreToPercent(score, sourceCount);
+
+  if (avgMatchPercent === undefined) {
+    return undefined;
+  }
+
+  if (!similarArtistLimit) {
+    return avgMatchPercent;
+  }
+
+  const weighted = (avgMatchPercent * sourceCount) / similarArtistLimit;
+  const clamped = Math.min(100, Math.max(0, weighted));
+
+  return Math.round(clamped * 100) / 100;
 }

@@ -5,7 +5,7 @@ import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
 import DownloadTask, { DownloadTaskType, DownloadTaskStatus } from '@server/models/DownloadTask';
 
-import SlskdClient, { SlskdUserTransfers } from './clients/SlskdClient';
+import SlskdClient, { type SlskdTransferFile, type SlskdUserTransfers } from './clients/SlskdClient';
 import WishlistService from './WishlistService';
 
 /**
@@ -41,7 +41,7 @@ export class DownloadService {
     const { limit = 50, offset = 0 } = params;
 
     // Query database for active tasks
-    const { rows, count } = await DownloadTask.findAndCountAll({
+    let { rows, count } = await DownloadTask.findAndCountAll({
       where: { status: { [Op.in]: ['searching', 'queued', 'downloading'] } },
       order: [['queuedAt', 'DESC']],
       limit,
@@ -58,6 +58,19 @@ export class DownloadService {
 
     // Get real-time progress from slskd (if configured)
     const slskdTransfers = this.slskdClient ? await this.slskdClient.getDownloads() : [];
+
+    if (slskdTransfers.length) {
+      const syncResult = await this.syncTasksFromTransfers(rows, slskdTransfers);
+
+      if (syncResult.activeSetChanged) {
+        ({ rows, count } = await DownloadTask.findAndCountAll({
+          where: { status: { [Op.in]: ['searching', 'queued', 'downloading'] } },
+          order: [['queuedAt', 'DESC']],
+          limit,
+          offset,
+        }));
+      }
+    }
 
     // Merge database records with real-time progress
     const items: ActiveDownload[] = rows.map(task => {
@@ -86,6 +99,206 @@ export class DownloadService {
   }
 
   /**
+   * Sync queued/downloading task statuses from slskd transfers.
+   * Intended to be called by background jobs and by UI polling endpoints.
+   */
+  async syncTaskStatusesFromTransfers(transfers: SlskdUserTransfers[]): Promise<void> {
+    if (!transfers.length) {
+      return;
+    }
+
+    const tasks = await DownloadTask.findAll({ where: { status: { [Op.in]: ['queued', 'downloading'] } } });
+
+    await this.syncTasksFromTransfers(tasks, transfers);
+  }
+
+  private normalizeSlskdPath(value: string | null | undefined): string | null {
+    if (value === undefined || value === null) {
+      return null;
+    }
+
+    const normalized = value.replace(/\\/g, '/').replace(/\/+$/, '');
+
+    return normalized === '.' ? '' : normalized;
+  }
+
+  private tokenizeSlskdState(value: unknown): string[] {
+    if (typeof value !== 'string') {
+      return [];
+    }
+
+    return value
+      .split(',')
+      .map((part) => part.trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  private deriveTransferStatus(files: SlskdTransferFile[]): {
+    status:        'queued' | 'downloading' | 'completed' | 'failed';
+    errorMessage?: string;
+  } {
+    const isQueued = (tokens: string[]) => tokens.includes('queued');
+    const isCompleted = (tokens: string[]) => tokens.includes('completed') || tokens.includes('succeeded') || tokens.includes('success');
+    const isErrored = (tokens: string[]) => tokens.includes('errored') || tokens.includes('error');
+    const isCancelled = (tokens: string[]) => tokens.includes('cancelled') || tokens.includes('canceled');
+    const isTimedOut = (tokens: string[]) => tokens.includes('timedout') || tokens.includes('timed out');
+    const isErrorState = (tokens: string[]) => isErrored(tokens) || isCancelled(tokens) || isTimedOut(tokens);
+    const isFinal = (tokens: string[]) => isCompleted(tokens) || isErrorState(tokens);
+
+    let allQueued = true;
+    let allCompleted = true;
+    let allFinal = true;
+    let allBytesTransferred = true;
+    const errorFiles: SlskdTransferFile[] = [];
+
+    for (const file of files) {
+      const tokens = this.tokenizeSlskdState(file.state);
+
+      if (!isQueued(tokens)) {
+        allQueued = false;
+      }
+
+      if (!isCompleted(tokens)) {
+        allCompleted = false;
+      }
+
+      if (!isFinal(tokens)) {
+        allFinal = false;
+      }
+
+      if (isErrorState(tokens)) {
+        errorFiles.push(file);
+      }
+
+      if (!Number.isFinite(file.size) || !Number.isFinite(file.bytesTransferred) || file.size > file.bytesTransferred) {
+        allBytesTransferred = false;
+      }
+    }
+
+    if (allCompleted || (allBytesTransferred && errorFiles.length === 0)) {
+      return { status: 'completed' };
+    }
+
+    if (allFinal && errorFiles.length > 0) {
+      return {
+        status:       'failed',
+        errorMessage: this.summarizeTransferErrors(errorFiles, files.length),
+      };
+    }
+
+    if (allQueued) {
+      return { status: 'queued' };
+    }
+
+    return { status: 'downloading' };
+  }
+
+  private summarizeTransferErrors(errorFiles: SlskdTransferFile[], totalFiles: number): string {
+    const counts = errorFiles.reduce<Record<string, number>>((acc, file) => {
+      const state = typeof file.state === 'string' ? file.state : String(file.state);
+      const key = state || 'Unknown';
+
+      acc[key] = (acc[key] || 0) + 1;
+
+      return acc;
+    }, {});
+
+    const summary = Object.entries(counts)
+      .map(([state, count]) => `${ count } ${ state }`)
+      .join(', ');
+
+    return `Download failed (${ summary }, ${ totalFiles } total files)`;
+  }
+
+  private getFilesForTask(taskDirectory: string, transfers: SlskdUserTransfers): SlskdTransferFile[] {
+    const normalizedTaskDirectory = this.normalizeSlskdPath(taskDirectory);
+
+    if (normalizedTaskDirectory === null) {
+      return [];
+    }
+
+    const matchingDirectories = transfers.directories.filter((directory) => {
+      const normalizedDirectory = this.normalizeSlskdPath(directory.directory);
+
+      return normalizedDirectory === normalizedTaskDirectory;
+    });
+
+    return matchingDirectories.flatMap(directory => directory.files);
+  }
+
+  private async syncTasksFromTransfers(
+    tasks: DownloadTask[],
+    transfers: SlskdUserTransfers[],
+  ): Promise<{ updated: boolean; activeSetChanged: boolean }> {
+    let updated = false;
+    let activeSetChanged = false;
+
+    for (const task of tasks) {
+      if (!task.slskdUsername) {
+        continue;
+      }
+
+      if (task.status !== 'queued' && task.status !== 'downloading') {
+        continue;
+      }
+
+      const userTransfers = transfers.find((transfer) => transfer.username === task.slskdUsername);
+
+      if (!userTransfers) {
+        continue;
+      }
+
+      if (task.slskdDirectory == null && userTransfers.directories.length === 1) {
+        const fallbackDirectory = this.normalizeSlskdPath(userTransfers.directories[0].directory);
+
+        await DownloadTask.update(
+          {
+            slskdDirectory: fallbackDirectory ?? undefined,
+            fileCount:      task.fileCount || userTransfers.directories[0].files.length,
+          },
+          { where: { id: task.id } }
+        );
+
+        task.slskdDirectory = fallbackDirectory ?? undefined;
+      }
+
+      if (task.slskdDirectory == null) {
+        continue;
+      }
+
+      const files = this.getFilesForTask(task.slskdDirectory, userTransfers);
+
+      if (!files.length) {
+        continue;
+      }
+
+      const { status, errorMessage } = this.deriveTransferStatus(files);
+
+      if (status === task.status) {
+        continue;
+      }
+
+      updated = true;
+
+      if (status === 'completed' || status === 'failed') {
+        activeSetChanged = true;
+      }
+
+      await this.updateTaskStatus(task.id, status as DownloadTaskStatus, {
+        slskdUsername:  task.slskdUsername,
+        slskdDirectory: task.slskdDirectory,
+        fileCount:      task.fileCount || files.length,
+        errorMessage:   status === 'failed' ? errorMessage : undefined,
+      });
+
+      task.status = status as DownloadTaskStatus;
+      task.errorMessage = status === 'failed' ? errorMessage : undefined;
+    }
+
+    return { updated, activeSetChanged };
+  }
+
+  /**
    * Calculate progress for a task from slskd transfers
    */
   private calculateProgress(
@@ -106,9 +319,15 @@ export class DownloadService {
       return null;
     }
 
+    const taskDirectory = this.normalizeSlskdPath(task.slskdDirectory);
+
+    if (taskDirectory === null) {
+      return null;
+    }
+
     // Find matching directory
     const directory = userTransfers.directories.find(
-      d => d.directory === task.slskdDirectory
+      d => this.normalizeSlskdPath(d.directory) === taskDirectory
     );
 
     if (!directory) {
@@ -117,9 +336,21 @@ export class DownloadService {
 
     // Aggregate file stats
     const files = directory.files;
-    const filesCompleted = files.filter(
-      f => f.state === 'Completed'
-    ).length;
+    const isFileCompleted = (file: SlskdTransferFile) => {
+      const tokens = this.tokenizeSlskdState(file.state);
+
+      if (tokens.includes('completed') || tokens.includes('succeeded') || tokens.includes('success')) {
+        return true;
+      }
+
+      if (Number.isFinite(file.size) && Number.isFinite(file.bytesTransferred) && file.size > 0) {
+        return file.bytesTransferred >= file.size;
+      }
+
+      return false;
+    };
+
+    const filesCompleted = files.filter(isFileCompleted).length;
     const filesTotal = files.length;
 
     const bytesTransferred = files.reduce(
@@ -133,7 +364,12 @@ export class DownloadService {
 
     // Calculate average speed from active transfers
     const activeFiles = files.filter(
-      f => f.state === 'InProgress' && f.averageSpeed
+      (file) => {
+        const tokens = this.tokenizeSlskdState(file.state);
+        const inProgress = tokens.includes('inprogress') || tokens.includes('in progress');
+
+        return Boolean(file.averageSpeed) && (inProgress || !isFileCompleted(file));
+      }
     );
     const totalSpeed = activeFiles.reduce(
       (sum, f) => sum + (f.averageSpeed || 0),
@@ -284,7 +520,11 @@ export class DownloadService {
           t.directories.flatMap(d => d.files)
         );
         const activeFiles = allFiles.filter(
-          f => f.state === 'InProgress' && f.averageSpeed
+          (file) => {
+            const tokens = this.tokenizeSlskdState(file.state);
+
+            return Boolean(file.averageSpeed) && (tokens.includes('inprogress') || tokens.includes('in progress'));
+          }
         );
 
         totalBandwidth = activeFiles.reduce(

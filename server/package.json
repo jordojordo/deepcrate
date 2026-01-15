@@ -14,7 +14,8 @@
   "license": "Apache-2.0",
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
-    "dev": "NODE_ENV=development nodemon --watch src --ext ts --exec 'tsx -r dotenv/config ./src/server.ts'",
+    "dev": "NODE_ENV=development LOG_LEVEL=info nodemon --watch src --ext ts --exec 'tsx -r dotenv/config ./src/server.ts'",
+    "debug": "NODE_ENV=development LOG_LEVEL=debug nodemon --watch src --ext ts --exec 'tsx -r dotenv/config ./src/server.ts'",
     "start": "NODE_ENV=production node dist/server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
