@@ -113,6 +113,14 @@ export class DownloadService {
     await this.syncTasksFromTransfers(tasks, transfers);
   }
 
+  /**
+   * Normalize slskd path for consistent comparison.
+   * slskd returns paths in various formats depending on the source user's OS:
+   * - Windows paths with backslashes: "C:\\Music\\Album"
+   * - Relative paths: "./Music/Album" or "."
+   * - Paths with trailing slashes
+   * This normalizes all to forward slashes with no trailing slash.
+   */
   private normalizeSlskdPath(value: string | null | undefined): string | null {
     if (value === undefined || value === null) {
       return null;
@@ -123,6 +131,12 @@ export class DownloadService {
     return normalized === '.' ? '' : normalized;
   }
 
+  /**
+   * Tokenize slskd state string into individual flags.
+   * slskd returns transfer states as comma-separated enum flags
+   * (e.g., "Completed, Succeeded" or "InProgress") rather than single values.
+   * This splits and normalizes them for easier checking.
+   */
   private tokenizeSlskdState(value: unknown): string[] {
     if (typeof value !== 'string') {
       return [];
@@ -211,6 +225,12 @@ export class DownloadService {
     return `Download failed (${ summary }, ${ totalFiles } total files)`;
   }
 
+  /**
+   * Get transfer files for a task by matching username and directory.
+   * We match by directory path because slskd doesn't return transfer IDs
+   * until after files are enqueued and accepted by the source user.
+   * The slskdFileIds field can be used for direct lookup once populated.
+   */
   private getFilesForTask(taskDirectory: string, transfers: SlskdUserTransfers): SlskdTransferFile[] {
     const normalizedTaskDirectory = this.normalizeSlskdPath(taskDirectory);
 
@@ -249,7 +269,7 @@ export class DownloadService {
         continue;
       }
 
-      if (task.slskdDirectory == null && userTransfers.directories.length === 1) {
+      if ((task.slskdDirectory === null || task.slskdDirectory === undefined) && userTransfers.directories.length === 1) {
         const fallbackDirectory = this.normalizeSlskdPath(userTransfers.directories[0].directory);
 
         await DownloadTask.update(
@@ -263,7 +283,7 @@ export class DownloadService {
         task.slskdDirectory = fallbackDirectory ?? undefined;
       }
 
-      if (task.slskdDirectory == null) {
+      if (task.slskdDirectory === null || task.slskdDirectory === undefined) {
         continue;
       }
 
@@ -335,56 +355,28 @@ export class DownloadService {
       return null;
     }
 
-    // Aggregate file stats
+    // Aggregate file stats using slskd's built-in properties
     const files = directory.files;
-    const isFileCompleted = (file: SlskdTransferFile) => {
-      const tokens = this.tokenizeSlskdState(file.state);
 
-      if (tokens.includes('completed') || tokens.includes('succeeded') || tokens.includes('success')) {
-        return true;
-      }
-
-      if (Number.isFinite(file.size) && Number.isFinite(file.bytesTransferred) && file.size > 0) {
-        return file.bytesTransferred >= file.size;
-      }
-
-      return false;
-    };
-
-    const filesCompleted = files.filter(isFileCompleted).length;
+    const filesCompleted = files.filter(f => f.percentComplete >= 100).length;
     const filesTotal = files.length;
 
-    const bytesTransferred = files.reduce(
-      (sum, f) => sum + f.bytesTransferred,
-      0
-    );
-    const bytesTotal = files.reduce(
-      (sum, f) => sum + f.size,
-      0
-    );
+    const bytesTransferred = files.reduce((sum, f) => sum + f.bytesTransferred, 0);
+    const bytesTotal = files.reduce((sum, f) => sum + f.size, 0);
 
-    // Calculate average speed from active transfers
+    // Calculate average speed from active transfers (in progress with remaining bytes)
     const activeFiles = files.filter(
-      (file) => {
-        const tokens = this.tokenizeSlskdState(file.state);
-        const inProgress = tokens.includes('inprogress') || tokens.includes('in progress');
-
-        return Boolean(file.averageSpeed) && (inProgress || !isFileCompleted(file));
-      }
+      f => f.percentComplete > 0 && f.percentComplete < 100 && f.bytesRemaining > 0
     );
-    const totalSpeed = activeFiles.reduce(
-      (sum, f) => sum + (f.averageSpeed || 0),
-      0
-    );
+    const totalSpeed = activeFiles.reduce((sum, f) => sum + (f.averageSpeed || 0), 0);
     const averageSpeed = activeFiles.length > 0 ? totalSpeed : null;
 
-    // Calculate estimated time remaining
+    // Calculate estimated time remaining from active file stats
+    const totalBytesRemaining = activeFiles.reduce((sum, f) => sum + f.bytesRemaining, 0);
     let estimatedTimeRemaining: number | null = null;
 
-    if (averageSpeed && bytesTotal > bytesTransferred) {
-      const bytesRemaining = bytesTotal - bytesTransferred;
-
-      estimatedTimeRemaining = Math.ceil(bytesRemaining / averageSpeed);
+    if (averageSpeed && totalBytesRemaining > 0) {
+      estimatedTimeRemaining = Math.ceil(totalBytesRemaining / averageSpeed);
     }
 
     return {
@@ -475,7 +467,9 @@ export class DownloadService {
 
     for (const task of tasks) {
       try {
-        // Add to wishlist first (can fail safely without leaving inconsistent state)
+        // Add to wishlist BEFORE updating task status to prevent race conditions:
+        // If we updated task status first, the downloader job could see the pending
+        // task but find an empty wishlist, causing the retry to be skipped.
         this.wishlistService.append(
           task.artist,
           task.album,
@@ -490,6 +484,7 @@ export class DownloadService {
           slskdSearchId:   undefined,
           slskdUsername:   undefined,
           slskdDirectory:  undefined,
+          slskdFileIds:    undefined,
           fileCount:       undefined,
           startedAt:       undefined,
           completedAt:     undefined,
@@ -537,18 +532,13 @@ export class DownloadService {
         const allFiles = transfers.flatMap(t =>
           t.directories.flatMap(d => d.files)
         );
+
+        // Use percentComplete and bytesRemaining to identify actively transferring files
         const activeFiles = allFiles.filter(
-          (file) => {
-            const tokens = this.tokenizeSlskdState(file.state);
-
-            return Boolean(file.averageSpeed) && (tokens.includes('inprogress') || tokens.includes('in progress'));
-          }
+          f => f.percentComplete > 0 && f.percentComplete < 100 && f.bytesRemaining > 0
         );
 
-        totalBandwidth = activeFiles.reduce(
-          (sum, f) => sum + (f.averageSpeed || 0),
-          0
-        );
+        totalBandwidth = activeFiles.reduce((sum, f) => sum + (f.averageSpeed || 0), 0);
       } catch(error) {
         logger.debug(`Could not get bandwidth from slskd: ${ String(error) }`);
       }
@@ -597,6 +587,7 @@ export class DownloadService {
       slskdSearchId?:  string;
       slskdUsername?:  string;
       slskdDirectory?: string;
+      slskdFileIds?:   string[];
       fileCount?:      number;
       errorMessage?:   string;
     }

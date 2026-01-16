@@ -26,6 +26,7 @@ export interface DownloadTaskAttributes {
   slskdSearchId?:  string;           // Search ID from slskd
   slskdUsername?:  string;           // Source user for downloads
   slskdDirectory?: string;           // Directory path on source
+  slskdFileIds?:   string[];         // Transfer file IDs from slskd enqueue response
   fileCount?:      number;           // Total files in download
   errorMessage?:   string;           // Error details for failed status
   retryCount:      number;           // Number of retry attempts
@@ -55,6 +56,7 @@ class DownloadTask extends Model<DownloadTaskAttributes, DownloadTaskCreationAtt
   declare slskdSearchId?:  string;
   declare slskdUsername?:  string;
   declare slskdDirectory?: string;
+  declare slskdFileIds?:   string[];
   declare fileCount?:      number;
   declare errorMessage?:   string;
   declare retryCount:      number;
@@ -114,6 +116,12 @@ DownloadTask.init(
       allowNull:  true,
       columnName: 'slskd_directory',
       comment:    'Directory path on the source user',
+    },
+    slskdFileIds: {
+      type:       DataTypes.JSON,
+      allowNull:  true,
+      columnName: 'slskd_file_ids',
+      comment:    'Transfer file IDs from slskd enqueue response',
     },
     fileCount: {
       type:       DataTypes.INTEGER,

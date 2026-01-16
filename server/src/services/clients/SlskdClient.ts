@@ -46,14 +46,30 @@ export interface SlskdSearchState {
   state: 'InProgress' | 'Completed' | 'Cancelled';
 }
 
+/**
+ * Transfer file from slskd downloads API.
+ * The `state` field is a comma-separated flags string (e.g., "Completed, Succeeded")
+ * rather than a single enum value.
+ */
 export interface SlskdTransferFile {
   id:               string;
+  username:         string;
+  direction:        'Download' | 'Upload';
   filename:         string;
   size:             number;
-  state:            'Queued' | 'Initializing' | 'InProgress' | 'Completed' | 'Errored' | 'Cancelled' | 'TimedOut';
+  startOffset:      number;
+  state:            string;  // Flags string like "Completed, Succeeded"
+  stateDescription: string;
+  requestedAt:      string;  // ISO date
+  enqueuedAt:       string;  // ISO date
+  startedAt?:       string;  // ISO date
+  endedAt?:         string;  // ISO date
   bytesTransferred: number;
-  averageSpeed?:    number;
-  remainingTime?:   number;
+  averageSpeed:     number;
+  bytesRemaining:   number;
+  elapsedTime:      string;  // TimeSpan format "00:00:09.9020424"
+  percentComplete:  number;  // 0-100
+  remainingTime:    string;  // TimeSpan format
 }
 
 export interface SlskdTransferDirectory {
@@ -153,6 +169,10 @@ export class SlskdClient {
     };
 
     const encodedSearchId = encodeURIComponent(searchId);
+    // Multiple endpoint candidates handle different slskd API versions:
+    // - /searches/{id} returns full search object (older versions)
+    // - /searches/{id}/state returns state directly (some versions)
+    // - /searches/{id}/status returns status object (other versions)
     const candidates = [
       `/api/v0/searches/${ encodedSearchId }`,
       `/api/v0/searches/${ encodedSearchId }/state`,
@@ -248,18 +268,22 @@ export class SlskdClient {
   }
 
   /**
-   * Enqueue files for download
+   * Enqueue files for download.
+   * Returns the transfer files with their IDs, or null on failure.
    */
-  async enqueue(username: string, files: SlskdFile[]): Promise<boolean> {
+  async enqueue(username: string, files: SlskdFile[]): Promise<SlskdTransferFile[] | null> {
     try {
-      await this.client.post(`/api/v0/transfers/downloads/${ encodeURIComponent(username) }`, files.map(file => ({
-        filename: file.filename,
-        size:     file.size ?? 0,
-      })));
+      const response = await this.client.post<SlskdTransferFile[]>(
+        `/api/v0/transfers/downloads/${ encodeURIComponent(username) }`,
+        files.map(file => ({
+          filename: file.filename,
+          size:     file.size ?? 0,
+        }))
+      );
 
       logger.info(`Enqueued ${ files.length } files from ${ username }`);
 
-      return true;
+      return response.data;
     } catch(error) {
       if (axios.isAxiosError(error)) {
         const slskdError = SlskdError.fromAxiosError(error, 'Failed to enqueue downloads');
@@ -273,7 +297,7 @@ export class SlskdClient {
         logger.error(`Failed to enqueue downloads: ${ String(error) }`);
       }
 
-      return false;
+      return null;
     }
   }
 

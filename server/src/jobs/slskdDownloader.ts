@@ -26,6 +26,9 @@ const SEARCH_MAX_WAIT_MS = 20000;
 const MIN_FILES_ALBUM = 3;
 const MIN_FILES_TRACK = 1;
 
+/** Common music file extensions to filter search results */
+const MUSIC_EXTENSIONS = ['.mp3', '.flac', '.m4a', '.ogg', '.opus', '.wav', '.aac', '.wma', '.alac'];
+
 /**
  * slskd Downloader Job
  *
@@ -289,9 +292,9 @@ async function processWishlistEntry(params: {
     logger.debug(`Selected ${ selection.files.length }/${ response.files.length } files for ${ wishlistKey } from ${ response.username }`);
   }
 
-  const enqueueSuccess = await slskdClient.enqueue(response.username, selection.files);
+  const transferFiles = await slskdClient.enqueue(response.username, selection.files);
 
-  if (!enqueueSuccess) {
+  if (!transferFiles) {
     await downloadService.updateTaskStatus(task.id, 'failed', {
       slskdSearchId: searchId,
       errorMessage:  'Failed to enqueue downloads in slskd',
@@ -302,10 +305,13 @@ async function processWishlistEntry(params: {
     return 'failed';
   }
 
+  const fileIds = transferFiles.map(f => f.id);
+
   await downloadService.updateTaskStatus(task.id, 'queued', {
     slskdSearchId:  searchId,
     slskdUsername:  response.username,
     slskdDirectory: selection.directory,
+    slskdFileIds:   fileIds,
     fileCount:      selection.files.length,
     errorMessage:   undefined,
   });
@@ -327,16 +333,27 @@ function normalizeSlskdPath(value: string): string {
   return normalized === '.' ? '' : normalized;
 }
 
+function isMusicFile(filename: string): boolean {
+  const ext = path.extname(filename).toLowerCase();
+
+  return MUSIC_EXTENSIONS.includes(ext);
+}
+
 function pickBestResponse(responses: SlskdSearchResponse[]): SlskdSearchResponse | null {
   const scored = responses
-    .filter(response => response.files.length > 0)
-    .map((response) => ({
-      response,
-      fileCount:   response.files.length,
-      totalSize:   response.files.reduce((sum, file) => sum + (file.size || 0), 0),
-      uploadSpeed: response.uploadSpeed || 0,
-      hasSlot:     response.hasFreeUploadSlot ? 1 : 0,
-    }));
+    .map((response) => {
+      // Count only music files for scoring
+      const musicFiles = response.files.filter(f => isMusicFile(f.filename));
+
+      return {
+        response,
+        musicFileCount: musicFiles.length,
+        totalSize:      musicFiles.reduce((sum, file) => sum + (file.size || 0), 0),
+        uploadSpeed:    response.uploadSpeed || 0,
+        hasSlot:        response.hasFreeUploadSlot ? 1 : 0,
+      };
+    })
+    .filter(scored => scored.musicFileCount > 0);
 
   if (scored.length === 0) {
     return null;
@@ -347,8 +364,8 @@ function pickBestResponse(responses: SlskdSearchResponse[]): SlskdSearchResponse
       return b.hasSlot - a.hasSlot;
     }
 
-    if (b.fileCount !== a.fileCount) {
-      return b.fileCount - a.fileCount;
+    if (b.musicFileCount !== a.musicFileCount) {
+      return b.musicFileCount - a.musicFileCount;
     }
 
     if (b.totalSize !== a.totalSize) {
@@ -364,11 +381,10 @@ function pickBestResponse(responses: SlskdSearchResponse[]): SlskdSearchResponse
 function selectDownloadFiles(response: SlskdSearchResponse): { directory: string; files: SlskdFile[] } | null {
   const directoryMap = new Map<string, { files: Map<string, SlskdFile>; totalSize: number }>();
 
-  for (const file of response.files) {
-    if (!file.filename) {
-      continue;
-    }
+  // Filter to music files only to avoid downloading non-audio files
+  const musicFiles = response.files.filter(f => f.filename && isMusicFile(f.filename));
 
+  for (const file of musicFiles) {
     const normalizedFilename = normalizeSlskdPath(file.filename);
     const directory = path.posix.dirname(normalizedFilename);
 

@@ -11,8 +11,8 @@ const enableFile = isProduction || process.env.LOG_TO_FILE === 'true';
 if (enableFile) {
   try {
     fs.mkdirSync(logDir, { recursive: true });
-  } catch {
-    // If we can't create the directory, fall back to console-only.
+  } catch(err) {
+    console.warn('Failed to create log directory, falling back to console-only logging:', err);
   }
 }
 
