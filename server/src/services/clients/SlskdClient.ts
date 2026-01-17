@@ -99,9 +99,7 @@ export class SlskdClient {
     const trimmedHost = host.replace(/\/$/, '');
     const trimmedBase = urlBase.trim();
     const normalizedBase =
-      trimmedBase === '' || trimmedBase === '/'
-        ? ''
-        : `/${ trimmedBase.replace(/^\/+|\/+$/g, '') }`;
+      trimmedBase === '' || trimmedBase === '/'? '': `/${ trimmedBase.replace(/^\/+|\/+$/g, '') }`;
 
     this.client = axios.create({
       baseURL: `${ trimmedHost }${ normalizedBase }`,

@@ -29,16 +29,22 @@ const AuthSettingsSchema = z.object({
 
   if (value.type === 'basic') {
     if (!value.username) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Required when ui.auth.type is basic', path: ['username'] });
+      ctx.addIssue({
+        code: 'custom', message: 'Required when ui.auth.type is basic', path: ['username'] 
+      });
     }
 
     if (!value.password) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Required when ui.auth.type is basic', path: ['password'] });
+      ctx.addIssue({
+        code: 'custom', message: 'Required when ui.auth.type is basic', path: ['password'] 
+      });
     }
   }
 
   if (value.type === 'api_key' && !value.api_key) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Required when ui.auth.type is api_key', path: ['api_key'] });
+    ctx.addIssue({
+      code: 'custom', message: 'Required when ui.auth.type is api_key', path: ['api_key'] 
+    });
   }
 });
 
@@ -51,10 +57,10 @@ const ListenBrainzSettingsSchema = z.object({
 });
 
 const SlskdSettingsSchema = z.object({
-  host:            z.string(),
-  api_key:         z.string(),
-  url_base:        z.string().default('/'),
-  search_timeout:  z.number().int().positive().default(15000),
+  host:             z.string(),
+  api_key:          z.string(),
+  url_base:         z.string().default('/'),
+  search_timeout:   z.number().int().positive().default(15000),
   min_album_tracks: z.number().int().positive().default(3),
 });
 
@@ -81,18 +87,22 @@ const CatalogDiscoverySettingsSchema = z.object({
   }
 
   if (!value.navidrome) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Required when catalog_discovery.enabled is true', path: ['navidrome'] });
+    ctx.addIssue({
+      code: 'custom', message: 'Required when catalog_discovery.enabled is true', path: ['navidrome'] 
+    });
   }
 
   if (!value.lastfm) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Required when catalog_discovery.enabled is true', path: ['lastfm'] });
+    ctx.addIssue({
+      code: 'custom', message: 'Required when catalog_discovery.enabled is true', path: ['lastfm'] 
+    });
   }
 });
 
 const LibraryDuplicateSettingsSchema = z.object({
   enabled:     z.boolean(),
   auto_reject: z.boolean().optional().default(false),
-}).superRefine((value, ctx) => {
+}).superRefine((value) => {
   if (!value.enabled) {
     return;
   }
@@ -116,7 +126,7 @@ const ConfigSchema = z.object({
 }).superRefine((value, ctx) => {
   if (value.library_duplicate?.enabled && !value.catalog_discovery?.navidrome) {
     ctx.addIssue({
-      code:    z.ZodIssueCode.custom,
+      code:    'custom',
       message: 'catalog_discovery.navidrome is required when library_duplicate.enabled is true',
       path:    ['catalog_discovery', 'navidrome'],
     });
