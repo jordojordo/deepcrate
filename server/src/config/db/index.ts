@@ -1,5 +1,6 @@
 import logger from '@server/config/logger';
 import { sequelize } from './sequelize';
+import { DataTypes } from '@sequelize/core';
 import QueueItem from '@server/models/QueueItem';
 import ProcessedRecording from '@server/models/ProcessedRecording';
 import CatalogArtist from '@server/models/CatalogArtist';
@@ -30,11 +31,32 @@ export async function initDb(): Promise<void> {
     // Sync tables from model definitions
     await sequelize.sync();
 
+    // Lightweight schema migrations for additive changes
+    await applySchemaMigrations();
+
     logger.info('[db] connected and synced', { file: process.env.RESONANCE_DB_FILE });
   } catch(error) {
     logger.error('[db] failed to initialize', { error: (error as Error)?.message ?? String(error) });
 
     throw error;
+  }
+}
+
+async function applySchemaMigrations(): Promise<void> {
+  const queryInterface = sequelize.getQueryInterface();
+
+  try {
+    const downloadTasks = await queryInterface.describeTable('download_tasks');
+
+    if (!('organized_at' in downloadTasks)) {
+      await queryInterface.addColumn('download_tasks', 'organized_at', {
+        type:      DataTypes.DATE,
+        allowNull: true,
+      });
+    }
+  } catch {
+    // download_tasks may not exist yet (fresh install) or describeTable may not be supported;
+    // rely on sequelize.sync() in that case.
   }
 }
 

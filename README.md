@@ -226,6 +226,8 @@ POST /api/v1/actions/lb-fetch   # Trigger lb-fetch
 POST /api/v1/actions/catalog    # Trigger catalog discovery
 GET  /api/v1/library/stats      # Library sync statistics
 POST /api/v1/library/sync       # Trigger library sync
+POST /api/v1/library/organize   # Trigger library organize
+GET  /api/v1/library/organize/status # Library organize status
 GET  /api/v1/health             # Health check
 ```
 
@@ -240,6 +242,8 @@ Resonance runs as a single Node.js process with background jobs scheduled via no
 | lb-fetch | Every 6 hours | ListenBrainz recommendations |
 | catalog-discovery | Weekly | Last.fm similar artists |
 | slskd-downloader | Every hour | Process wishlist via slskd |
+| library-sync | Daily | Sync Navidrome library albums |
+| library-organize | Manual (default) | Move completed downloads into library |
 
 The web interface is served by Express with a Vue 3 ui.
 
@@ -257,6 +261,7 @@ See [docs/architecture.md](docs/architecture.md) for technical details.
 | `SLSKD_INTERVAL` | `3600` | Seconds between download runs (1h) |
 | `RUN_JOBS_ON_STARTUP` | `true` | Run discovery jobs immediately on startup |
 | `LIBRARY_SYNC_INTERVAL` | `86400` | Seconds between library sync runs (24h) |
+| `LIBRARY_ORGANIZE_INTERVAL` | `0` | Seconds between library organize runs (0 = manual only) |
 
 ## Data Directory
 

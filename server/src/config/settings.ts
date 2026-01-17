@@ -72,6 +72,38 @@ const NavidromeSettingsSchema = z.object({
 
 const LastFmSettingsSchema = z.object({ api_key: z.string() });
 
+const BeetsSettingsSchema = z.object({
+  enabled: z.boolean(),
+  command: z.string().min(1).default('beet import --quiet'),
+});
+
+const LibraryOrganizeSettingsSchema = z.object({
+  enabled:           z.boolean(),
+  downloads_path:    z.string().min(1).optional(),
+  library_path:      z.string().min(1).optional(),
+  organization:      z.enum(['flat', 'artist_album']).default('artist_album'),
+  auto_organize:     z.boolean().default(false),
+  delete_after_move: z.boolean().default(true),
+  navidrome_rescan:  z.boolean().default(false),
+  beets:             BeetsSettingsSchema.default({ enabled: false, command: 'beet import --quiet' }),
+}).superRefine((value, ctx) => {
+  if (!value.enabled) {
+    return;
+  }
+
+  if (!value.downloads_path) {
+    ctx.addIssue({
+      code: 'custom', message: 'Required when library_organize.enabled is true', path: ['downloads_path'],
+    });
+  }
+
+  if (!value.library_path) {
+    ctx.addIssue({
+      code: 'custom', message: 'Required when library_organize.enabled is true', path: ['library_path'],
+    });
+  }
+});
+
 const CatalogDiscoverySettingsSchema = z.object({
   enabled:              z.boolean(),
   navidrome:            NavidromeSettingsSchema.optional(),
@@ -122,12 +154,21 @@ const ConfigSchema = z.object({
   slskd:             SlskdSettingsSchema.optional(),
   catalog_discovery: CatalogDiscoverySettingsSchema,
   library_duplicate: LibraryDuplicateSettingsSchema.optional(),
+  library_organize:  LibraryOrganizeSettingsSchema.optional(),
   ui:                UISettingsSchema,
 }).superRefine((value, ctx) => {
   if (value.library_duplicate?.enabled && !value.catalog_discovery?.navidrome) {
     ctx.addIssue({
       code:    'custom',
       message: 'catalog_discovery.navidrome is required when library_duplicate.enabled is true',
+      path:    ['catalog_discovery', 'navidrome'],
+    });
+  }
+
+  if (value.library_organize?.enabled && value.library_organize.navidrome_rescan && !value.catalog_discovery?.navidrome) {
+    ctx.addIssue({
+      code:    'custom',
+      message: 'catalog_discovery.navidrome is required when library_organize.navidrome_rescan is true',
       path:    ['catalog_discovery', 'navidrome'],
     });
   }
@@ -140,6 +181,7 @@ export type ListenBrainzSettings = z.infer<typeof ListenBrainzSettingsSchema>;
 export type SlskdSettings = z.infer<typeof SlskdSettingsSchema>;
 export type CatalogDiscoverySettings = z.infer<typeof CatalogDiscoverySettingsSchema>;
 export type LibraryDuplicateSettings = z.infer<typeof LibraryDuplicateSettingsSchema>;
+export type LibraryOrganizeSettings = z.infer<typeof LibraryOrganizeSettingsSchema>;
 
 /**
  * Default configuration values

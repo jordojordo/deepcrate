@@ -54,6 +54,14 @@ export const JOB_INTERVALS = {
     seconds: parseInt(process.env.LIBRARY_SYNC_INTERVAL || '86400', 10), // 24 hours
     cron:    secondsToCron(parseInt(process.env.LIBRARY_SYNC_INTERVAL || '86400', 10)),
   },
+  libraryOrganize: {
+    seconds: parseInt(process.env.LIBRARY_ORGANIZE_INTERVAL || '0', 10), // disabled/manual by default
+    cron:    (() => {
+      const seconds = parseInt(process.env.LIBRARY_ORGANIZE_INTERVAL || '0', 10);
+
+      return seconds > 0 ? secondsToCron(seconds) : 'manual';
+    })(),
+  },
 };
 
 /**

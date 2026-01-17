@@ -113,6 +113,37 @@ library_duplicate:
   auto_reject: false
 
 # -----------------------------------------------------------------------------
+# Library Organization (Optional)
+# Move completed slskd downloads into your music library
+# -----------------------------------------------------------------------------
+library_organize:
+  # Enable library organization
+  enabled: false
+
+  # Where slskd saves completed downloads (must be accessible to Resonance)
+  downloads_path: "/downloads/slskd/complete"
+
+  # Destination music library path
+  library_path: "/music/library"
+
+  # Organization mode: "flat" or "artist_album"
+  organization: "artist_album"
+
+  # If true, run automatically on an interval (see LIBRARY_ORGANIZE_INTERVAL)
+  auto_organize: false
+
+  # Delete the source after a successful transfer
+  delete_after_move: true
+
+  # Trigger a Navidrome rescan after organizing (requires catalog_discovery.navidrome)
+  navidrome_rescan: false
+
+  # Optional beets integration for tagging/import
+  beets:
+    enabled: false
+    command: "beet import --quiet"
+
+# -----------------------------------------------------------------------------
 # Web UI Settings
 # -----------------------------------------------------------------------------
 ui:

@@ -23,6 +23,7 @@ export interface DownloadTaskAttributes {
   album:           string;
   type:            DownloadTaskType;
   status:          DownloadTaskStatus;
+  organizedAt?:    Date;             // When moved to library
   slskdSearchId?:  string;           // Search ID from slskd
   slskdUsername?:  string;           // Source user for downloads
   slskdDirectory?: string;           // Directory path on source
@@ -53,6 +54,7 @@ class DownloadTask extends Model<DownloadTaskAttributes, DownloadTaskCreationAtt
   declare album:           string;
   declare type:            DownloadTaskType;
   declare status:          DownloadTaskStatus;
+  declare organizedAt?:    Date;
   declare slskdSearchId?:  string;
   declare slskdUsername?:  string;
   declare slskdDirectory?: string;
@@ -98,6 +100,12 @@ DownloadTask.init(
       type:         DataTypes.STRING(20),
       allowNull:    false,
       defaultValue: 'pending',
+    },
+    organizedAt: {
+      type:       DataTypes.DATE,
+      allowNull:  true,
+      columnName: 'organized_at',
+      comment:    'When this download was organized into the library',
     },
     slskdSearchId: {
       type:       DataTypes.STRING(255),
@@ -168,6 +176,7 @@ DownloadTask.init(
     underscored: true,
     indexes:     [
       { fields: ['status'] },
+      { fields: ['organized_at'] },
       { fields: ['queued_at'] },
       // Note: wishlist_key already has unique constraint at column level
     ],

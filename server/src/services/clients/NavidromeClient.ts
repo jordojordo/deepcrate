@@ -199,6 +199,56 @@ export class NavidromeClient {
       return [];
     }
   }
+
+  /**
+   * Trigger a library scan in Navidrome.
+   * Uses Subsonic API startScan.
+   */
+  async startScan(): Promise<boolean> {
+    const salt = 'startScan';
+    const token = this.md5Hash(this.password + salt);
+
+    const params = {
+      u: this.username,
+      t: token,
+      s: salt,
+      v: '1.16.1',
+      c: 'resonance',
+      f: 'json',
+    };
+
+    const url = `${ this.host }/rest/startScan`;
+
+    try {
+      logger.info(`Triggering Navidrome scan at ${ this.host }...`);
+
+      const response = await axios.get(url, {
+        params,
+        timeout: 30000,
+      });
+
+      const data = response.data;
+      const subsonicResp = data['subsonic-response'] || {};
+
+      if (subsonicResp.status !== 'ok') {
+        const error = subsonicResp.error || {};
+
+        logger.error(`Subsonic startScan error: ${ error.message || 'Unknown error' }`);
+
+        return false;
+      }
+
+      return true;
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.error(`Failed to trigger Navidrome scan: ${ error.message }`);
+      } else {
+        logger.error(`Failed to trigger Navidrome scan: ${ String(error) }`);
+      }
+
+      return false;
+    }
+  }
 }
 
 export default NavidromeClient;

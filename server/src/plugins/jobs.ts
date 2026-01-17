@@ -3,10 +3,12 @@ import * as cron from 'node-cron';
 import logger from '@server/config/logger';
 import { JOB_NAMES } from '@server/constants/jobs';
 import { JOB_INTERVALS, RUN_ON_STARTUP } from '@server/config/jobs';
+import { getConfig } from '@server/config/settings';
 import { listenbrainzFetchJob } from '@server/jobs/listenbrainzFetch';
 import { catalogDiscoveryJob } from '@server/jobs/catalogDiscovery';
 import { slskdDownloaderJob } from '@server/jobs/slskdDownloader';
 import { librarySyncJob } from '@server/jobs/librarySync';
+import { libraryOrganizeJob } from '@server/jobs/libraryOrganize';
 import {
   emitJobStarted,
   emitJobCompleted,
@@ -56,6 +58,14 @@ const jobs: JobDefinition[] = [
     name:    JOB_NAMES.LIBRARY_SYNC,
     cron:    JOB_INTERVALS.librarySync.cron,
     handler: librarySyncJob,
+    running: false,
+    lastRun: null,
+    aborted: false,
+  },
+  {
+    name:    JOB_NAMES.LIBRARY_ORGANIZE,
+    cron:    JOB_INTERVALS.libraryOrganize.cron,
+    handler: libraryOrganizeJob,
     running: false,
     lastRun: null,
     aborted: false,
@@ -130,6 +140,20 @@ export function startJobs(): void {
   logger.info('Starting background jobs');
 
   for (const job of jobs) {
+    if (job.cron === 'manual' || job.cron.trim() === '') {
+      logger.info(`Job ${ job.name } is manual-only and will not be scheduled`);
+      continue;
+    }
+
+    if (job.name === JOB_NAMES.LIBRARY_ORGANIZE) {
+      const libraryOrganize = getConfig().library_organize;
+
+      if (!libraryOrganize?.enabled || !libraryOrganize.auto_organize) {
+        logger.info(`Job ${ job.name } is disabled by config (library_organize.auto_organize=false)`);
+        continue;
+      }
+    }
+
     // Validate cron expression
     if (!cron.validate(job.cron)) {
       logger.error(`Invalid cron expression for ${ job.name }: ${ job.cron }`);
