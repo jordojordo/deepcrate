@@ -48,7 +48,8 @@ function handleLogout(): void {
         </div>
         <div class="sidebar__branding">
           <span class="sidebar__title">Resonance</span>
-          <span class="sidebar__version">v2.4.0</span>
+          <!-- TODO: Implement version number -->
+           <!-- <span class="sidebar__version">v2.4.0</span>  -->
         </div>
       </RouterLink>
     </template>

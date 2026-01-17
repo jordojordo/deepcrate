@@ -5,6 +5,8 @@ import { computed } from 'vue';
 
 import ProgressBar from 'primevue/progressbar';
 
+import { formatBytes, formatSpeed, formatDuration } from '@/utils/formatters';
+
 interface Props {
   progress: DownloadProgressType;
 }
@@ -16,29 +18,6 @@ const percentComplete = computed(() => {
 
   return Math.round((props.progress.bytesTransferred / props.progress.bytesTotal) * 100);
 });
-
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return `${ parseFloat((bytes / Math.pow(k, i)).toFixed(2)) } ${ sizes[i] }`;
-};
-
-const formatSpeed = (bytesPerSecond: number | null): string => {
-  if (!bytesPerSecond) return 'N/A';
-
-  return `${ formatBytes(bytesPerSecond) }/s`;
-};
-
-const formatTime = (seconds: number | null): string => {
-  if (!seconds) return 'N/A';
-  if (seconds < 60) return `${ Math.round(seconds) }s`;
-  if (seconds < 3600) return `${ Math.round(seconds / 60) }m`;
-
-  return `${ Math.round(seconds / 3600) }h`;
-};
 </script>
 
 <template>
@@ -56,7 +35,7 @@ const formatTime = (seconds: number | null): string => {
         {{ formatSpeed(progress.averageSpeed) }}
       </span>
       <span class="download-progress__eta" v-if="progress.estimatedTimeRemaining">
-        ETA: {{ formatTime(progress.estimatedTimeRemaining) }}
+        ETA: {{ formatDuration(progress.estimatedTimeRemaining) }}
       </span>
     </div>
   </div>

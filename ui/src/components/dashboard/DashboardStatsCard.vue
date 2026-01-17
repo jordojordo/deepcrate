@@ -6,6 +6,8 @@ import { RouterLink } from 'vue-router';
 
 import Button from 'primevue/button';
 
+import { formatSpeed } from '@/utils/formatters';
+
 interface TrendData {
   value:    string;
   positive: boolean;
@@ -102,7 +104,7 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
       <div class="flex align-items-center justify-content-between mb-4">
         <p class="text-white/60 text-sm font-medium">{{ title }}</p>
         <div class="flex align-items-center gap-2">
-          <span v-if="speed" class="text-primary text-xs font-mono">{{ speed }}</span>
+          <span v-if="speed" class="text-primary text-xs font-mono">{{ formatSpeed(speed) }}</span>
           <span
             v-if="showPulse"
             class="size-2 rounded-full animate-pulse"

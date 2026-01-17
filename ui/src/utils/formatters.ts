@@ -31,3 +31,37 @@ export function formatRelativeTime(date: string): string {
     return formatDate(date);
   }
 }
+
+export function formatBytes(bytes: number): string {
+  if (bytes === 0) {
+    return '0 B';
+  }
+
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return `${ parseFloat((bytes / Math.pow(k, i)).toFixed(2)) } ${ sizes[i] }`;
+}
+
+export function formatSpeed(bytesPerSecond: number | null): string {
+  if (!bytesPerSecond) {
+    return 'N/A';
+  }
+
+  return `${ formatBytes(bytesPerSecond) }/s`;
+}
+
+export function formatDuration(seconds: number | null): string {
+  if (!seconds) {
+    return 'N/A';
+  }
+  if (seconds < 60) {
+    return `${ Math.round(seconds) }s`;
+  }
+  if (seconds < 3600) {
+    return `${ Math.round(seconds / 60) }m`;
+  }
+
+  return `${ Math.round(seconds / 3600) }h`;
+}

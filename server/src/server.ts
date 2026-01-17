@@ -5,6 +5,8 @@ import logger from '@server/config/logger';
 import { initDb, stopDb } from '@server/config/db';
 import app from '@server/plugins/app';
 import { startJobs, stopJobs } from '@server/plugins/jobs';
+import { initIo, stopIo } from '@server/plugins/io';
+import { startProgressSync, stopProgressSync } from '@server/plugins/progressSync';
 import { migrateJsonToSqlite } from './scripts/migrate-json-to-sqlite';
 
 const PORT = parseInt(process.env.PORT || '8080', 10);
@@ -31,7 +33,11 @@ async function startServer(): Promise<void> {
     // 3. Create HTTP server
     server = http.createServer(app);
 
-    // 4. Start listening
+    // 4. Initialize Socket.io
+    logger.info('Initializing Socket.io...');
+    initIo(server);
+
+    // 5. Start listening
     await new Promise<void>((resolve, reject) => {
       server!.listen(PORT, HOST, () => {
         const addr = server!.address() as AddressInfo;
@@ -46,9 +52,13 @@ async function startServer(): Promise<void> {
       });
     });
 
-    // 5. Start background jobs
+    // 6. Start background jobs
     logger.info('Starting background jobs...');
     startJobs();
+
+    // 7. Start download progress sync
+    logger.info('Starting download progress sync...');
+    startProgressSync();
 
     logger.info('Resonance server started successfully');
   } catch(error) {
@@ -64,7 +74,11 @@ async function shutdownServer(signal: string): Promise<void> {
   logger.info(`Received ${ signal }, shutting down gracefully...`);
 
   try {
-    // 1. Stop accepting new requests
+    // 1. Stop Socket.io first (gracefully close all socket connections)
+    logger.info('Closing Socket.io connections...');
+    await stopIo();
+
+    // 2. Stop accepting new HTTP requests
     if (server) {
       await new Promise<void>((resolve, reject) => {
         server!.close((err) => {
@@ -79,11 +93,15 @@ async function shutdownServer(signal: string): Promise<void> {
       });
     }
 
-    // 2. Stop background jobs
+    // 3. Stop background jobs
     logger.info('Stopping background jobs...');
     stopJobs();
 
-    // 3. Close database connections
+    // 4. Stop download progress sync
+    logger.info('Stopping download progress sync...');
+    stopProgressSync();
+
+    // 5. Close database connections
     logger.info('Closing database connections...');
     await stopDb();
 

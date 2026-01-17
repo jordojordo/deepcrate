@@ -63,8 +63,15 @@ const getPercentage = (value: number): number => {
       />
     </div>
 
+    <!-- Empty State -->
+    <div v-if="sources.length === 0" class="flex flex-column align-items-center justify-content-center flex-1 py-8">
+      <i class="pi pi-chart-pie text-4xl text-white/20 mb-3"></i>
+      <p class="text-white/40 text-sm mb-1">No discovery data yet</p>
+      <p class="text-white/30 text-xs">Coming soon</p>
+    </div>
+
     <!-- Chart and Legend -->
-    <div class="flex flex-column md:flex-row gap-8 align-items-center justify-content-between flex-1">
+    <div v-else class="flex flex-column md:flex-row gap-8 align-items-center justify-content-between flex-1">
       <!-- Donut Chart -->
       <div class="discovery-chart__donut relative flex-shrink-0">
         <svg class="w-full h-full" viewBox="0 0 36 36" style="transform: rotate(-90deg);">

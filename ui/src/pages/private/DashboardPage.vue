@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 
 import { useStats } from '@/composables/useStats';
 import { useDownloads } from '@/composables/useDownloads';
+import { useQueueSocket } from '@/composables/useQueueSocket';
+import { useDownloadsSocket } from '@/composables/useDownloadsSocket';
+import { useJobsSocket } from '@/composables/useJobsSocket';
 import { ROUTE_PATHS } from '@/constants/routes';
 
 import ProgressSpinner from 'primevue/progressspinner';
@@ -16,48 +19,24 @@ import RecentActivityFeed, { type ActivityItem } from '@/components/dashboard/Re
 import ActionsPanel from '@/components/actions/ActionsPanel.vue';
 
 const { stats, loading, error } = useStats();
-const { stats: downloadStats, activeDownloads } = useDownloads();
+const { stats: downloadStats, activeDownloads, fetchActive } = useDownloads();
 
-// TODO: Discovery sources data (mock for now - will come from API)
-const discoverySources = computed(() => [
-  {
-    label: 'ListenBrainz', value: 45, color: 'var(--primary-500)'
-  },
-  {
-    label: 'Catalog', value: 30, color: 'var(--purple-500)'
-  },
-  {
-    label: 'Manual Import', value: 15, color: 'var(--teal-400)'
-  },
-  {
-    label: 'Other', value: 10, color: 'rgba(255, 255, 255, 0.2)'
-  },
-]);
+// Connect to WebSockets for real-time updates
+useQueueSocket();
+useDownloadsSocket();
+useJobsSocket();
 
-// TODO: Recent activity (mock for now - will come from API)
-const recentActivity = computed<ActivityItem[]>(() => [
-  {
-    id:          '1',
-    title:       'New album discovered',
-    description: 'From ListenBrainz recommendations',
-    timestamp:   '2 mins ago',
-    type:        'queued',
-  },
-  {
-    id:          '2',
-    title:       'System Scan',
-    description: 'Completed successfully',
-    timestamp:   '1 hr ago',
-    type:        'system',
-  },
-  {
-    id:          '3',
-    title:       'Album approved',
-    description: 'Sent to wishlist',
-    timestamp:   '3 hrs ago',
-    type:        'approved',
-  },
-]);
+// Fetch active downloads on mount so progress bars can be displayed
+// WebSocket will handle real-time updates after initial load
+onMounted(() => {
+  fetchActive();
+});
+
+// TODO: Discovery sources data - API not yet implemented
+const discoverySources = computed(() => []);
+
+// TODO: Recent activity - API not yet implemented
+const recentActivity = computed<ActivityItem[]>(() => []);
 
 const handleViewAllActivity = () => {
   // TODO: Navigate to activity log page when implemented
@@ -97,70 +76,66 @@ const handleViewAllActivity = () => {
 
     <Message v-else-if="error" severity="error" :closable="false">{{ error }}</Message>
 
-    <template v-else>
-      <div class="dashboard__stats-grid">
-        <!-- Pending Approvals (Actionable) -->
-        <DashboardStatsCard
-          title="Pending Approvals"
-          :value="stats.pending"
-          subtitle="Items awaiting review"
-          color="orange"
-          icon="pi-list-check"
-          :show-pulse="(stats.pending ?? 0) > 0"
-          action-label="Review Queue"
-          :action-route="ROUTE_PATHS.QUEUE"
-        />
+    <div class="mt-8">
+      <h2 class="text-xl font-bold text-white mb-4">Discovery Jobs</h2>
+      <ActionsPanel />
+    </div>
 
-        <!-- Active Downloads (Progress) -->
-        <DashboardStatsCard
-          title="Active Downloads"
-          :value="downloadStats?.active ?? 0"
-          :speed="downloadStats?.totalBandwidth ?? 0"
-          color="primary"
-          icon="pi-cloud-download"
-          :downloads="activeDownloads"
-        />
+    <div class="dashboard__stats-grid">
+      <!-- Pending Approvals (Actionable) -->
+      <DashboardStatsCard
+        title="Pending Approvals"
+        :value="stats.pending"
+        subtitle="Items awaiting review"
+        color="orange"
+        icon="pi-list-check"
+        :show-pulse="(stats.pending ?? 0) > 0"
+        action-label="Review Queue"
+        :action-route="ROUTE_PATHS.QUEUE"
+      />
 
-        <!-- In Library (Duplicates) -->
-        <DashboardStatsCard
-          title="In Library"
-          :value="stats.inLibrary || 0"
-          subtitle="Pending items you already own"
-          color="green"
-          icon="pi-check-circle"
-        />
+      <!-- Active Downloads (Progress) -->
+      <DashboardStatsCard
+        title="Active Downloads"
+        :value="downloadStats?.active ?? 0"
+        :speed="downloadStats?.totalBandwidth ?? 0"
+        color="primary"
+        icon="pi-cloud-download"
+        :downloads="activeDownloads"
+      />
 
-        <!-- Library Storage (Capacity) -->
-        <!-- TODO: Implement library storage capacity API -->
-        <DashboardStatsCard
-          title="Library Storage"
-          value="2.4"
-          unit="TB"
-          subtitle="Total used space"
-          color="purple"
-          icon="pi-database"
-          :progress="{ value: 85, label: '85% Capacity' }"
-        />
+      <!-- In Library (Duplicates) -->
+      <DashboardStatsCard
+        title="In Library"
+        :value="stats.inLibrary || 0"
+        subtitle="Pending items you already own"
+        color="green"
+        icon="pi-check-circle"
+      />
+
+      <!-- Library Storage (Capacity) -->
+      <!-- TODO: Implement library storage capacity API -->
+      <DashboardStatsCard
+        title="Library Storage"
+        value="—"
+        subtitle="Coming soon"
+        color="purple"
+        icon="pi-database"
+      />
+    </div>
+
+    <div class="dashboard__content-row">
+      <div class="dashboard__chart-section">
+        <DiscoverySourcesChart :sources="discoverySources" />
       </div>
 
-      <div class="dashboard__content-row">
-        <div class="dashboard__chart-section">
-          <DiscoverySourcesChart :sources="discoverySources" />
-        </div>
-
-        <div class="dashboard__activity-section">
-          <RecentActivityFeed
-            :activities="recentActivity"
-            @view-all="handleViewAllActivity"
-          />
-        </div>
+      <div class="dashboard__activity-section">
+        <RecentActivityFeed
+          :activities="recentActivity"
+          @view-all="handleViewAllActivity"
+        />
       </div>
-
-      <div class="mt-8">
-        <h2 class="text-xl font-bold text-white mb-4">Discovery Jobs</h2>
-        <ActionsPanel />
-      </div>
-    </template>
+    </div>
   </div>
 </template>
 

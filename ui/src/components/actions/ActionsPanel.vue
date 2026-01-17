@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import Card from 'primevue/card';
-import Button from 'primevue/button';
 import { JOB_NAMES } from '@/constants/jobs';
 import { useJobs } from '@/composables/useJobs';
+
+import Card from 'primevue/card';
+import Button from 'primevue/button';
 import AddToWishlistModal from './AddToWishlistModal.vue';
 
 const {

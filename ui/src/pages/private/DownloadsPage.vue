@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted } from 'vue';
 import { useDownloads } from '@/composables/useDownloads';
+import { useDownloadsSocket } from '@/composables/useDownloadsSocket';
 
 import Tabs from 'primevue/tabs';
 import TabList from 'primevue/tablist';
@@ -14,12 +15,6 @@ import DownloadStats from '@/components/downloads/DownloadStats.vue';
 import ActiveDownloadsList from '@/components/downloads/ActiveDownloadsList.vue';
 import CompletedDownloadsList from '@/components/downloads/CompletedDownloadsList.vue';
 import FailedDownloadsList from '@/components/downloads/FailedDownloadsList.vue';
-
-/*
-  TODO: Remove the entire auto-fetching functionality and replace with websockets.
-        The auto-fetch should not cause the entire table to be in a loading state
-        when running, with sockets it should be seamless.
-*/
 
 /*
   TODO: Add "Queued" downloads tab, will require a new API endpoint.
@@ -39,7 +34,8 @@ const {
   retryFailed,
 } = useDownloads();
 
-const refreshInterval = ref<number | null>(null);
+// Connect to WebSocket for real-time updates
+useDownloadsSocket();
 
 const loadData = async() => {
   await Promise.all([
@@ -60,27 +56,8 @@ const handleRetry = async(ids: string[]) => {
   await fetchFailed();
 };
 
-const startAutoRefresh = () => {
-  refreshInterval.value = window.setInterval(() => {
-    fetchActive();
-    fetchStats();
-  }, 5000);
-};
-
-const stopAutoRefresh = () => {
-  if (refreshInterval.value) {
-    clearInterval(refreshInterval.value);
-    refreshInterval.value = null;
-  }
-};
-
 onMounted(() => {
   loadData();
-  startAutoRefresh();
-});
-
-onUnmounted(() => {
-  stopAutoRefresh();
 });
 </script>
 

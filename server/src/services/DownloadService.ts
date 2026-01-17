@@ -5,6 +5,12 @@ import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
 import DownloadedItem from '@server/models/DownloadedItem';
 import DownloadTask, { DownloadTaskType, DownloadTaskStatus } from '@server/models/DownloadTask';
+import {
+  emitDownloadTaskCreated,
+  emitDownloadTaskUpdated,
+  emitDownloadProgress,
+  emitDownloadStatsUpdated,
+} from '@server/plugins/io/namespaces/downloadsNamespace';
 
 import SlskdClient, { type SlskdTransferFile, type SlskdUserTransfers } from './clients/SlskdClient';
 import WishlistService from './WishlistService';
@@ -111,6 +117,49 @@ export class DownloadService {
     const tasks = await DownloadTask.findAll({ where: { status: { [Op.in]: ['queued', 'downloading'] } } });
 
     await this.syncTasksFromTransfers(tasks, transfers);
+  }
+
+  /**
+   * Sync progress for active downloads and emit WebSocket events.
+   * This should be called periodically to push progress updates to connected clients.
+   */
+  async syncAndEmitProgress(): Promise<void> {
+    if (!this.slskdClient) {
+      return;
+    }
+
+    // Get active downloading tasks
+    const tasks = await DownloadTask.findAll({ where: { status: { [Op.in]: ['queued', 'downloading'] } } });
+
+    if (!tasks.length) {
+      return;
+    }
+
+    // Get transfers from slskd
+    const slskdTransfers = await this.slskdClient.getDownloads();
+
+    if (!slskdTransfers.length) {
+      return;
+    }
+
+    // Sync status changes (this emits task:updated events for status changes)
+    await this.syncTasksFromTransfers(tasks, slskdTransfers);
+
+    // Emit progress events for downloading tasks
+    for (const task of tasks) {
+      if (task.status !== 'downloading') {
+        continue;
+      }
+
+      const progress = this.calculateProgress(task, slskdTransfers);
+
+      if (progress) {
+        emitDownloadProgress({
+          id: task.id,
+          progress,
+        });
+      }
+    }
   }
 
   /**
@@ -574,6 +623,28 @@ export class DownloadService {
 
     logger.info(`Created download task: ${ params.wishlistKey }`);
 
+    // Emit socket events
+    emitDownloadTaskCreated({
+      task: {
+        id:             task.id,
+        wishlistKey:    task.wishlistKey,
+        artist:         task.artist,
+        album:          task.album,
+        type:           task.type,
+        status:         task.status,
+        slskdUsername:  null,
+        slskdDirectory: null,
+        fileCount:      null,
+        progress:       null,
+        queuedAt:       task.queuedAt,
+        startedAt:      null,
+      },
+    });
+
+    const stats = await this.getStats();
+
+    emitDownloadStatsUpdated(stats);
+
     return task;
   }
 
@@ -628,6 +699,19 @@ export class DownloadService {
     }
 
     logger.debug(`Updated task ${ id } to status ${ status }`);
+
+    // Emit socket events
+    emitDownloadTaskUpdated({
+      id,
+      status,
+      slskdUsername: details?.slskdUsername,
+      fileCount:     details?.fileCount,
+      errorMessage:  details?.errorMessage,
+    });
+
+    const stats = await this.getStats();
+
+    emitDownloadStatsUpdated(stats);
   }
 }
 

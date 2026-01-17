@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import type { QueueItem } from '@/types';
+import type { ViewMode } from '@/components/queue/QueueFilters.vue';
+
 import { onMounted, ref, watch } from 'vue';
 import { useQueue } from '@/composables/useQueue';
+import { useQueueSocket } from '@/composables/useQueueSocket';
+import { useToast } from '@/composables/useToast';
 
 import Message from 'primevue/message';
 import Button from 'primevue/button';
-import QueueFilters, { type ViewMode } from '@/components/queue/QueueFilters.vue';
+import QueueFilters from '@/components/queue/QueueFilters.vue';
 import QueueList from '@/components/queue/QueueList.vue';
 import QueueGrid from '@/components/queue/QueueGrid.vue';
 
@@ -22,6 +27,10 @@ const {
   loadMore: loadMoreItems,
   reset,
 } = useQueue();
+
+useQueueSocket();
+
+const { showSuccess } = useToast();
 
 const viewMode = ref<ViewMode>('grid');
 
@@ -53,11 +62,16 @@ async function handleReject(mbids: string[]) {
   }
 }
 
-function handlePreview(item: unknown) {
+function handlePreview(item: QueueItem) {
   // TODO: Implement preview functionality
   //       This will need to include a media player to preview songs/albums/artists
   //       Should this fetch from listenbrainz? last.fm? tbd...
   console.log('Preview item:', item);
+
+  showSuccess(
+    'Preview coming soon',
+    `Artist: ${ item.artist }\n Title: ${ item.title ?? item.album }`
+  );
 }
 </script>
 

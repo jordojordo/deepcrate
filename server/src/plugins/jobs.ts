@@ -7,6 +7,12 @@ import { listenbrainzFetchJob } from '@server/jobs/listenbrainzFetch';
 import { catalogDiscoveryJob } from '@server/jobs/catalogDiscovery';
 import { slskdDownloaderJob } from '@server/jobs/slskdDownloader';
 import { librarySyncJob } from '@server/jobs/librarySync';
+import {
+  emitJobStarted,
+  emitJobCompleted,
+  emitJobFailed,
+  emitJobCancelled,
+} from '@server/plugins/io/namespaces/jobsNamespace';
 
 /**
  * Job definitions with name, cron schedule, and handler
@@ -74,6 +80,12 @@ function wrapJobHandler(job: JobDefinition): () => Promise<void> {
     logger.debug(`Job ${ job.name } running state set to true`);
     const startTime = Date.now();
 
+    // Emit job started event
+    emitJobStarted({
+      name:      job.name,
+      startedAt: job.lastRun,
+    });
+
     try {
       logger.info(`Starting job: ${ job.name }`);
       await job.handler();
@@ -81,14 +93,27 @@ function wrapJobHandler(job: JobDefinition): () => Promise<void> {
 
       if (job.aborted) {
         logger.info(`Job ${ job.name } was cancelled after ${ duration }ms`);
+        emitJobCancelled({ name: job.name });
       } else {
         logger.info(`Job ${ job.name } completed in ${ duration }ms`);
+        emitJobCompleted({
+          name: job.name,
+          duration,
+        });
       }
     } catch(error) {
+      const duration = Date.now() - startTime;
+
       if (job.aborted) {
         logger.info(`Job ${ job.name } cancelled:`, { error });
+        emitJobCancelled({ name: job.name });
       } else {
         logger.error(`Job ${ job.name } failed:`, { error });
+        emitJobFailed({
+          name:  job.name,
+          error: error instanceof Error ? error.message : String(error),
+          duration,
+        });
       }
     } finally {
       job.running = false;

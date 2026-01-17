@@ -90,7 +90,8 @@ const getDefaultCover = () => {
     >
       <div v-if="activities.length === 0" class="text-center py-8">
         <i class="pi pi-inbox text-4xl text-white/20 mb-3"></i>
-        <p class="text-white/40 text-sm">No recent activity</p>
+        <p class="text-white/40 text-sm mb-1">No recent activity</p>
+        <p class="text-white/30 text-xs">Coming soon</p>
       </div>
 
       <div
