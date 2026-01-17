@@ -98,7 +98,7 @@ RUN cd /app/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3 && \
     echo "SQLite3 production build complete"
 
 # Copy built server from builder
-COPY --from=server-builder /build/server/dist ./dist
+COPY --from=server-builder /build/server/dist ./server/dist
 
 # Copy built ui to static directory
 COPY --from=ui-builder /build/ui/dist ./static

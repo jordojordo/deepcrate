@@ -20,4 +20,4 @@ if [ "$(id -u)" = "0" ]; then
 fi
 
 # Now running as resonance user - start the application
-exec node dist/server.js
+exec node server/dist/server.js
