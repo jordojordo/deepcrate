@@ -41,9 +41,9 @@ export class DownloadService {
   }): Promise<{ items: ActiveDownload[]; total: number }> {
     const { limit = 50, offset = 0 } = params;
 
-    // Query database for active tasks (includes pending for retried items)
+    // Query database for active tasks (includes pending for retried items, deferred for timed-out searches)
     let { rows, count } = await DownloadTask.findAndCountAll({
-      where: { status: { [Op.in]: ['pending', 'searching', 'queued', 'downloading'] } },
+      where: { status: { [Op.in]: ['pending', 'searching', 'queued', 'downloading', 'deferred'] } },
       order: [['queuedAt', 'DESC']],
       limit,
       offset,
@@ -65,7 +65,7 @@ export class DownloadService {
 
       if (syncResult.activeSetChanged) {
         ({ rows, count } = await DownloadTask.findAndCountAll({
-          where: { status: { [Op.in]: ['pending', 'searching', 'queued', 'downloading'] } },
+          where: { status: { [Op.in]: ['pending', 'searching', 'queued', 'downloading', 'deferred'] } },
           order: [['queuedAt', 'DESC']],
           limit,
           offset,

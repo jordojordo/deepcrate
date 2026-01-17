@@ -122,7 +122,10 @@ export async function slskdDownloaderJob(): Promise<void> {
         }
       } catch(error) {
         failedCount++;
-        logger.error(`Failed to process wishlist entry ${ wishlistKey }:`, { error });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
+
+        logger.error(`Failed to process wishlist entry ${ wishlistKey }: ${ errorMessage }`, { stack: errorStack });
       }
     }
 
@@ -204,12 +207,13 @@ async function processWishlistEntry(params: {
   downloadService: DownloadService;
 }): Promise<'queued' | 'failed' | 'skipped' | 'deferred'> {
   const {
-    entry, task, wishlistKey, slskdClient, downloadService 
+    entry, task, wishlistKey, slskdClient, downloadService
   } = params;
   const query = wishlistKey;
   const minFiles = entry.type === 'track' ? MIN_FILES_TRACK : MIN_FILES_ALBUM;
 
-  let searchId = task.status === 'searching' ? task.slskdSearchId || null : null;
+  // Reuse existing search if task was deferred (timed out) or is still searching
+  let searchId = (task.status === 'searching' || task.status === 'deferred') ? task.slskdSearchId || null : null;
 
   if (!searchId) {
     searchId = await slskdClient.search(query, SEARCH_TIMEOUT_MS, minFiles);
@@ -234,6 +238,10 @@ async function processWishlistEntry(params: {
 
   if (searchResult === 'TimedOut') {
     logger.info(`Search still in progress for ${ wishlistKey }, will retry later`);
+    await downloadService.updateTaskStatus(task.id, 'deferred', {
+      slskdSearchId: searchId,
+      errorMessage:  undefined,
+    });
 
     return 'deferred';
   }
@@ -292,9 +300,9 @@ async function processWishlistEntry(params: {
     logger.debug(`Selected ${ selection.files.length }/${ response.files.length } files for ${ wishlistKey } from ${ response.username }`);
   }
 
-  const transferFiles = await slskdClient.enqueue(response.username, selection.files);
+  const enqueueResult = await slskdClient.enqueue(response.username, selection.files);
 
-  if (!transferFiles) {
+  if (!enqueueResult) {
     await downloadService.updateTaskStatus(task.id, 'failed', {
       slskdSearchId: searchId,
       errorMessage:  'Failed to enqueue downloads in slskd',
@@ -305,20 +313,31 @@ async function processWishlistEntry(params: {
     return 'failed';
   }
 
-  const fileIds = transferFiles.map(f => f.id);
+  if (enqueueResult.enqueued.length === 0) {
+    await downloadService.updateTaskStatus(task.id, 'failed', {
+      slskdSearchId: searchId,
+      errorMessage:  `slskd rejected all ${ selection.files.length } files`,
+    });
+
+    await slskdClient.deleteSearch(searchId);
+
+    return 'failed';
+  }
+
+  const fileIds = enqueueResult.enqueued.map(f => f.id).filter((id): id is string => typeof id === 'string');
 
   await downloadService.updateTaskStatus(task.id, 'queued', {
     slskdSearchId:  searchId,
     slskdUsername:  response.username,
     slskdDirectory: selection.directory,
-    slskdFileIds:   fileIds,
-    fileCount:      selection.files.length,
+    slskdFileIds:   fileIds.length > 0 ? fileIds : undefined,
+    fileCount:      enqueueResult.enqueued.length,
     errorMessage:   undefined,
   });
 
   await slskdClient.deleteSearch(searchId);
 
-  logger.info(`Queued download: ${ wishlistKey } (${ response.username }, ${ selection.files.length } files)`);
+  logger.info(`Queued download: ${ wishlistKey } (${ response.username }, ${ enqueueResult.enqueued.length } files)`);
 
   return 'queued';
 }

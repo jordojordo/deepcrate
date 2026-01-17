@@ -3,12 +3,15 @@ import type { ActionResponse, PaginatedResponse } from '@server/types/responses'
 import type QueueItemModel from '@server/models/QueueItem';
 
 import { BaseController } from '@server/controllers/BaseController';
+import { JOB_NAMES } from '@server/constants/jobs';
+import { triggerJob } from '@server/plugins/jobs';
 import {
   getPendingQuerySchema,
   approveRequestSchema,
   rejectRequestSchema,
 } from '@server/types/queue';
 import { sendValidationError } from '@server/utils/errorHandler';
+import logger from '@server/config/logger';
 import { QueueService } from '@server/services/QueueService';
 
 /**
@@ -111,6 +114,17 @@ class QueueController extends BaseController {
 
       // Approve items
       const count = all? await this.queueService.approveAll(): await this.queueService.approve(mbids!);
+
+      // Trigger slskd job immediately to start downloads
+      if (count > 0) {
+        const triggered = triggerJob(JOB_NAMES.SLSKD);
+
+        if (triggered === false) {
+          logger.info('slskd job already running, downloads will process shortly');
+        } else if (triggered === null) {
+          logger.warn('slskd job not found, downloads will wait for next scheduled run');
+        }
+      }
 
       const response: ActionResponse = {
         success: true,

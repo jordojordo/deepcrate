@@ -5,7 +5,7 @@ import { sequelize } from '@server/config/db/sequelize';
 /**
  * Status of a download task in the download workflow
  */
-export type DownloadTaskStatus = 'pending' | 'searching' | 'queued' | 'downloading' | 'completed' | 'failed';
+export type DownloadTaskStatus = 'pending' | 'searching' | 'deferred' | 'queued' | 'downloading' | 'completed' | 'failed';
 
 /**
  * Type of music item (album or track)

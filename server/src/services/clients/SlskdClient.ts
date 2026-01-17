@@ -83,6 +83,11 @@ export interface SlskdUserTransfers {
   directories: SlskdTransferDirectory[];
 }
 
+export interface SlskdEnqueueResult {
+  enqueued: SlskdTransferFile[];
+  failed:   SlskdTransferFile[];
+}
+
 /**
  * SlskdClient provides access to slskd (Soulseek) API for music downloads.
  * https://github.com/slskd/slskd
@@ -269,11 +274,11 @@ export class SlskdClient {
 
   /**
    * Enqueue files for download.
-   * Returns the transfer files with their IDs, or null on failure.
+   * Returns the enqueue result with counts, or null on failure.
    */
-  async enqueue(username: string, files: SlskdFile[]): Promise<SlskdTransferFile[] | null> {
+  async enqueue(username: string, files: SlskdFile[]): Promise<SlskdEnqueueResult | null> {
     try {
-      const response = await this.client.post<SlskdTransferFile[]>(
+      const response = await this.client.post<SlskdEnqueueResult>(
         `/api/v0/transfers/downloads/${ encodeURIComponent(username) }`,
         files.map(file => ({
           filename: file.filename,
@@ -281,9 +286,12 @@ export class SlskdClient {
         }))
       );
 
-      logger.info(`Enqueued ${ files.length } files from ${ username }`);
+      const enqueued = response.data.enqueued ?? [];
+      const failed = response.data.failed ?? [];
 
-      return response.data;
+      logger.info(`Enqueued ${ enqueued.length } files from ${ username } (${ failed.length } failed)`);
+
+      return { enqueued, failed };
     } catch(error) {
       if (axios.isAxiosError(error)) {
         const slskdError = SlskdError.fromAxiosError(error, 'Failed to enqueue downloads');

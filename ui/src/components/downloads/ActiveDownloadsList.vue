@@ -21,6 +21,7 @@ const getStatusSeverity = (status: string) => {
     downloading: 'success',
     searching:   'info',
     queued:      'warning',
+    deferred:    'contrast',
     pending:     'secondary',
   };
 

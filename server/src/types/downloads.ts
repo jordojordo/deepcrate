@@ -6,6 +6,7 @@ import { z } from 'zod';
 export const downloadStatusSchema = z.enum([
   'pending',
   'searching',
+  'deferred',
   'queued',
   'downloading',
   'completed',

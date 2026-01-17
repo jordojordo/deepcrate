@@ -1,4 +1,4 @@
-export type DownloadStatus = 'pending' | 'searching' | 'queued' | 'downloading' | 'completed' | 'failed';
+export type DownloadStatus = 'pending' | 'searching' | 'queued' | 'downloading' | 'deferred' | 'completed' | 'failed';
 
 export interface DownloadProgress {
   filesCompleted:         number;
