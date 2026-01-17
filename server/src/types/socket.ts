@@ -74,9 +74,6 @@ export interface JobCancelledEvent {
   name: string;
 }
 
-/**
- * Server-to-client event maps for type safety
- */
 export interface QueueServerToClientEvents {
   'queue:item:added':    (_event: QueueItemAddedEvent) => void;
   'queue:item:updated':  (_event: QueueItemUpdatedEvent) => void;
@@ -99,7 +96,7 @@ export interface JobsServerToClientEvents {
 }
 
 /**
- * Client-to-server events (currently none, but available for future use)
+ * Client-to-server events (currently none)
  */
 export interface QueueClientToServerEvents {}
 export interface DownloadsClientToServerEvents {}

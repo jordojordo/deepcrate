@@ -1,4 +1,5 @@
 import type { ActiveDownload, DownloadProgress, DownloadStats } from '@server/types/downloads';
+import type { SlskdTransferFile, SlskdUserTransfers } from './clients/SlskdClient';
 
 import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
@@ -12,7 +13,7 @@ import {
   emitDownloadStatsUpdated,
 } from '@server/plugins/io/namespaces/downloadsNamespace';
 
-import SlskdClient, { type SlskdTransferFile, type SlskdUserTransfers } from './clients/SlskdClient';
+import SlskdClient from './clients/SlskdClient';
 import WishlistService from './WishlistService';
 
 /**
@@ -38,16 +39,12 @@ export class DownloadService {
     this.wishlistService = new WishlistService();
   }
 
-  /**
-   * Get active downloads with real-time progress from slskd
-   */
   async getActive(params: {
     limit?:  number;
     offset?: number;
   }): Promise<{ items: ActiveDownload[]; total: number }> {
     const { limit = 50, offset = 0 } = params;
 
-    // Query database for active tasks (includes pending for retried items, deferred for timed-out searches)
     let { rows, count } = await DownloadTask.findAndCountAll({
       where: { status: { [Op.in]: ['pending', 'searching', 'queued', 'downloading', 'deferred'] } },
       order: [['queuedAt', 'DESC']],
@@ -55,7 +52,6 @@ export class DownloadService {
       offset,
     });
 
-    // If no active tasks, return early
     if (!rows.length) {
       return {
         items: [],
@@ -63,7 +59,7 @@ export class DownloadService {
       };
     }
 
-    // Get real-time progress from slskd (if configured)
+    // Get progress from slskd (if configured)
     const slskdTransfers = this.slskdClient ? await this.slskdClient.getDownloads() : [];
 
     if (slskdTransfers.length) {
@@ -79,7 +75,7 @@ export class DownloadService {
       }
     }
 
-    // Merge database records with real-time progress
+    // Merge database records with progress
     const items: ActiveDownload[] = rows.map(task => {
       const progress = this.calculateProgress(task, slskdTransfers);
 
@@ -128,14 +124,12 @@ export class DownloadService {
       return;
     }
 
-    // Get active downloading tasks
     const tasks = await DownloadTask.findAll({ where: { status: { [Op.in]: ['queued', 'downloading'] } } });
 
     if (!tasks.length) {
       return;
     }
 
-    // Get transfers from slskd
     const slskdTransfers = await this.slskdClient.getDownloads();
 
     if (!slskdTransfers.length) {
@@ -145,7 +139,6 @@ export class DownloadService {
     // Sync status changes (this emits task:updated events for status changes)
     await this.syncTasksFromTransfers(tasks, slskdTransfers);
 
-    // Emit progress events for downloading tasks
     for (const task of tasks) {
       if (task.status !== 'downloading') {
         continue;
@@ -492,7 +485,7 @@ export class DownloadService {
   }> {
     if (!ids.length) {
       return {
-        success: 0, failed: 0, failures: [] 
+        success: 0, failed: 0, failures: []
       };
     }
 
@@ -506,7 +499,7 @@ export class DownloadService {
 
     if (!tasks.length) {
       return {
-        success: 0, failed: 0, failures: [] 
+        success: 0, failed: 0, failures: []
       };
     }
 

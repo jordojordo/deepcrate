@@ -1,6 +1,8 @@
-import { ref, type Ref } from 'vue';
-import { io, Socket } from 'socket.io-client';
+import type { Ref } from 'vue';
 import type { SocketNamespace } from '@/types/socket';
+
+import { ref } from 'vue';
+import { io, Socket } from 'socket.io-client';
 
 interface SocketConnection {
   socket:    Socket | null;
@@ -9,23 +11,15 @@ interface SocketConnection {
   error:     Ref<string | null>;
 }
 
-// Singleton socket instances per namespace with ref counting
 const connections = new Map<SocketNamespace, SocketConnection>();
 
-/**
- * Get auth token from localStorage
- * Handles both Basic Auth (stored as base64 encoded username:password)
- * and API key auth
- */
 function getAuthToken(): string | null {
-  // Try to get Basic Auth credentials (stored by auth store)
   const basicAuth = localStorage.getItem('auth_credentials');
 
   if (basicAuth) {
     return `Basic ${ basicAuth }`;
   }
 
-  // Try to get API key
   const apiKey = localStorage.getItem('apiKey');
 
   if (apiKey) {
@@ -35,9 +29,6 @@ function getAuthToken(): string | null {
   return null;
 }
 
-/**
- * Create a new socket connection to a namespace
- */
 function createConnection(namespace: SocketNamespace): SocketConnection {
   const connected = ref(false);
   const error = ref<string | null>(null);
@@ -83,7 +74,6 @@ function createConnection(namespace: SocketNamespace): SocketConnection {
  * when all subscribers have unsubscribed.
  */
 export function useSocketConnection(namespace: SocketNamespace) {
-  // Get or create connection for this namespace
   let connection = connections.get(namespace);
 
   if (!connection) {
@@ -91,9 +81,6 @@ export function useSocketConnection(namespace: SocketNamespace) {
     connections.set(namespace, connection);
   }
 
-  /**
-   * Connect to the socket (increments ref count)
-   */
   function connect(): Socket {
     if (!connection!.socket) {
       throw new Error(`Socket connection for ${ namespace } not initialized`);
@@ -109,9 +96,6 @@ export function useSocketConnection(namespace: SocketNamespace) {
     return connection!.socket;
   }
 
-  /**
-   * Disconnect from the socket (decrements ref count)
-   */
   function disconnect(): void {
     if (!connection!.socket) {
       return;

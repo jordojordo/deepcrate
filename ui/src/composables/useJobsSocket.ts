@@ -1,7 +1,4 @@
-import { onMounted, onUnmounted } from 'vue';
 import type { Socket } from 'socket.io-client';
-import { useSocketConnection } from './useSocketConnection';
-import { useJobsStore } from '@/stores/jobs';
 import type {
   JobStartedEvent,
   JobCompletedEvent,
@@ -9,11 +6,10 @@ import type {
   JobCancelledEvent,
 } from '@/types/socket';
 
-/**
- * Composable for real-time job status updates via WebSocket.
- * Automatically connects on mount and disconnects on unmount.
- * Updates are applied directly to the jobs store.
- */
+import { onMounted, onUnmounted } from 'vue';
+import { useJobsStore } from '@/stores/jobs';
+import { useSocketConnection } from './useSocketConnection';
+
 export function useJobsSocket() {
   const { connected, connect, disconnect } = useSocketConnection('/jobs');
   const store = useJobsStore();

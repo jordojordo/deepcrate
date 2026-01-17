@@ -21,7 +21,6 @@ import ActionsPanel from '@/components/actions/ActionsPanel.vue';
 const { stats, loading, error } = useStats();
 const { stats: downloadStats, activeDownloads, fetchActive } = useDownloads();
 
-// Connect to WebSockets for real-time updates
 useQueueSocket();
 useDownloadsSocket();
 useJobsSocket();

@@ -34,7 +34,6 @@ const {
   retryFailed,
 } = useDownloads();
 
-// Connect to WebSocket for real-time updates
 useDownloadsSocket();
 
 const loadData = async() => {

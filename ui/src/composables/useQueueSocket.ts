@@ -1,18 +1,14 @@
-import { onMounted, onUnmounted } from 'vue';
 import type { Socket } from 'socket.io-client';
-import { useSocketConnection } from './useSocketConnection';
-import { useQueueStore } from '@/stores/queue';
 import type {
   QueueItemAddedEvent,
   QueueItemUpdatedEvent,
   QueueStatsUpdatedEvent,
 } from '@/types/socket';
 
-/**
- * Composable for real-time queue updates via WebSocket.
- * Automatically connects on mount and disconnects on unmount.
- * Updates are applied directly to the queue store.
- */
+import { onMounted, onUnmounted } from 'vue';
+import { useQueueStore } from '@/stores/queue';
+import { useSocketConnection } from './useSocketConnection';
+
 export function useQueueSocket() {
   const { connected, connect, disconnect } = useSocketConnection('/queue');
   const store = useQueueStore();
@@ -20,13 +16,12 @@ export function useQueueSocket() {
   let socket: Socket | null = null;
 
   function handleItemAdded(event: QueueItemAddedEvent) {
-    // Add new item to the beginning of the list
     store.items.unshift(event.item);
     store.total++;
   }
 
   function handleItemUpdated(event: QueueItemUpdatedEvent) {
-    // Remove item from list (it was approved/rejected)
+    // Item was approved/rejected, remove it
     const index = store.items.findIndex((item) => item.mbid === event.mbid);
 
     if (index !== -1) {

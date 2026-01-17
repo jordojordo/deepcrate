@@ -1,4 +1,5 @@
 import type http from 'http';
+
 import { Server } from 'socket.io';
 
 import logger from '@server/config/logger';
@@ -8,9 +9,6 @@ import { setupJobsNamespace } from './namespaces/jobsNamespace';
 
 let io: Server | null = null;
 
-/**
- * Initialize Socket.io server
- */
 export function initIo(httpServer: http.Server): Server {
   if (io) {
     logger.warn('Socket.io already initialized');
@@ -27,7 +25,6 @@ export function initIo(httpServer: http.Server): Server {
     serveClient: false,
   });
 
-  // Setup namespaces
   setupQueueNamespace(io);
   setupDownloadsNamespace(io);
   setupJobsNamespace(io);
@@ -37,16 +34,10 @@ export function initIo(httpServer: http.Server): Server {
   return io;
 }
 
-/**
- * Get the Socket.io server instance
- */
 export function getIo(): Server | null {
   return io;
 }
 
-/**
- * Stop Socket.io server and close all connections
- */
 export async function stopIo(): Promise<void> {
   if (!io) {
     return;

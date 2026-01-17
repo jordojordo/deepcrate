@@ -1,7 +1,4 @@
-import { onMounted, onUnmounted } from 'vue';
 import type { Socket } from 'socket.io-client';
-import { useSocketConnection } from './useSocketConnection';
-import { useDownloadsStore } from '@/stores/downloads';
 import type {
   DownloadTaskCreatedEvent,
   DownloadTaskUpdatedEvent,
@@ -9,11 +6,10 @@ import type {
   DownloadStatsUpdatedEvent,
 } from '@/types/socket';
 
-/**
- * Composable for real-time download updates via WebSocket.
- * Automatically connects on mount and disconnects on unmount.
- * Updates are applied directly to the downloads store.
- */
+import { onMounted, onUnmounted } from 'vue';
+import { useSocketConnection } from './useSocketConnection';
+import { useDownloadsStore } from '@/stores/downloads';
+
 export function useDownloadsSocket() {
   const { connected, connect, disconnect } = useSocketConnection('/downloads');
   const store = useDownloadsStore();
@@ -21,7 +17,6 @@ export function useDownloadsSocket() {
   let socket: Socket | null = null;
 
   function handleTaskCreated(event: DownloadTaskCreatedEvent) {
-    // Add new task to the beginning of active downloads
     store.activeDownloads.unshift(event.task);
     store.activeTotal++;
   }
@@ -39,7 +34,6 @@ export function useDownloadsSocket() {
       return;
     }
 
-    // Update fields
     download.status = event.status as typeof download.status;
 
     if (event.slskdUsername !== undefined) {
