@@ -296,8 +296,6 @@ services:
       - ./resonance/data:/data
     networks:
       - resonance-net
-    environment:
-      - TZ=America/New_York
 
 networks:
   resonance-net:

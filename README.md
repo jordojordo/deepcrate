@@ -122,8 +122,6 @@ services:
   resonance:
     image: ghcr.io/jordonet/resonance:latest
     container_name: resonance
-    environment:
-      - TZ=America/New_York
     volumes:
       - ./config.yaml:/config/config.yaml:ro
       - ./data:/data
@@ -253,9 +251,11 @@ See [docs/architecture.md](docs/architecture.md) for technical details.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TZ` | `UTC` | Timezone |
 | `PORT` | `8080` | HTTP server port |
-| `LOG_LEVEL` | `INFO` | Logging verbosity |
+| `LOG_LEVEL` | `info` | Logging verbosity |
+| `LOG_TO_CONSOLE` | `true` | Log to stdout/stderr |
+| `LOG_TO_FILE` | `false` | Log to files in `LOG_DIR` |
+| `LOG_DIR` | `DATA_PATH` | Directory for log files (when enabled) |
 | `LB_FETCH_INTERVAL` | `21600` | Seconds between lb-fetch runs (6h) |
 | `CATALOG_INTERVAL` | `604800` | Seconds between catalog discovery (7d) |
 | `SLSKD_INTERVAL` | `3600` | Seconds between download runs (1h) |
@@ -270,9 +270,7 @@ All state is stored in `/data`:
 ```
 /data/
 ├── resonance.sqlite          # SQLite database (queue, processed items, etc.)
-├── wishlist.txt              # Albums to download (read by slskd-downloader)
-├── combined.log              # Application logs
-└── error.log                 # Error logs
+└── wishlist.txt              # Albums to download (read by slskd-downloader)
 ```
 
 ## Network Requirements

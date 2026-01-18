@@ -11,8 +11,7 @@ services:
     image: ghcr.io/jordonet/resonance:latest
     container_name: resonance
     environment:
-      - TZ=America/New_York
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=info
     volumes:
       - ./resonance/config.yaml:/config/config.yaml:ro
       - ./resonance/data:/data

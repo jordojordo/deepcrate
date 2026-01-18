@@ -332,6 +332,7 @@ docker logs -f resonance  # Follow
 ```
 
 Log levels are controlled via `LOG_LEVEL` environment variable.
+To also write `/data/combined.log` and `/data/error.log`, set `LOG_TO_FILE=true` (optionally `LOG_DIR`).
 
 ## Failure Handling
 

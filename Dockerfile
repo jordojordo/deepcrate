@@ -110,7 +110,7 @@ RUN apk del python3 make g++
 ENV NODE_ENV=production \
     CONFIG_PATH=/config/config.yaml \
     DATA_PATH=/data \
-    LOG_LEVEL=INFO \
+    LOG_LEVEL=info \
     PORT=8080 \
     HOST=0.0.0.0 \
     LB_FETCH_INTERVAL=21600 \

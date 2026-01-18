@@ -122,16 +122,15 @@ Environment variables can override or supplement the config file:
 |----------|---------|-------------|
 | `HOST` | `0.0.0.0` | Bind address for the server |
 | `PORT` | `8080` | Port for the server |
-| `TZ` | `UTC` | Timezone (e.g., `America/New_York`) |
 | `LB_FETCH_INTERVAL` | `21600` | Seconds between lb-fetch runs (default: 6 hours) |
 | `CATALOG_INTERVAL` | `604800` | Seconds between catalog discovery (default: 7 days) |
 | `SLSKD_INTERVAL` | `3600` | Seconds between download runs (default: 1 hour) |
 | `LIBRARY_SYNC_INTERVAL` | `86400` | Seconds between library sync runs (default: 24 hours) |
 | `RUN_JOBS_ON_STARTUP` | `true` | Run jobs once on startup (`false` to disable) |
-| `LOG_LEVEL` | `debug` (dev), `info` (prod) | Logging level: `debug`, `info`, `warn`, `error` |
+| `LOG_LEVEL` | `debug` (dev), `info` (prod) | Logging level (case-insensitive): `debug`, `info`, `warn`, `error` |
 | `LOG_DIR` | `DATA_PATH` | Directory for log files (when file logging is enabled) |
-| `LOG_TO_CONSOLE` | `true` (dev), `false` (prod) | Enable console logging |
-| `LOG_TO_FILE` | `false` (dev), `true` (prod) | Enable file logging |
+| `LOG_TO_CONSOLE` | `true` | Enable console logging (stdout/stderr) |
+| `LOG_TO_FILE` | `false` | Enable file logging |
 | `CONFIG_PATH` | `/config/config.yaml` | Path to config file |
 | `DATA_PATH` | `/data` | Path to data directory |
 | `RESONANCE_DB_FILE` | `DATA_PATH/resonance.sqlite` | SQLite DB file path |
@@ -243,11 +242,10 @@ services:
   resonance:
     image: ghcr.io/jordonet/resonance:latest
     environment:
-      - TZ=America/New_York
       - LB_FETCH_INTERVAL=21600
       - CATALOG_INTERVAL=604800
       - SLSKD_INTERVAL=3600
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=info
     volumes:
       - ./config.yaml:/config/config.yaml:ro
       - ./data:/data
