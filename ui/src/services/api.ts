@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ROUTE_PATHS } from '@/constants/routes';
 
 let redirectingToLogin = false;
 
@@ -26,9 +27,9 @@ client.interceptors.response.use(
       localStorage.removeItem('auth_credentials');
       localStorage.removeItem('auth_username');
 
-      if (!redirectingToLogin && window.location.pathname !== '/login') {
+      if (!redirectingToLogin && window.location.pathname !== ROUTE_PATHS.LOGIN) {
         redirectingToLogin = true;
-        window.location.replace('/login');
+        window.location.replace(ROUTE_PATHS.LOGIN);
       }
     }
 
