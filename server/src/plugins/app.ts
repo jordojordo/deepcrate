@@ -49,9 +49,11 @@ try {
   if (fs.existsSync(staticPath)) {
     app.use(express.static(staticPath));
     // Fallback to index.html for SPA routing
-    app.get('*', (req, res) => {
+    app.use((req, res, next) => {
       if (!req.path.startsWith('/api') && !req.path.startsWith('/health')) {
         res.sendFile(path.join(staticPath, 'index.html'));
+      } else {
+        next();
       }
     });
   }

@@ -1,4 +1,7 @@
 import axios from 'axios';
+import { ROUTE_PATHS } from '@/constants/routes';
+
+let redirectingToLogin = false;
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api/v1',
@@ -23,7 +26,11 @@ client.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_credentials');
       localStorage.removeItem('auth_username');
-      window.location.href = '/login';
+
+      if (!redirectingToLogin && window.location.pathname !== ROUTE_PATHS.LOGIN) {
+        redirectingToLogin = true;
+        window.location.replace(ROUTE_PATHS.LOGIN);
+      }
     }
 
     return Promise.reject(error);

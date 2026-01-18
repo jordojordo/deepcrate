@@ -1,8 +1,20 @@
 import type { RouteRecordRaw } from 'vue-router';
 
 import { ROUTE_PATHS, ROUTE_NAMES } from '@/constants/routes';
+import { useAuthStore } from '@/stores/auth';
 
 export const routes: RouteRecordRaw[] = [
+  // Root
+  {
+    path:     '/',
+    name:     'root',
+    redirect: () => {
+      const authStore = useAuthStore();
+
+      return authStore.isAuthenticated ? { name: ROUTE_NAMES.DASHBOARD } : { name: ROUTE_NAMES.LOGIN };
+    },
+  },
+
   // public
   //
   // TODO: Make home page

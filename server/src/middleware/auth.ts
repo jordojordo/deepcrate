@@ -158,10 +158,12 @@ function timingSafeEqual(a: string, b: string): boolean {
  * Send 401 Unauthorized response
  */
 function sendUnauthorized(res: Response, scheme?: string): void {
-  const headers: Record<string, string> = {};
+  if (res.headersSent) {
+    return;
+  }
 
   if (scheme) {
-    headers['WWW-Authenticate'] = scheme;
+    res.setHeader('WWW-Authenticate', scheme);
   }
 
   res.status(401).json({
@@ -169,10 +171,5 @@ function sendUnauthorized(res: Response, scheme?: string): void {
     code:    'unauthorized',
     message: 'Authentication required',
     details: {},
-  });
-
-  // Set headers after sending JSON
-  Object.entries(headers).forEach(([key, value]) => {
-    res.setHeader(key, value);
   });
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { useAuthStore } from '@/stores/auth';
@@ -15,10 +15,6 @@ const authStore = useAuthStore();
 const router = useRouter();
 
 const { sidebarTopItems, sidebarBottomItems } = useSidebarItems();
-
-onMounted(() => {
-  authStore.initialize();
-});
 
 const isAuthed = computed(() => authStore.isAuthenticated);
 

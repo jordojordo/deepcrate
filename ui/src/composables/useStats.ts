@@ -1,16 +1,18 @@
 import type { QueueStats } from '@/services/queue';
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import * as queueApi from '@/services/queue';
 import * as downloadsApi from '@/services/downloads';
 import { useQueueStore } from '@/stores/queue';
 import { useDownloadsStore } from '@/stores/downloads';
+import { useAuthStore } from '@/stores/auth';
 
 interface CombinedStats extends QueueStats {
   activeDownloads?: number;
 }
 
 export function useStats() {
+  const authStore = useAuthStore();
   const queueStore = useQueueStore();
   const downloadsStore = useDownloadsStore();
 
@@ -22,7 +24,7 @@ export function useStats() {
     approvedToday:  0,
     totalProcessed: 0,
   });
-  const loading = ref(true);
+  const loading = ref(false);
   const error = ref<string | null>(null);
 
   const initialized = ref(false);
@@ -36,6 +38,10 @@ export function useStats() {
   }));
 
   async function fetchStats() {
+    if (!authStore.isAuthenticated) {
+      return;
+    }
+
     loading.value = true;
     error.value = null;
     try {
@@ -61,9 +67,29 @@ export function useStats() {
     }
   }
 
-  onMounted(() => {
-    fetchStats();
-  });
+  watch(
+    () => authStore.isAuthenticated,
+    (isAuthed) => {
+      if (!isAuthed) {
+        initialized.value = false;
+        loading.value = false;
+        error.value = null;
+        apiStats.value = {
+          pending:        0,
+          approved:       0,
+          rejected:       0,
+          inLibrary:      0,
+          approvedToday:  0,
+          totalProcessed: 0,
+        };
+
+        return;
+      }
+
+      fetchStats();
+    },
+    { immediate: true }
+  );
 
   return {
     stats,
