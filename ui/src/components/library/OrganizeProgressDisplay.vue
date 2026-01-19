@@ -63,7 +63,7 @@ const percent = computed(() => {
 }
 
 .organize-progress__message {
-  color: white;
+  color: var(--r-text-primary);
   font-size: 0.875rem;
 }
 

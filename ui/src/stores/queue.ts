@@ -13,6 +13,7 @@ export const useQueueStore = defineStore('queue', () => {
   const total = ref(0);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const processingIds = ref<Set<string>>(new Set());
   const filters = ref<QueueFilters>({
     source: 'all',
     sort:   'added_at',
@@ -22,6 +23,10 @@ export const useQueueStore = defineStore('queue', () => {
   });
 
   const hasMore = computed(() => items.value?.length < total.value);
+
+  function isProcessing(mbid: string): boolean {
+    return processingIds.value.has(mbid);
+  }
 
   async function fetchPending(append = false) {
     loading.value = true;
@@ -45,8 +50,10 @@ export const useQueueStore = defineStore('queue', () => {
   }
 
   async function approve(mbids: string[]) {
-    loading.value = true;
     error.value = null;
+
+    // Track processing state for each item
+    mbids.forEach((mbid) => processingIds.value.add(mbid));
 
     try {
       await queueApi.approve({ mbids });
@@ -62,7 +69,7 @@ export const useQueueStore = defineStore('queue', () => {
       showError('Failed to approve items');
       throw e;
     } finally {
-      loading.value = false;
+      mbids.forEach((mbid) => processingIds.value.delete(mbid));
     }
   }
 
@@ -73,8 +80,10 @@ export const useQueueStore = defineStore('queue', () => {
   }
 
   async function reject(mbids: string[]) {
-    loading.value = true;
     error.value = null;
+
+    // Track processing state for each item
+    mbids.forEach((mbid) => processingIds.value.add(mbid));
 
     try {
       await queueApi.reject({ mbids });
@@ -90,7 +99,7 @@ export const useQueueStore = defineStore('queue', () => {
       showError('Failed to reject items');
       throw e;
     } finally {
-      loading.value = false;
+      mbids.forEach((mbid) => processingIds.value.delete(mbid));
     }
   }
 
@@ -119,6 +128,7 @@ export const useQueueStore = defineStore('queue', () => {
     error,
     filters,
     hasMore,
+    isProcessing,
     fetchPending,
     approve,
     approveAll,

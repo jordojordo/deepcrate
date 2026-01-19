@@ -4,6 +4,7 @@ import { createPinia } from 'pinia';
 import App from './App.vue';
 import router from './router';
 import { useAuthStore } from '@/stores/auth';
+import { useThemeStore } from '@/stores/theme';
 
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
@@ -19,6 +20,7 @@ const pinia = createPinia();
 app.use(pinia);
 
 useAuthStore(pinia).initialize();
+useThemeStore(pinia).initialize();
 
 app.use(router);
 app.use(PrimeVue, {

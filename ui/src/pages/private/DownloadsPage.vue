@@ -11,9 +11,9 @@ import Tab from 'primevue/tab';
 import TabPanels from 'primevue/tabpanels';
 import TabPanel from 'primevue/tabpanel';
 import Button from 'primevue/button';
-import Message from 'primevue/message';
 
 import DownloadStats from '@/components/downloads/DownloadStats.vue';
+import ErrorMessage from '@/components/common/ErrorMessage.vue';
 import ActiveDownloadsList from '@/components/downloads/ActiveDownloadsList.vue';
 import CompletedDownloadsList from '@/components/downloads/CompletedDownloadsList.vue';
 import FailedDownloadsList from '@/components/downloads/FailedDownloadsList.vue';
@@ -106,9 +106,11 @@ onMounted(() => {
       </div>
     </header>
 
-    <Message v-if="error" severity="error" :closable="false" class="mb-4">
-      {{ error }}
-    </Message>
+    <ErrorMessage
+      :error="error"
+      :loading="loading"
+      @retry="loadData"
+    />
 
     <DownloadStats :stats="stats" />
 
@@ -165,7 +167,7 @@ onMounted(() => {
 .downloads-page__title {
   font-size: 2.25rem;
   font-weight: 700;
-  color: white;
+  color: var(--r-text-primary);
   margin: 0;
 }
 
@@ -193,17 +195,17 @@ onMounted(() => {
 
 .badge--primary {
   background: var(--primary-500);
-  color: white;
+  color: var(--r-text-primary);
 }
 
 .badge--success {
   background: var(--green-500);
-  color: white;
+  color: var(--r-text-primary);
 }
 
 .badge--danger {
   background: var(--red-500);
-  color: white;
+  color: var(--r-text-primary);
 }
 
 @media (max-width: 768px) {

@@ -2,16 +2,18 @@
 import type { QueueItem } from '@/types';
 import type { ViewMode } from '@/components/queue/QueueFilters.vue';
 
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import { useQueue } from '@/composables/useQueue';
 import { useQueueSocket } from '@/composables/useQueueSocket';
 import { useToast } from '@/composables/useToast';
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 
-import Message from 'primevue/message';
 import Button from 'primevue/button';
 import QueueFilters from '@/components/queue/QueueFilters.vue';
 import QueueList from '@/components/queue/QueueList.vue';
 import QueueGrid from '@/components/queue/QueueGrid.vue';
+import KeyboardShortcutsHelp from '@/components/common/KeyboardShortcutsHelp.vue';
+import ErrorMessage from '@/components/common/ErrorMessage.vue';
 
 const {
   items,
@@ -20,6 +22,7 @@ const {
   error,
   filters,
   hasMore,
+  isProcessing,
   fetchPending,
   approveItems,
   rejectItems,
@@ -30,9 +33,29 @@ const {
 
 useQueueSocket();
 
-const { showSuccess } = useToast();
+const { showInfo, showWarning } = useToast();
 
 const viewMode = ref<ViewMode>('grid');
+const selectedIndex = ref(0);
+
+const selectedItem = computed(() => items.value[selectedIndex.value] ?? null);
+
+const { isHelpOpen, closeHelp, shortcuts } = useKeyboardShortcuts({
+  onApprove: () => {
+    if (selectedItem.value) {
+      handleApprove([selectedItem.value.mbid]);
+    } else {
+      showWarning('No item selected', 'Select an item first to approve');
+    }
+  },
+  onReject: () => {
+    if (selectedItem.value) {
+      handleReject([selectedItem.value.mbid]);
+    } else {
+      showWarning('No item selected', 'Select an item first to reject');
+    }
+  },
+});
 
 onMounted(() => {
   fetchPending();
@@ -43,6 +66,16 @@ watch(
   () => {
     reset();
     fetchPending();
+  }
+);
+
+// Reset selected index when items change
+watch(
+  () => items.value.length,
+  () => {
+    if (selectedIndex.value >= items.value.length) {
+      selectedIndex.value = Math.max(0, items.value.length - 1);
+    }
   }
 );
 
@@ -66,9 +99,9 @@ function handlePreview(item: QueueItem) {
   // TODO: Implement preview functionality
   //       This will need to include a media player to preview songs/albums/artists
   //       Should this fetch from listenbrainz? last.fm? tbd...
-  console.log('Preview item:', item);
+  console.log('Preview item:', JSON.parse(JSON.stringify(item)));
 
-  showSuccess(
+  showInfo(
     'Preview coming soon',
     `Artist: ${ item.artist }\n Title: ${ item.title ?? item.album }`
   );
@@ -85,26 +118,19 @@ function handlePreview(item: QueueItem) {
         </h1>
         <p class="queue-page__subtitle">
           Review music recommendations discovered by your automated agents.
-          <br class="hidden md:block" />
+          <br class="queue-page__subtitle-break" />
           <span class="queue-page__shortcuts">
-            Keyboard Shortcuts:
-            <kbd>A</kbd> Approve
-            <kbd>D</kbd> Dismiss
+            Press <kbd>?</kbd> for keyboard shortcuts
           </span>
         </p>
       </div>
-      <div class="flex align-items-center gap-3">
-        <Button
-          label="Approve High Confidence"
-          icon="pi pi-check-square"
-          class="queue-page__bulk-btn"
-        />
-      </div>
     </header>
 
-    <Message v-if="error" severity="error" class="mb-6" :closable="false">
-      {{ error }}
-    </Message>
+    <ErrorMessage
+      :error="error"
+      :loading="loading"
+      @retry="fetchPending"
+    />
 
     <div class="queue-page__filters">
       <QueueFilters
@@ -116,17 +142,16 @@ function handlePreview(item: QueueItem) {
     </div>
 
     <div class="queue-page__content">
-      <!-- Grid View -->
       <QueueGrid
         v-if="viewMode === 'grid'"
         :items="items"
         :loading="loading"
+        :is-processing="isProcessing"
         @approve="handleApprove"
         @reject="handleReject"
         @preview="handlePreview"
       />
 
-      <!-- List View -->
       <QueueList
         v-else
         :items="items"
@@ -149,6 +174,12 @@ function handlePreview(item: QueueItem) {
     <div class="queue-page__footer">
       <p>{{ items.length }} albums displayed</p>
     </div>
+
+    <KeyboardShortcutsHelp
+      v-model:visible="isHelpOpen"
+      :shortcuts="shortcuts"
+      @update:visible="closeHelp"
+    />
   </div>
 </template>
 
@@ -176,7 +207,7 @@ function handlePreview(item: QueueItem) {
 .queue-page__title {
   font-size: 1.875rem;
   font-weight: 700;
-  color: white;
+  color: var(--r-text-primary);
   line-height: 1.2;
   margin: 0;
 }
@@ -208,6 +239,16 @@ function handlePreview(item: QueueItem) {
   }
 }
 
+.queue-page__subtitle-break {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .queue-page__subtitle-break {
+    display: block;
+  }
+}
+
 .queue-page__shortcuts {
   display: inline-block;
   font-size: 0.75rem;
@@ -216,7 +257,7 @@ function handlePreview(item: QueueItem) {
 }
 
 .queue-page__shortcuts kbd {
-  background: var(--surface-600);
+  background: var(--r-hover-bg);
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   margin: 0 0.25rem;
@@ -226,7 +267,7 @@ function handlePreview(item: QueueItem) {
 .queue-page__filters {
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--surface-600);
+  border-bottom: 1px solid var(--r-border-default);
 }
 
 .queue-page__content {
@@ -244,8 +285,8 @@ function handlePreview(item: QueueItem) {
   gap: 0.5rem;
   margin-top: 3rem;
   padding-top: 2rem;
-  border-top: 1px solid var(--surface-600);
-  color: var(--surface-400);
+  border-top: 1px solid var(--r-border-default);
+  color: var(--r-text-muted);
   font-size: 0.875rem;
 }
 
@@ -274,13 +315,13 @@ function handlePreview(item: QueueItem) {
 }
 
 :deep(.queue-page__load-more-btn) {
-  background: var(--surface-700);
-  border-color: var(--surface-600);
-  color: white;
+  background: var(--surface-card);
+  border-color: var(--r-border-default);
+  color: var(--r-text-primary);
 }
 
 :deep(.queue-page__load-more-btn:hover) {
-  background: var(--surface-600);
-  border-color: var(--surface-500);
+  background: var(--r-hover-bg);
+  border-color: var(--r-border-emphasis);
 }
 </style>

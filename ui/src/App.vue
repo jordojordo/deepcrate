@@ -10,6 +10,7 @@ import Button from 'primevue/button';
 import Toast from 'primevue/toast';
 
 import AppShell from '@/components/layout/AppShell.vue';
+import ThemeToggle from '@/components/common/ThemeToggle.vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -59,6 +60,10 @@ function handleLogout(): void {
       >
         Logout
       </Button>
+    </template>
+
+    <template #sidebar-footer="{ sidebarCollapsed }">
+      <ThemeToggle :collapsed="sidebarCollapsed" />
     </template>
 
     <router-view />

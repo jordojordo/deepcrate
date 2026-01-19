@@ -205,7 +205,7 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
 
 .dashboard-stats-card__watermark i {
   font-size: 5rem;
-  color: white;
+  color: var(--r-text-primary);
 }
 
 .dashboard-stats-card:hover .dashboard-stats-card__watermark {
@@ -222,7 +222,7 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
 :deep(.p-button.p-button-secondary.p-button-outlined:hover) {
   background: var(--primary-500);
   border-color: var(--primary-500);
-  color: white;
+  color: var(--r-text-primary);
 }
 
 /* Space-y utility */

@@ -36,6 +36,10 @@ export function useQueue() {
     store.reset();
   }
 
+  function isProcessing(mbid: string) {
+    return store.isProcessing(mbid);
+  }
+
   return {
     items,
     total,
@@ -43,6 +47,7 @@ export function useQueue() {
     error,
     filters,
     hasMore,
+    isProcessing,
     fetchPending,
     approveItems,
     rejectItems,

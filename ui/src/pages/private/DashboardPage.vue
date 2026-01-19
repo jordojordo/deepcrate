@@ -10,15 +10,17 @@ import { useJobsSocket } from '@/composables/useJobsSocket';
 import { ROUTE_PATHS } from '@/constants/routes';
 
 import ProgressSpinner from 'primevue/progressspinner';
-import Message from 'primevue/message';
 import Button from 'primevue/button';
 
 import DashboardStatsCard from '@/components/dashboard/DashboardStatsCard.vue';
+import ErrorMessage from '@/components/common/ErrorMessage.vue';
 import DiscoverySourcesChart from '@/components/dashboard/DiscoverySourcesChart.vue';
 import RecentActivityFeed, { type ActivityItem } from '@/components/dashboard/RecentActivityFeed.vue';
 import ActionsPanel from '@/components/actions/ActionsPanel.vue';
 
-const { stats, loading, error } = useStats();
+const {
+  stats, loading, error, fetchStats
+} = useStats();
 const { stats: downloadStats, activeDownloads, fetchActive } = useDownloads();
 
 useQueueSocket();
@@ -69,13 +71,17 @@ const handleViewAllActivity = () => {
       </div>
     </header>
 
-    <div v-if="loading" class="flex justify-content-center py-8">
+    <div v-if="loading && !error" class="flex justify-content-center py-8">
       <ProgressSpinner style="width: 64px; height: 64px" />
     </div>
 
-    <Message v-else-if="error" severity="error" :closable="false">{{ error }}</Message>
+    <ErrorMessage
+      :error="error"
+      :loading="loading"
+      @retry="fetchStats"
+    />
 
-    <div class="mt-8">
+    <div class="mt-8 mb-8">
       <h2 class="text-xl font-bold text-white mb-4">Discovery Jobs</h2>
       <ActionsPanel />
     </div>
@@ -191,20 +197,20 @@ const handleViewAllActivity = () => {
 
 /* Button styling */
 :deep(.dashboard__action-btn) {
-  background: color-mix(in srgb, var(--surface-700) 70%, transparent);
+  background: color-mix(in srgb, var(--surface-card) 70%, transparent);
   border: 1px solid var(--border-subtle);
-  color: white;
+  color: var(--r-text-primary);
 }
 
 :deep(.dashboard__action-btn:hover) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--r-hover-bg);
+  border-color: var(--r-border-emphasis);
 }
 
 :deep(.dashboard__action-btn--primary) {
   background: var(--primary-500);
   border-color: var(--primary-500);
-  color: white;
+  color: var(--r-text-primary);
   box-shadow: 0 0 15px rgba(43, 43, 238, 0.25);
 }
 

@@ -9,16 +9,84 @@
    CSS Custom Properties (Design Tokens)
    ============================================ */
 :root {
-  /* Glass panel tokens */
-  --surface-glass: rgba(21, 21, 37, 0.7);
-  --surface-glass-solid: rgba(21, 21, 37, 0.9);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(43, 43, 238, 0.5);
-
   /* Animation tokens - not part of PrimeVue theme system */
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.3s ease;
-  --shadow-glow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  --border-glow: rgba(43, 43, 238, 0.5);
+}
+
+/* ============================================
+   Semantic Theme Variables
+   ============================================ */
+
+/* Light mode (default) */
+:root {
+  /* Text colors */
+  --r-text-primary: var(--surface-900);
+  --r-text-secondary: var(--surface-700);
+  --r-text-muted: var(--surface-500);
+
+  /* Border colors */
+  --r-border-subtle: rgba(0, 0, 0, 0.08);
+  --r-border-default: rgba(0, 0, 0, 0.12);
+  --r-border-emphasis: rgba(0, 0, 0, 0.2);
+
+  /* Interactive state colors */
+  --r-hover-bg: rgba(0, 0, 0, 0.05);
+  --r-active-bg: rgba(0, 0, 0, 0.1);
+
+  /* Overlay colors */
+  --r-overlay-light: rgba(0, 0, 0, 0.03);
+  --r-overlay-medium: rgba(0, 0, 0, 0.4);
+  --r-overlay-heavy: rgba(0, 0, 0, 0.6);
+
+  /* Glass effects */
+  --r-glass-bg: rgba(255, 255, 255, 0.7);
+  --r-glass-bg-solid: rgba(255, 255, 255, 0.9);
+
+  /* Shadows */
+  --r-shadow-glow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
+
+  /* Semantic aliases for backwards compatibility */
+  --surface-glass: var(--r-glass-bg);
+  --surface-glass-solid: var(--r-glass-bg-solid);
+  --border-subtle: var(--r-border-subtle);
+  --shadow-glow: var(--r-shadow-glow);
+}
+
+/* Dark mode */
+:root.dark {
+  /* Text colors */
+  --r-text-primary: var(--surface-0);
+  --r-text-secondary: var(--surface-300);
+  --r-text-muted: var(--surface-400);
+
+  /* Border colors */
+  --r-border-subtle: rgba(255, 255, 255, 0.08);
+  --r-border-default: rgba(255, 255, 255, 0.12);
+  --r-border-emphasis: rgba(255, 255, 255, 0.2);
+
+  /* Interactive state colors */
+  --r-hover-bg: rgba(255, 255, 255, 0.1);
+  --r-active-bg: rgba(255, 255, 255, 0.15);
+
+  /* Overlay colors */
+  --r-overlay-light: rgba(255, 255, 255, 0.05);
+  --r-overlay-medium: rgba(0, 0, 0, 0.4);
+  --r-overlay-heavy: rgba(0, 0, 0, 0.6);
+
+  /* Glass effects */
+  --r-glass-bg: rgba(21, 21, 37, 0.7);
+  --r-glass-bg-solid: rgba(21, 21, 37, 0.9);
+
+  /* Shadows */
+  --r-shadow-glow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+
+  /* Semantic aliases for backwards compatibility */
+  --surface-glass: var(--r-glass-bg);
+  --surface-glass-solid: var(--r-glass-bg-solid);
+  --border-subtle: var(--r-border-subtle);
+  --shadow-glow: var(--r-shadow-glow);
 }
 
 /* ============================================
@@ -50,7 +118,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .glass-panel--solid {
-  background: var(--surface-700);
+  background: var(--surface-card);
 }
 
 .glass-panel--hover:hover {
@@ -100,11 +168,11 @@ h1, h2, h3, h4, h5, h6,
 /* Text colors */
 .text-muted { color: var(--text-color-secondary); }
 .text-primary { color: var(--primary-color); }
-.text-white { color: #ffffff; }
-.text-white\/40 { color: rgba(255, 255, 255, 0.4); }
-.text-white\/50 { color: rgba(255, 255, 255, 0.5); }
-.text-white\/60 { color: rgba(255, 255, 255, 0.6); }
-.text-white\/70 { color: rgba(255, 255, 255, 0.7); }
+.text-white { color: var(--r-text-primary); }
+.text-white\/40 { color: var(--r-text-muted); }
+.text-white\/50 { color: var(--r-text-muted); }
+.text-white\/60 { color: var(--r-text-secondary); }
+.text-white\/70 { color: var(--r-text-secondary); }
 .text-orange-500 { color: var(--orange-500); }
 .text-green-400 { color: var(--green-400); }
 .text-green-500 { color: var(--green-500); }
@@ -338,11 +406,11 @@ h1, h2, h3, h4, h5, h6,
    ============================================ */
 .bg-transparent { background-color: transparent; }
 .bg-white { background-color: #ffffff; }
-.bg-white\/5 { background-color: rgba(255, 255, 255, 0.05); }
-.bg-white\/10 { background-color: rgba(255, 255, 255, 0.1); }
+.bg-white\/5 { background-color: var(--r-overlay-light); }
+.bg-white\/10 { background-color: var(--r-hover-bg); }
 .bg-black { background-color: #000000; }
-.bg-black\/40 { background-color: rgba(0, 0, 0, 0.4); }
-.bg-black\/60 { background-color: rgba(0, 0, 0, 0.6); }
+.bg-black\/40 { background-color: var(--r-overlay-medium); }
+.bg-black\/60 { background-color: var(--r-overlay-heavy); }
 
 .bg-gradient-to-br {
   background: linear-gradient(to bottom right, var(--primary-500), var(--purple-600));
@@ -446,11 +514,11 @@ h1, h2, h3, h4, h5, h6,
    Hover Utilities
    ============================================ */
 .hover\:text-color:hover { color: var(--text-color); }
-.hover\:text-white:hover { color: #ffffff; }
+.hover\:text-white:hover { color: var(--r-text-primary); }
 .hover\:text-primary:hover { color: var(--primary-color); }
 .hover\:border-surface-400:hover { border-color: var(--surface-400); }
-.hover\:bg-white\/5:hover { background-color: rgba(255, 255, 255, 0.05); }
-.hover\:bg-white\/10:hover { background-color: rgba(255, 255, 255, 0.1); }
+.hover\:bg-white\/5:hover { background-color: var(--r-overlay-light); }
+.hover\:bg-white\/10:hover { background-color: var(--r-hover-bg); }
 .hover\:scale-105:hover { transform: scale(1.05); }
 .hover\:scale-110:hover { transform: scale(1.1); }
 .hover\:opacity-100:hover { opacity: 1; }
@@ -461,7 +529,7 @@ h1, h2, h3, h4, h5, h6,
 .group:hover .group-hover\:opacity-100 { opacity: 1; }
 .group:hover .group-hover\:scale-110 { transform: scale(1.1); }
 .group:hover .group-hover\:text-primary { color: var(--primary-color); }
-.group:hover .group-hover\:text-white { color: #ffffff; }
+.group:hover .group-hover\:text-white { color: var(--r-text-primary); }
 
 /* ============================================
    PrimeVue Component Customizations
@@ -469,10 +537,10 @@ h1, h2, h3, h4, h5, h6,
 
 /* Glass panel effect for cards */
 .p-card {
-  background: color-mix(in srgb, var(--surface-700) 70%, transparent);
+  background: color-mix(in srgb, var(--surface-card) 70%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--surface-600);
+  border: 1px solid var(--r-border-default);
   box-shadow: var(--shadow-glow);
 }
 
@@ -486,16 +554,16 @@ h1, h2, h3, h4, h5, h6,
 
 /* Toast glass effect */
 .p-toast-message {
-  background: var(--surface-700);
-  border: 1px solid var(--surface-600);
+  background: var(--surface-card);
+  border: 1px solid var(--r-border-default);
 }
 
 /* DataTable styling */
 .p-datatable {
-  background: color-mix(in srgb, var(--surface-700) 70%, transparent);
+  background: color-mix(in srgb, var(--surface-card) 70%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--surface-600);
+  border: 1px solid var(--r-border-default);
 }
 
 .p-datatable .p-datatable-tbody > tr:hover {
@@ -504,30 +572,57 @@ h1, h2, h3, h4, h5, h6,
 
 /* Dialog glass effect */
 .p-dialog {
-  background: var(--surface-700);
+  background: var(--surface-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--surface-600);
+  border: 1px solid var(--r-border-default);
   border-radius: 1rem;
 }
 
 /* Message glass styling */
 .p-message {
-  background: color-mix(in srgb, var(--surface-700) 70%, transparent);
+  background: color-mix(in srgb, var(--surface-card) 70%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--surface-600);
+  border: 1px solid var(--r-border-default);
 }
 
-/* Tag color variants */
+/* Tag variants for queue cards */
+.p-tag.queue-tag {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.p-tag.queue-tag .p-tag-icon {
+  font-size: 0.75rem;
+}
+
 .p-tag.tag--listenbrainz {
-  background-color: var(--primary-500);
-  color: white;
+  background: color-mix(in srgb, var(--primary-500) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary-500) 20%, transparent);
+  color: var(--primary-400);
 }
 
 .p-tag.tag--catalog {
-  background-color: var(--purple-500);
-  color: white;
+  background: color-mix(in srgb, var(--purple-500) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--purple-500) 20%, transparent);
+  color: var(--purple-400);
+}
+
+.p-tag.tag--similar {
+  background: color-mix(in srgb, var(--teal-500) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--teal-500) 20%, transparent);
+  color: var(--teal-400);
+}
+
+.p-tag.tag--library {
+  background: color-mix(in srgb, var(--green-500) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--green-500) 20%, transparent);
+  color: var(--green-400);
 }
 
 /* ============================================

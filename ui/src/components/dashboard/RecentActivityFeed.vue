@@ -153,17 +153,17 @@ const getDefaultCover = () => {
 }
 
 .activity-feed__item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--r-overlay-light);
 }
 
 .activity-feed__cover {
   width: 3rem;
   height: 3rem;
   border-radius: 0.375rem;
-  background-color: var(--surface-700);
+  background-color: var(--surface-card);
   flex-shrink: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--r-border-default);
 }
 
 .activity-feed__icon {
@@ -196,6 +196,6 @@ const getDefaultCover = () => {
 }
 
 :deep(.activity-feed__view-all:hover) {
-  color: white;
+  color: var(--r-text-primary);
 }
 </style>

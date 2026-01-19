@@ -159,14 +159,14 @@ function setViewMode(mode: ViewMode) {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--surface-300);
+  color: var(--r-text-muted);
   margin-right: 0.5rem;
 }
 
 .queue-filters__divider {
   width: 1px;
   height: 1rem;
-  background: var(--surface-600);
+  background: var(--r-border-default);
   margin: 0 0.5rem;
 }
 
@@ -178,14 +178,14 @@ function setViewMode(mode: ViewMode) {
   font-size: 0.875rem;
   font-weight: 500;
   white-space: nowrap;
-  background: var(--surface-700);
-  border-color: var(--surface-600);
-  color: white;
+  background: var(--surface-card);
+  border-color: var(--r-border-default);
+  color: var(--r-text-primary);
 }
 
 :deep(.queue-filters__btn:hover) {
-  background: var(--surface-600);
-  border-color: var(--surface-500);
+  background: var(--r-hover-bg);
+  border-color: var(--r-border-emphasis);
 }
 
 :deep(.queue-filters__btn .queue-filters__hidden-select) {
@@ -199,7 +199,7 @@ function setViewMode(mode: ViewMode) {
 :deep(.queue-filters__sort-btn) {
   font-size: 0.875rem;
   font-weight: 500;
-  color: white;
+  color: var(--r-text-primary);
   padding: 0.5rem;
 }
 
@@ -212,18 +212,18 @@ function setViewMode(mode: ViewMode) {
   width: 2.25rem;
   height: 2.25rem;
   padding: 0;
-  color: var(--surface-300);
+  color: var(--r-text-muted);
   border-radius: 0.5rem;
 }
 
 :deep(.queue-filters__view-btn:hover) {
-  background: var(--surface-600);
-  color: white;
+  background: var(--r-hover-bg);
+  color: var(--r-text-primary);
 }
 
 :deep(.queue-filters__view-btn--active) {
-  background: var(--surface-600);
-  color: white;
+  background: var(--r-active-bg);
+  color: var(--r-text-primary);
 }
 
 /* Hide owned toggle */
@@ -237,11 +237,11 @@ function setViewMode(mode: ViewMode) {
 .queue-filters__toggle-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--surface-300);
+  color: var(--r-text-muted);
   white-space: nowrap;
 }
 
 .queue-filters__toggle:hover .queue-filters__toggle-label {
-  color: white;
+  color: var(--r-text-primary);
 }
 </style>

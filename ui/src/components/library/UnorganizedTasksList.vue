@@ -7,6 +7,8 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 
+import EmptyState from '@/components/common/EmptyState.vue';
+
 defineProps<{
   tasks:   UnorganizedTask[];
   total:   number;
@@ -26,8 +28,14 @@ const emit = defineEmits<{
       :loading="loading"
       striped-rows
       class="downloads-table"
-      :empty-message="loading ? 'Loading...' : 'No unorganized downloads'"
     >
+      <template #empty>
+        <EmptyState
+          icon="pi-check-circle"
+          title="No unorganized downloads"
+          message="All your downloads have been organized into your library"
+        />
+      </template>
       <Column field="artist" header="Artist" sortable>
         <template #body="{ data }">
           <div>

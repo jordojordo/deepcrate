@@ -8,6 +8,8 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 
+import EmptyState from '@/components/common/EmptyState.vue';
+
 interface Props {
   downloads: CompletedDownload[];
   loading?:  boolean;
@@ -50,10 +52,16 @@ const handleDelete = () => {
       :loading="loading"
       striped-rows
       class="downloads-table"
-      :empty-message="loading ? 'Loading...' : 'No completed downloads'"
       selection-mode="multiple"
       data-key="id"
     >
+      <template #empty>
+        <EmptyState
+          icon="pi-check-circle"
+          title="No completed downloads yet"
+          message="Finished downloads will be listed here"
+        />
+      </template>
       <Column selection-mode="multiple" header-style="width: 3rem"></Column>
 
       <Column field="artist" header="Artist" sortable>

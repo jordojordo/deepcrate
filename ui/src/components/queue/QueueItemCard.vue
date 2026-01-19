@@ -4,12 +4,14 @@ import type { QueueItem } from '@/types/queue';
 import { computed } from 'vue';
 
 import Button from 'primevue/button';
+import Tag from 'primevue/tag';
 
 interface Props {
-  item: QueueItem;
+  item:        QueueItem;
+  processing?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { processing: false });
 
 const emit = defineEmits<{
   approve: [mbid: string];
@@ -19,31 +21,17 @@ const emit = defineEmits<{
 
 const displayTitle = computed(() => props.item.album || props.item.title || 'Unknown');
 
-const scoreColorClass = computed(() => {
-  const score = props.item.score ?? 0;
-
-  if (score >= 90) {
-    return 'queue-card__score--high';
-  }
-
-  if (score >= 70) {
-    return 'queue-card__score--medium';
-  }
-
-  return 'queue-card__score--low';
-});
-
 const sourceTag = computed(() => {
   const tags = {
     listenbrainz: {
-      label: 'ListenBrainz',
-      icon:  'pi-chart-line',
-      class: 'queue-card__tag--listenbrainz',
+      label:    'ListenBrainz',
+      icon:     'pi-chart-line',
+      severity: 'info',
     },
     catalog: {
-      label: 'Catalog',
-      icon:  'pi-database',
-      class: 'queue-card__tag--catalog',
+      label:    'Catalog',
+      icon:     'pi-database',
+      severity: 'secondary',
     },
   };
 
@@ -59,6 +47,23 @@ const similarTag = computed(() => {
 
     if (remaining > 0) {
       return `Similar to ${ first } (+${ remaining })`;
+    }
+
+    return `Similar to ${ first }`;
+  }
+
+  return null;
+});
+
+const similarTooltip = computed(() => {
+  const similarTo = props.item.similar_to;
+
+  if (similarTo && similarTo.length > 0) {
+    const first = similarTo[0];
+    const remaining = similarTo.length - 1;
+
+    if (remaining > 0) {
+      return `Similar to ${ similarTo.join(', ') }`;
     }
 
     return `Similar to ${ first }`;
@@ -112,7 +117,7 @@ const handlePreview = () => {
         </button>
       </div>
 
-      <div v-if="item.score" class="queue-card__score" :class="scoreColorClass">
+      <div v-if="item.score" class="queue-card__score">
         {{ item.score }}% Match
       </div>
     </div>
@@ -127,18 +132,23 @@ const handlePreview = () => {
       </div>
 
       <div class="queue-card__tags">
-        <span v-if="isInLibrary" class="queue-card__tag queue-card__tag--library">
-          <i class="pi pi-check-circle"></i>
-          In Library
-        </span>
-        <span class="queue-card__tag" :class="sourceTag.class">
-          <i :class="['pi', sourceTag.icon]"></i>
-          {{ sourceTag.label }}
-        </span>
-        <span v-if="similarTag" class="queue-card__tag queue-card__tag--similar">
-          <i class="pi pi-link"></i>
-          {{ similarTag }}
-        </span>
+        <Tag
+          :value="sourceTag.label"
+          :icon="'pi ' + sourceTag.icon"
+          :severity="sourceTag.severity"
+        />
+        <Tag
+          v-if="isInLibrary"
+          value="In Library"
+          icon="pi pi-check-circle"
+          severity="success"
+        />
+        <Tag
+          v-if="similarTag"
+          :value="similarTag"
+          v-tooltip.bottom="similarTooltip"
+          icon="pi pi-link"
+        />
       </div>
 
       <div class="queue-card__actions">
@@ -146,6 +156,8 @@ const handlePreview = () => {
           label="Approve"
           icon="pi pi-download"
           class="queue-card__approve-btn"
+          :loading="processing"
+          :disabled="processing"
           @click="handleApprove"
         />
         <Button
@@ -154,6 +166,7 @@ const handlePreview = () => {
           severity="secondary"
           outlined
           aria-label="Reject"
+          :disabled="processing"
           @click="handleReject"
         />
       </div>
@@ -167,8 +180,8 @@ const handlePreview = () => {
   display: flex;
   flex-direction: column;
   border-radius: 0.75rem;
-  border: 1px solid var(--surface-600, #282839);
-  background-color: var(--surface-700, #1c1c27);
+  border: 1px solid var(--r-border-default);
+  background-color: var(--p-card-background);
   overflow: hidden;
   transition: all 0.3s ease;
 }
@@ -185,7 +198,7 @@ const handlePreview = () => {
   aspect-ratio: 1 / 1;
   width: 100%;
   overflow: hidden;
-  background-color: #000;
+  background-color: var(--surface-900);
 }
 
 .queue-card__image {
@@ -205,7 +218,7 @@ const handlePreview = () => {
 .queue-card__overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--r-overlay-medium);
   backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
@@ -223,18 +236,13 @@ const handlePreview = () => {
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background: white;
-  color: black;
+  background: var(--r-overlay-medium);
+  color: var(--p-button-primary-color);
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.queue-card__play-btn:hover {
-  transform: scale(1.1);
 }
 
 .queue-card__play-btn i {
@@ -244,27 +252,16 @@ const handlePreview = () => {
 /* Score Badge */
 .queue-card__score {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  padding: 0.25rem 0.5rem;
+  top: 0.25rem;
+  right: 0.25rem;
+  padding: 0.25rem 0.25rem;
   border-radius: 0.375rem;
   font-size: 0.75rem;
   font-weight: 700;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--r-overlay-medium);
+  color: var(--p-button-primary-color);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.queue-card__score--high {
-  color: var(--green-400);
-}
-
-.queue-card__score--medium {
-  color: var(--yellow-400);
-}
-
-.queue-card__score--low {
-  color: var(--orange-400);
+  border: 1px solid var(--r-border-default);
 }
 
 /* Content Section */
@@ -285,7 +282,7 @@ const handlePreview = () => {
 .queue-card__title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: white;
+  color: var(--r-text-primary);
   line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -296,7 +293,7 @@ const handlePreview = () => {
 .queue-card__artist {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--surface-300, #9d9db9);
+  color: var(--r-text-secondary);
   margin: 0;
 }
 
@@ -306,49 +303,6 @@ const handlePreview = () => {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.25rem;
-}
-
-.queue-card__tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--surface-300, #9d9db9);
-}
-
-.queue-card__tag i {
-  font-size: 0.75rem;
-}
-
-.queue-card__tag--listenbrainz {
-  background: rgba(43, 43, 238, 0.2);
-  border-color: rgba(43, 43, 238, 0.2);
-  color: var(--primary-400);
-}
-
-.queue-card__tag--catalog {
-  background: rgba(168, 85, 247, 0.2);
-  border-color: rgba(168, 85, 247, 0.2);
-  color: var(--purple-400);
-}
-
-.queue-card__tag--similar {
-  background: rgba(45, 212, 191, 0.2);
-  border-color: rgba(45, 212, 191, 0.2);
-  color: var(--teal-400);
-}
-
-.queue-card__tag--library {
-  background: rgba(34, 197, 94, 0.2);
-  border-color: rgba(34, 197, 94, 0.2);
-  color: var(--green-400);
 }
 
 /* Actions */
@@ -377,13 +331,13 @@ const handlePreview = () => {
   width: 2.25rem;
   height: 2.25rem;
   padding: 0;
-  border-color: var(--surface-600);
-  color: var(--surface-300);
+  border-color: var(--r-border-default);
+  color: var(--r-text-muted);
 }
 
 :deep(.queue-card__reject-btn:hover) {
   border-color: var(--red-400);
   color: var(--red-400);
-  background: rgba(248, 113, 113, 0.1);
+  background: color-mix(in srgb, var(--red-400) 10%, transparent);
 }
 </style>

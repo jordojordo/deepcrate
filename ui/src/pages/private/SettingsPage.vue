@@ -58,7 +58,7 @@
 .settings-page__title {
   font-size: 2.25rem;
   font-weight: 700;
-  color: white;
+  color: var(--r-text-primary);
   margin: 0;
 }
 
@@ -87,26 +87,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--surface-500) 0%, var(--surface-600) 100%);
+  background: linear-gradient(135deg, var(--r-hover-bg) 0%, var(--r-active-bg) 100%);
   border-radius: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
 .settings-page__icon i {
   font-size: 2.5rem;
-  color: white;
+  color: var(--r-text-primary);
 }
 
 .settings-page__placeholder-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: white;
+  color: var(--r-text-primary);
   margin: 0 0 0.75rem 0;
 }
 
 .settings-page__placeholder-text {
   font-size: 1rem;
-  color: var(--surface-300);
+  color: var(--r-text-secondary);
   margin: 0 0 2rem 0;
   max-width: 480px;
   line-height: 1.6;
@@ -124,14 +124,14 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background: var(--surface-700);
+  background: var(--surface-card);
   border-radius: 0.75rem;
-  color: var(--surface-200);
+  color: var(--r-text-secondary);
   font-size: 0.875rem;
   font-weight: 500;
 }
 
 .settings-page__feature i {
-  color: var(--surface-400);
+  color: var(--r-text-muted);
 }
 </style>

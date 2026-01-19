@@ -146,8 +146,8 @@ const getPercentage = (value: number): number => {
 .discovery-chart__legend-item {
   padding: 0.75rem;
   border-radius: 0.375rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--r-overlay-light);
+  border: 1px solid var(--r-border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -155,14 +155,14 @@ const getPercentage = (value: number): number => {
 
 /* Select dropdown styling */
 :deep(.discovery-chart__select) {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--r-overlay-medium);
+  border: 1px solid var(--r-border-default);
   border-radius: 0.375rem;
 }
 
 :deep(.discovery-chart__select .p-select-label) {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--r-text-secondary);
   padding: 0.25rem 0.5rem;
 }
 

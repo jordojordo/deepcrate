@@ -247,7 +247,7 @@ function handleSave() {
 
 .library-config__summary {
   cursor: pointer;
-  color: white;
+  color: var(--r-text-primary);
   font-weight: 700;
 }
 

@@ -2,13 +2,18 @@
 import type { QueueItem } from '@/types/queue';
 import QueueItemCard from './QueueItemCard.vue';
 import ProgressSpinner from 'primevue/progressspinner';
+import EmptyState from '@/components/common/EmptyState.vue';
 
 interface Props {
-  items:    QueueItem[];
-  loading?: boolean;
+  items:         QueueItem[];
+  loading?:      boolean;
+  isProcessing?: (mbid: string) => boolean;
 }
 
-withDefaults(defineProps<Props>(), { loading: false });
+const props = withDefaults(defineProps<Props>(), {
+  loading:      false,
+  isProcessing: () => false,
+});
 
 const emit = defineEmits<{
   approve: [mbids: string[]];
@@ -31,26 +36,23 @@ const handlePreview = (item: QueueItem) => {
 
 <template>
   <div class="queue-grid">
-    <!-- Loading State -->
-    <div v-if="loading" class="queue-grid__loading">
+    <div v-if="loading && items.length === 0" class="queue-grid__loading">
       <ProgressSpinner style="width: 48px; height: 48px" />
     </div>
 
-    <!-- Empty State -->
-    <div v-else-if="items.length === 0" class="queue-grid__empty">
-      <i class="pi pi-inbox queue-grid__empty-icon"></i>
-      <p class="queue-grid__empty-title">No pending items</p>
-      <p class="queue-grid__empty-text">
-        New music recommendations will appear here when discovered
-      </p>
-    </div>
+    <EmptyState
+      v-else-if="!loading && items.length === 0"
+      icon="pi-inbox"
+      title="No pending items"
+      message="New music recommendations will appear here when discovered"
+    />
 
-    <!-- Grid -->
     <div v-else class="queue-grid__items">
       <QueueItemCard
         v-for="item in items"
         :key="item.mbid"
         :item="item"
+        :processing="props.isProcessing(item.mbid)"
         @approve="handleApprove"
         @reject="handleReject"
         @preview="handlePreview"
@@ -62,6 +64,7 @@ const handlePreview = (item: QueueItem) => {
 <style scoped>
 .queue-grid {
   width: 100%;
+  overflow-anchor: auto;
 }
 
 .queue-grid__loading {
@@ -69,35 +72,6 @@ const handlePreview = (item: QueueItem) => {
   justify-content: center;
   align-items: center;
   min-height: 400px;
-}
-
-.queue-grid__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 2rem;
-  text-align: center;
-}
-
-.queue-grid__empty-icon {
-  font-size: 4rem;
-  color: var(--surface-500);
-  margin-bottom: 1rem;
-}
-
-.queue-grid__empty-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--surface-300);
-  margin: 0 0 0.5rem 0;
-}
-
-.queue-grid__empty-text {
-  font-size: 0.875rem;
-  color: var(--surface-400);
-  margin: 0;
-  max-width: 300px;
 }
 
 .queue-grid__items {

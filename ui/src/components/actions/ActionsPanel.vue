@@ -174,3 +174,18 @@ async function handleCancelJob(jobName: string) {
 
   <AddToWishlistModal v-model:visible="showAddModal" />
 </template>
+
+<style scoped>
+/* Override button styles for the action button */
+:deep(.p-button.p-component.p-button-outlined) {
+  background: rgba(43, 43, 238, 0.2);
+  border-color: rgba(43, 43, 238, 0.3);
+  color: var(--primary-500);
+}
+
+:deep(.p-button.p-component.p-button-outlined:hover) {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+  color: var(--r-text-primary);
+}
+</style>

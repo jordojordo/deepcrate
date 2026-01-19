@@ -13,9 +13,9 @@ import Tab from 'primevue/tab';
 import TabPanels from 'primevue/tabpanels';
 import TabPanel from 'primevue/tabpanel';
 import Button from 'primevue/button';
-import Message from 'primevue/message';
 
 import LibraryStats from '@/components/library/LibraryStats.vue';
+import ErrorMessage from '@/components/common/ErrorMessage.vue';
 import LibraryOrganizeActions from '@/components/library/LibraryOrganizeActions.vue';
 import UnorganizedTasksList from '@/components/library/UnorganizedTasksList.vue';
 import LibraryConfigForm from '@/components/library/LibraryConfigForm.vue';
@@ -98,9 +98,11 @@ onMounted(() => {
       />
     </header>
 
-    <Message v-if="error" severity="error" :closable="false" class="mb-4">
-      {{ error }}
-    </Message>
+    <ErrorMessage
+      :error="error"
+      :loading="loading"
+      @retry="loadData"
+    />
 
     <LibraryStats :status="status" />
 
@@ -160,7 +162,7 @@ onMounted(() => {
 .library-page__title {
   font-size: 2.25rem;
   font-weight: 700;
-  color: white;
+  color: var(--r-text-primary);
   margin: 0;
 }
 

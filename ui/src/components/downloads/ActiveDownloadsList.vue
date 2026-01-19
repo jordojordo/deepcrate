@@ -10,6 +10,7 @@ import Tag from 'primevue/tag';
 import Button from 'primevue/button';
 
 import DownloadProgress from './DownloadProgress.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 
 interface Props {
   downloads: ActiveDownload[];
@@ -65,10 +66,16 @@ const handleDelete = () => {
       :loading="loading"
       striped-rows
       class="downloads-table"
-      :empty-message="loading ? 'Loading...' : 'No active downloads'"
       selection-mode="multiple"
       data-key="id"
     >
+      <template #empty>
+        <EmptyState
+          icon="pi-cloud-download"
+          title="No active downloads"
+          message="Approved items will appear here when downloading"
+        />
+      </template>
       <Column selection-mode="multiple" header-style="width: 3rem"></Column>
 
       <Column field="artist" header="Artist" sortable>

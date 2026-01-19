@@ -12,6 +12,15 @@ export function useToast() {
     });
   }
 
+  function showWarning(message: string, detail?: string) {
+    toast.add({
+      severity: 'warn',
+      summary:  message,
+      detail,
+      life:     3000,
+    });
+  }
+
   function showError(message: string, detail?: string) {
     toast.add({
       severity: 'error',
@@ -32,6 +41,7 @@ export function useToast() {
 
   return {
     showSuccess,
+    showWarning,
     showError,
     showInfo,
   };

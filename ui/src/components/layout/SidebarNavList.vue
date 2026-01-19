@@ -175,7 +175,7 @@ defineProps<{
   }
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--r-hover-bg);
   }
 }
 
@@ -183,7 +183,7 @@ defineProps<{
   list-style: none;
   margin: 0.25rem 0 0 0;
   padding: 0 0 0 1.5rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 1px solid var(--r-border-default);
 }
 
 .shell__sidebar-item--child {
@@ -223,12 +223,12 @@ defineProps<{
 }
 
 .shell__sidebar-link.is-active {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--r-active-bg);
   font-weight: 600;
 }
 
 .shell__sidebar-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--r-hover-bg);
 }
 
 .shell__sidebar-badge {
@@ -236,8 +236,8 @@ defineProps<{
   padding: 0.125rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 600;
-  background: var(--primary-500, #2b2bee);
-  color: white;
+  background: var(--r-overlay-medium);
+  color: var(--p-button-primary-color);
   border-radius: 9999px;
   min-width: 1.25rem;
   text-align: center;

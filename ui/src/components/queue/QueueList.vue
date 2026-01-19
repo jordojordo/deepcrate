@@ -52,7 +52,6 @@ function getDefaultCover() {
 
 <template>
   <div>
-    <!-- Bulk Actions Bar -->
     <div v-if="selectedItems.length > 0" class="mb-4 p-3 surface-card border-round-lg">
       <div class="flex align-items-center justify-content-between">
         <span class="text-sm text-muted">
@@ -78,12 +77,10 @@ function getDefaultCover() {
       </div>
     </div>
 
-    <!-- Loading State -->
     <div v-if="loading && !items?.length" class="flex justify-content-center py-6">
       <ProgressSpinner style="width: 64px; height: 64px" />
     </div>
 
-    <!-- Empty State -->
     <div
       v-else-if="!items || items.length === 0"
       class="surface-card border-round-lg p-8 text-center"
@@ -93,7 +90,6 @@ function getDefaultCover() {
       <p class="text-muted">The queue is empty. Check back later for new recommendations.</p>
     </div>
 
-    <!-- DataTable -->
     <DataTable
       v-else
       :value="items"
@@ -145,7 +141,8 @@ function getDefaultCover() {
 
       <Column field="score" header="Score" style="width: 100px">
         <template #body="{ data }">
-          {{ data.score?.toFixed(1) || 'N/A' }}
+          <span v-if="data.score">{{ data.score }}%</span>
+          <span v-else>N/A</span>
         </template>
       </Column>
 
@@ -170,7 +167,6 @@ function getDefaultCover() {
       </Column>
     </DataTable>
 
-    <!-- Loading More Indicator -->
     <div v-if="loading && items && items.length > 0" class="flex justify-content-center py-4">
       <ProgressSpinner style="width: 48px; height: 48px" />
     </div>

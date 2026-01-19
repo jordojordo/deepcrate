@@ -190,7 +190,7 @@ watch(
           v-if="hasSidebarFooterSlot"
           class="shell__sidebar-footer"
         >
-          <slot name="sidebar-footer" />
+          <slot name="sidebar-footer" :sidebar-collapsed="sidebarCollapsed" />
         </footer>
       </div>
     </aside>
@@ -252,7 +252,7 @@ watch(
   &__overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--r-overlay-medium);
     z-index: 15;
   }
 
@@ -267,7 +267,7 @@ watch(
     box-sizing: border-box;
     z-index: 20;
     transition: padding 0.3s ease;
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    border-right: 1px solid var(--r-border-emphasis);
 
     &.sidebar-collapsed {
       align-items: center;
@@ -278,6 +278,7 @@ watch(
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative;
 
     &.sidebar-collapsed {
       width: 2.8rem;
@@ -329,13 +330,12 @@ watch(
   }
 
   &__sidebar-footer {
-    position: absolute;
-    bottom: 1rem;
-    width: calc(260px - 2rem);
-    transition: width 0.3s ease, opacity 0.2s ease;
+    margin-top: auto;
+    padding-top: 1rem;
+    width: 100%;
+    transition: opacity 0.2s ease;
 
     .sidebar-collapsed & {
-      width: calc(70px - 1rem);
       opacity: 0.8;
     }
   }
@@ -359,7 +359,7 @@ watch(
   }
 
   &__sidebar-level-divider {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--r-hover-bg);
     height: 1px;
     margin: var(--ui-space-80, 24px) auto;
     min-height: 1px;
@@ -416,7 +416,7 @@ watch(
     }
 
     &:hover {
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: var(--r-hover-bg);
     }
   }
 
@@ -424,7 +424,7 @@ watch(
     list-style: none;
     margin: 0.25rem 0 0 0;
     padding: 0 0 0 1.5rem;
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 1px solid var(--r-border-default);
   }
 
   &__sidebar-item--child {
@@ -477,12 +477,12 @@ watch(
 
   &__sidebar-link.router-link-active,
   &__sidebar-link.is-active {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--r-active-bg);
     font-weight: 600;
   }
 
   &__sidebar-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--r-hover-bg);
 
     .sidebar-collapsed & {
       text-decoration: none;
