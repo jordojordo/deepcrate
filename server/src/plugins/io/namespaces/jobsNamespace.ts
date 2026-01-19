@@ -62,7 +62,7 @@ export function emitJobProgress(event: JobProgressEvent): void {
 
   try {
     namespaceInstance.emit('job:progress', event);
-    logger.debug(`[socket:jobs] Emitted job:progress for ${ event.name }: ${ event.message }`);
+    logger.silly(`[socket:jobs] Emitted job:progress for ${ event.name }: ${ event.message }`);
   } catch(error) {
     logger.error('[socket:jobs] Error emitting job:progress:', { error });
   }

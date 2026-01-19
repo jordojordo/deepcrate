@@ -96,7 +96,7 @@ export function emitDownloadProgress(event: DownloadProgressEvent): void {
 
   try {
     namespaceInstance.emit('download:progress', event);
-    logger.debug(`[socket:downloads] Emitted download:progress for ${ event.id }`);
+    logger.silly(`[socket:downloads] Emitted download:progress for ${ event.id }`);
   } catch(error) {
     logger.error('[socket:downloads] Error emitting download:progress:', { error });
   }

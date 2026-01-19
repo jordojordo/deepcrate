@@ -27,12 +27,18 @@ function parseBooleanEnv(value: string | undefined): boolean | undefined {
 }
 
 function normalizeLogLevel(value: string | undefined, fallback: LogLevel): LogLevel {
-  if (!value) return fallback;
+  if (!value) {
+    return fallback;
+  }
 
   const level = value.trim().toLowerCase();
 
-  if (level === 'warning') return 'warn';
-  if (level === 'err') return 'error';
+  if (level === 'warning') {
+    return 'warn';
+  }
+  if (level === 'err') {
+    return 'error';
+  }
 
   const allowed: Record<string, LogLevel> = {
     error:   'error',
