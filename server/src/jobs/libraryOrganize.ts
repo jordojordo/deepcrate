@@ -32,6 +32,12 @@ export async function libraryOrganizeJob(): Promise<void> {
 
   logger.info('[library-organize] starting');
 
+  const backfilled = await service.backfillDownloadPaths();
+
+  if (backfilled > 0) {
+    logger.info('[library-organize] backfilled download paths', { count: backfilled });
+  }
+
   const tasks = await service.getUnorganizedTasks();
   const totalTasks = tasks.length;
   const taskIndexById = new Map<string, number>(tasks.map((task, index) => [task.id, index + 1]));
@@ -49,7 +55,7 @@ export async function libraryOrganizeJob(): Promise<void> {
         total:   totalTasks,
       });
     },
-    onPhase: (task: DownloadTask, phase: OrganizePhase) => {
+    onPhase: (task: DownloadTask, phase: OrganizePhase, detail?: string) => {
       const label = formatTaskLabel({ artist: task.artist, album: task.album });
       const messages: Record<OrganizePhase, string> = {
         finding_files: `Finding files: ${ label }`,
@@ -61,7 +67,7 @@ export async function libraryOrganizeJob(): Promise<void> {
 
       emitJobProgress({
         name:    JOB_NAMES.LIBRARY_ORGANIZE,
-        message: messages[phase],
+        message: detail ? `${ messages[phase] } (${ detail })` : messages[phase],
       });
     },
     onFileProgress: (task: DownloadTask, current: number, total: number) => {
@@ -80,7 +86,7 @@ export async function libraryOrganizeJob(): Promise<void> {
 
       emitJobProgress({
         name:    JOB_NAMES.LIBRARY_ORGANIZE,
-        message: `${ prefix }: ${ label }`,
+        message: result.message ? `${ prefix }: ${ label } — ${ result.message }` : `${ prefix }: ${ label }`,
       });
     },
   };

@@ -359,13 +359,19 @@ export class SlskdClient {
   }
 
   /**
-   * Cancel a download
+   * Cancel and optionally remove a download.
+   * @param username - The username of the peer
+   * @param fileId - The transfer file ID
+   * @param remove - If true, removes the record from slskd entirely (default: true)
    */
-  async cancelDownload(username: string, fileId: string): Promise<boolean> {
+  async cancelDownload(username: string, fileId: string, remove: boolean = true): Promise<boolean> {
     try {
-      await this.client.delete(`/api/v0/transfers/downloads/${ encodeURIComponent(username) }/${ encodeURIComponent(fileId) }`);
+      await this.client.delete(
+        `/api/v0/transfers/downloads/${ encodeURIComponent(username) }/${ encodeURIComponent(fileId) }`,
+        { params: { remove } }
+      );
 
-      logger.info(`Cancelled download: ${ username }/${ fileId }`);
+      logger.info(`Cancelled download: ${ username }/${ fileId } (remove=${ remove })`);
 
       return true;
     } catch(error) {

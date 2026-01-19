@@ -24,6 +24,7 @@ export interface DownloadTaskAttributes {
   type:            DownloadTaskType;
   status:          DownloadTaskStatus;
   organizedAt?:    Date;             // When moved to library
+  downloadPath?:   string;           // Relative path under downloads root
   slskdSearchId?:  string;           // Search ID from slskd
   slskdUsername?:  string;           // Source user for downloads
   slskdDirectory?: string;           // Directory path on source
@@ -55,6 +56,7 @@ class DownloadTask extends Model<DownloadTaskAttributes, DownloadTaskCreationAtt
   declare type:            DownloadTaskType;
   declare status:          DownloadTaskStatus;
   declare organizedAt?:    Date;
+  declare downloadPath?:   string;
   declare slskdSearchId?:  string;
   declare slskdUsername?:  string;
   declare slskdDirectory?: string;
@@ -106,6 +108,12 @@ DownloadTask.init(
       allowNull:  true,
       columnName: 'organized_at',
       comment:    'When this download was organized into the library',
+    },
+    downloadPath: {
+      type:       DataTypes.STRING(2000),
+      allowNull:  true,
+      columnName: 'download_path',
+      comment:    'Relative path under the downloads root for this task',
     },
     slskdSearchId: {
       type:       DataTypes.STRING(255),

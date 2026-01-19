@@ -147,6 +147,56 @@ export class WishlistService {
 
     return entries;
   }
+
+  /**
+   * Remove an entry from the wishlist by artist and title
+   * Removes both album (a:"...") and track ("...") formats
+   * @returns true if entry was found and removed
+   */
+  remove(artist: string, title: string): boolean {
+    if (!fs.existsSync(this.wishlistPath)) {
+      return false;
+    }
+
+    const content = fs.readFileSync(this.wishlistPath, 'utf-8');
+    const lines = content.split('\n');
+
+    // Build the search pattern - the content inside quotes
+    const artistEscaped = this.escapeQuotes(artist);
+    const titleEscaped = this.escapeQuotes(title);
+    const searchContent = `"${ artistEscaped } - ${ titleEscaped }"`;
+
+    // Count non-empty lines before filtering
+    const nonEmptyLinesBefore = lines.filter(line => line.trim().length > 0).length;
+
+    // Filter out matching lines (both a:"..." and "..." formats)
+    const filteredLines = lines.filter(line => {
+      const trimmed = line.trim();
+
+      if (trimmed.length === 0) {
+        return false; // Remove empty lines
+      }
+
+      // Check if this line contains the search content
+      // Handle both album format (a:"...") and track format ("...")
+      const lineContent = trimmed.startsWith('a:') ? trimmed.slice(2) : trimmed;
+
+      return lineContent !== searchContent;
+    });
+
+    const removed = nonEmptyLinesBefore !== filteredLines.length;
+
+    // Rewrite file (add trailing newline if there are entries)
+    const newContent = filteredLines.length > 0 ? filteredLines.join('\n') + '\n' : '';
+
+    fs.writeFileSync(this.wishlistPath, newContent, 'utf-8');
+
+    if (removed) {
+      logger.info(`Removed from wishlist: ${ artist } - ${ title }`);
+    }
+
+    return removed;
+  }
 }
 
 export default WishlistService;

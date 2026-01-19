@@ -36,6 +36,14 @@ const COLUMN_MIGRATIONS: ColumnMigration[] = [
       allowNull: true,
     },
   },
+  {
+    table:      'download_tasks',
+    column:     'download_path',
+    definition: {
+      type:      DataTypes.STRING(2000),
+      allowNull: true,
+    },
+  },
 ];
 
 /**

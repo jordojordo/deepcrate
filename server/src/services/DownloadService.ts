@@ -1,6 +1,7 @@
 import type { ActiveDownload, DownloadProgress, DownloadStats } from '@server/types/downloads';
 import type { SlskdTransferFile, SlskdUserTransfers } from './clients/SlskdClient';
 
+import fs from 'fs';
 import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
 import { JOB_INTERVALS } from '@server/config/jobs';
@@ -18,6 +19,26 @@ import { triggerJob } from '@server/plugins/jobs';
 
 import SlskdClient from './clients/SlskdClient';
 import WishlistService from './WishlistService';
+import { joinDownloadsPath, normalizeSlskdPath, slskdDirectoryToRelativeDownloadPath, slskdPathBasename, toSafeRelativePath } from '@server/utils/slskdPaths';
+
+async function pathExists(candidatePath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(candidatePath, fs.constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeUsernameSegment(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const sanitized = value.replace(/[/\\]/g, '-').trim();
+
+  return sanitized.length ? sanitized : null;
+}
 
 /**
  * DownloadService manages download tasks and integrates with slskd.
@@ -159,24 +180,6 @@ export class DownloadService {
   }
 
   /**
-   * Normalize slskd path for consistent comparison.
-   * slskd returns paths in various formats depending on the source user's OS:
-   * - Windows paths with backslashes: "C:\\Music\\Album"
-   * - Relative paths: "./Music/Album" or "."
-   * - Paths with trailing slashes
-   * This normalizes all to forward slashes with no trailing slash.
-   */
-  private normalizeSlskdPath(value: string | null | undefined): string | null {
-    if (value === undefined || value === null) {
-      return null;
-    }
-
-    const normalized = value.replace(/\\/g, '/').replace(/\/+$/, '');
-
-    return normalized === '.' ? '' : normalized;
-  }
-
-  /**
    * Tokenize slskd state string into individual flags.
    * slskd returns transfer states as comma-separated enum flags
    * (e.g., "Completed, Succeeded" or "InProgress") rather than single values.
@@ -277,14 +280,14 @@ export class DownloadService {
    * The slskdFileIds field can be used for direct lookup once populated.
    */
   private getFilesForTask(taskDirectory: string, transfers: SlskdUserTransfers): SlskdTransferFile[] {
-    const normalizedTaskDirectory = this.normalizeSlskdPath(taskDirectory);
+    const normalizedTaskDirectory = normalizeSlskdPath(taskDirectory);
 
     if (normalizedTaskDirectory === null) {
       return [];
     }
 
     const matchingDirectories = transfers.directories.filter((directory) => {
-      const normalizedDirectory = this.normalizeSlskdPath(directory.directory);
+      const normalizedDirectory = normalizeSlskdPath(directory.directory);
 
       return normalizedDirectory === normalizedTaskDirectory;
     });
@@ -315,7 +318,7 @@ export class DownloadService {
       }
 
       if ((task.slskdDirectory === null || task.slskdDirectory === undefined) && userTransfers.directories.length === 1) {
-        const fallbackDirectory = this.normalizeSlskdPath(userTransfers.directories[0].directory);
+        const fallbackDirectory = normalizeSlskdPath(userTransfers.directories[0].directory);
 
         await DownloadTask.update(
           {
@@ -385,7 +388,7 @@ export class DownloadService {
       return null;
     }
 
-    const taskDirectory = this.normalizeSlskdPath(task.slskdDirectory);
+    const taskDirectory = normalizeSlskdPath(task.slskdDirectory);
 
     if (taskDirectory === null) {
       return null;
@@ -393,7 +396,7 @@ export class DownloadService {
 
     // Find matching directory
     const directory = userTransfers.directories.find(
-      d => this.normalizeSlskdPath(d.directory) === taskDirectory
+      d => normalizeSlskdPath(d.directory) === taskDirectory
     );
 
     if (!directory) {
@@ -526,6 +529,7 @@ export class DownloadService {
           status:          'pending',
           errorMessage:    undefined,
           retryCount:      task.retryCount + 1,
+          downloadPath:    undefined,
           slskdSearchId:   undefined,
           slskdUsername:   undefined,
           slskdDirectory:  undefined,
@@ -555,6 +559,73 @@ export class DownloadService {
       failed:  failedCount,
       failures,
     };
+  }
+
+  /**
+   * Delete download tasks by ID.
+   * Also cancels any active downloads in slskd for tasks that have file IDs.
+   */
+  async delete(ids: string[]): Promise<{
+    success:  number;
+    failed:   number;
+    failures: Array<{ id: string; reason: string }>;
+  }> {
+    if (!ids.length) {
+      return { success: 0, failed: 0, failures: [] };
+    }
+
+    const tasks = await DownloadTask.findAll({
+      where: { id: { [Op.in]: ids } },
+    });
+
+    if (!tasks.length) {
+      return { success: 0, failed: 0, failures: [] };
+    }
+
+    let successCount = 0;
+    let failedCount = 0;
+    const failures: Array<{ id: string; reason: string }> = [];
+
+    for (const task of tasks) {
+      try {
+        // Cancel downloads in slskd if the task has active transfers
+        if (this.slskdClient && task.slskdUsername && task.slskdFileIds?.length) {
+          for (const fileId of task.slskdFileIds) {
+            try {
+              await this.slskdClient.cancelDownload(task.slskdUsername, fileId);
+            } catch (cancelError) {
+              // Log but don't fail the delete if slskd cancel fails
+              logger.debug(`Failed to cancel slskd transfer ${ fileId }: ${ String(cancelError) }`);
+            }
+          }
+          logger.info(`Cancelled ${ task.slskdFileIds.length } slskd transfers for: ${ task.wishlistKey }`);
+        }
+
+        await task.destroy();
+
+        // Remove from wishlist to prevent re-processing
+        this.wishlistService.remove(task.artist, task.album);
+
+        successCount++;
+        logger.info(`Deleted download task: ${ task.wishlistKey }`);
+      } catch (error) {
+        failedCount++;
+        const reason = error instanceof Error ? error.message : String(error);
+
+        failures.push({
+          id:     task.id,
+          reason,
+        });
+        logger.error(`Failed to delete ${ task.wishlistKey }: ${ reason }`);
+      }
+    }
+
+    // Emit updated stats after deletion
+    const stats = await this.getStats();
+
+    emitDownloadStatsUpdated(stats);
+
+    return { success: successCount, failed: failedCount, failures };
   }
 
   /**
@@ -655,6 +726,7 @@ export class DownloadService {
       slskdUsername?:  string;
       slskdDirectory?: string;
       slskdFileIds?:   string[];
+      downloadPath?:   string;
       fileCount?:      number;
       errorMessage?:   string;
     }
@@ -670,6 +742,53 @@ export class DownloadService {
 
     if (status === 'completed' || status === 'failed') {
       updateData.completedAt = new Date();
+    }
+
+    if (status === 'completed') {
+      const downloadsRoot = getConfig().library_organize?.downloads_path;
+
+      if (downloadsRoot) {
+        const directoryRel = slskdDirectoryToRelativeDownloadPath(details?.slskdDirectory);
+        const leaf = slskdPathBasename(details?.slskdDirectory);
+        const username = sanitizeUsernameSegment(details?.slskdUsername);
+
+        const candidates = new Set<string>();
+
+        if (typeof details?.downloadPath === 'string') {
+          candidates.add(details.downloadPath);
+        }
+
+        if (username && directoryRel) {
+          candidates.add(`${ username }/${ directoryRel }`);
+        }
+
+        if (username && leaf) {
+          candidates.add(`${ username }/${ leaf }`);
+        }
+
+        if (directoryRel) {
+          candidates.add(directoryRel);
+        }
+
+        if (leaf) {
+          candidates.add(leaf);
+        }
+
+        for (const candidate of candidates) {
+          const safeRel = toSafeRelativePath(candidate);
+
+          if (!safeRel) {
+            continue;
+          }
+
+          const absPath = joinDownloadsPath(downloadsRoot, safeRel);
+
+          if (await pathExists(absPath)) {
+            updateData.downloadPath = safeRel;
+            break;
+          }
+        }
+      }
     }
 
     // Merge in optional details
@@ -691,6 +810,9 @@ export class DownloadService {
             downloadedAt: new Date(),
           },
         });
+
+        // Remove from wishlist since download is complete
+        this.wishlistService.remove(task.artist, task.album);
 
         // Auto-trigger library organize if enabled and not manual-only
         const config = getConfig();

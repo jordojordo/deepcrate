@@ -9,6 +9,7 @@ import { getConfig } from '@server/config/settings';
 import DownloadTask from '@server/models/DownloadTask';
 import NavidromeClient from '@server/services/clients/NavidromeClient';
 import { splitCommand } from '@server/utils/command';
+import { joinDownloadsPath, slskdDirectoryToRelativeDownloadPath, slskdPathBasename, toSafeRelativePath } from '@server/utils/slskdPaths';
 
 const execFile = promisify(execFileCallback);
 
@@ -93,6 +94,36 @@ async function listFilesRecursive(root: string): Promise<string[]> {
   return files;
 }
 
+function sanitizeUsernameSegment(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const sanitized = value.replace(/[/\\]/g, '-').trim();
+
+  return sanitized.length ? sanitized : null;
+}
+
+function normalizeRelativePath(value: string): string {
+  return value.replace(/\\/g, '/').replace(/\/+$/, '');
+}
+
+function endsWithSegments(haystack: string[], needle: string[]): boolean {
+  if (needle.length === 0 || needle.length > haystack.length) {
+    return false;
+  }
+
+  const offset = haystack.length - needle.length;
+
+  for (let i = 0; i < needle.length; i++) {
+    if (haystack[offset + i] !== needle[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export class LibraryOrganizeService {
   isConfigured(): boolean {
     const config = getConfig();
@@ -115,6 +146,60 @@ export class LibraryOrganizeService {
       where,
       order: [['completedAt', 'ASC']],
     });
+  }
+
+  async backfillDownloadPaths(): Promise<number> {
+    const config = getConfig();
+    const organize = config.library_organize;
+
+    if (!organize?.enabled || !organize.downloads_path) {
+      return 0;
+    }
+
+    const where: Record<string, unknown> = {
+      status:      'completed',
+      organizedAt: null,
+      slskdDirectory: {
+        [Op.ne]: null,
+      },
+    };
+
+    const tasks = await DownloadTask.findAll({
+      where,
+      order: [['completedAt', 'ASC']],
+    });
+    let updated = 0;
+
+    for (const task of tasks) {
+      const before = task.downloadPath ?? null;
+      const found = await this.findDownloadedFiles(task);
+      const after = task.downloadPath ?? null;
+
+      if (found && after && after !== before) {
+        updated++;
+      }
+    }
+
+    return updated;
+  }
+
+  async getUnorganizedTasksPaginated(limit: number, offset: number): Promise<{ items: DownloadTask[]; total: number }> {
+    const where: Record<string, unknown> = {
+      status:      'completed',
+      organizedAt: null,
+    };
+
+    const [items, total] = await Promise.all([
+      DownloadTask.findAll({
+        where,
+        order:  [['completedAt', 'ASC']],
+        limit,
+        offset,
+      }),
+      DownloadTask.count({ where }),
+    ]);
+
+    return { items, total };
   }
 
   async getOrganizeCounts(): Promise<{
@@ -202,30 +287,106 @@ export class LibraryOrganizeService {
       return null;
     }
 
-    const expected = `${ task.artist } - ${ task.album }`;
-    const expectedPath = path.join(settings.downloads_path, expected);
+    const downloadsRoot = settings.downloads_path;
+    const username = sanitizeUsernameSegment(task.slskdUsername);
+    const slskdDirectoryRel = slskdDirectoryToRelativeDownloadPath(task.slskdDirectory);
+    const slskdLeaf = slskdPathBasename(task.slskdDirectory);
+    const expectedArtistAlbum = `${ task.artist } - ${ task.album }`;
 
-    if (await pathExists(expectedPath)) {
-      return { sourcePath: expectedPath, sourceDirName: expected };
+    const candidateRelPaths = new Set<string>();
+
+    const existingDownloadPath = toSafeRelativePath(task.downloadPath);
+
+    if (existingDownloadPath) {
+      candidateRelPaths.add(existingDownloadPath);
     }
 
-    const normalizedExpected = normalizeName(expected);
+    if (username && slskdDirectoryRel) {
+      candidateRelPaths.add(`${ username }/${ slskdDirectoryRel }`);
+    }
+
+    if (username && slskdLeaf) {
+      candidateRelPaths.add(`${ username }/${ slskdLeaf }`);
+    }
+
+    if (slskdDirectoryRel) {
+      candidateRelPaths.add(slskdDirectoryRel);
+    }
+
+    if (slskdLeaf) {
+      candidateRelPaths.add(slskdLeaf);
+    }
+
+    candidateRelPaths.add(expectedArtistAlbum);
+
+    for (const candidate of candidateRelPaths) {
+      const safeRel = toSafeRelativePath(candidate);
+
+      if (!safeRel) {
+        continue;
+      }
+
+      const absPath = joinDownloadsPath(downloadsRoot, safeRel);
+
+      if (!(await pathExists(absPath))) {
+        continue;
+      }
+
+      if (task.downloadPath !== safeRel) {
+        await DownloadTask.update(
+          { downloadPath: safeRel },
+          { where: { id: task.id } }
+        );
+
+        task.downloadPath = safeRel;
+      }
+
+      const stat = await fs.promises.stat(absPath);
+      const sourceDirName = stat.isFile() ? path.basename(path.dirname(absPath)) : path.basename(absPath);
+
+      return { sourcePath: absPath, sourceDirName };
+    }
+
+    const normalizedExpected = normalizeName(expectedArtistAlbum);
     const normalizedArtist = normalizeName(task.artist);
     const normalizedAlbum = normalizeName(task.album);
+    const normalizedLeaf = slskdLeaf ? normalizeName(slskdLeaf) : null;
 
-    const candidates = await this.listCandidates(settings.downloads_path, 3);
+    const normalizedSlskdSegments = slskdDirectoryRel ? slskdDirectoryRel.split('/').map((segment) => normalizeName(segment)).filter(Boolean) : null;
+
+    const maxDepth = Math.min(
+      10,
+      Math.max(3, normalizedSlskdSegments ? normalizedSlskdSegments.length + 2 : 6),
+    );
+
+
+    const candidates = await this.listCandidates(downloadsRoot, maxDepth);
     let best: { score: number; depth: number; absPath: string; name: string; isDir: boolean } | null = null;
 
     for (const candidate of candidates) {
       const normalizedCandidate = normalizeName(candidate.name);
+      const relPath = normalizeRelativePath(path.relative(downloadsRoot, candidate.absPath));
+      const relSegmentsNormalized = relPath.split('/').map((segment) => normalizeName(segment)).filter(Boolean);
       let score = 0;
 
-      if (candidate.name === expected) {
+      if (normalizedSlskdSegments && endsWithSegments(relSegmentsNormalized, normalizedSlskdSegments)) {
+        score = 350;
+      } else if (normalizedSlskdSegments && normalizedSlskdSegments.length >= 2 && endsWithSegments(relSegmentsNormalized, normalizedSlskdSegments.slice(-2))) {
         score = 300;
+      } else if (normalizedSlskdSegments && normalizedSlskdSegments.length >= 1 && endsWithSegments(relSegmentsNormalized, normalizedSlskdSegments.slice(-1))) {
+        score = 250;
+      } else if (candidate.name === expectedArtistAlbum) {
+        score = 220;
       } else if (normalizedCandidate === normalizedExpected) {
-        score = 200;
-      } else if (candidate.isDir && normalizedCandidate.includes(normalizedArtist) && normalizedCandidate.includes(normalizedAlbum)) {
-        score = 100;
+        score = 180;
+      } else if (candidate.isDir && relSegmentsNormalized.includes(normalizedArtist) && relSegmentsNormalized.includes(normalizedAlbum)) {
+        score = 160;
+      } else if (normalizedCandidate === normalizedAlbum) {
+        score = 140;
+      } else if (normalizedLeaf && normalizedCandidate === normalizedLeaf) {
+        score = 140;
+      } else if (candidate.isDir && relSegmentsNormalized.includes(normalizedAlbum)) {
+        score = 110;
       }
 
       if (score === 0) {
@@ -255,9 +416,25 @@ export class LibraryOrganizeService {
       return null;
     }
 
+    const bestRel = toSafeRelativePath(normalizeRelativePath(path.relative(downloadsRoot, best.absPath)));
+
+    if (bestRel && task.downloadPath !== bestRel) {
+      await DownloadTask.update(
+        { downloadPath: bestRel },
+        { where: { id: task.id } }
+      );
+      task.downloadPath = bestRel;
+    }
+
+    const bestStat = await fs.promises.stat(best.absPath);
+    const sourceDirName = bestStat.isFile() ? path.basename(path.dirname(best.absPath)) : path.basename(best.absPath);
+
+    logger.debug('[#####] downloadsRoot:', { downloadsRoot });
+    logger.debug('[#####] best:', { best });
+
     return {
-      sourcePath:    best.absPath,
-      sourceDirName: best.name,
+      sourcePath: best.absPath,
+      sourceDirName,
     };
   }
 
@@ -433,14 +610,29 @@ export class LibraryOrganizeService {
         return result;
       }
 
-      callbacks?.onPhase?.(task, 'finding_files');
+      const expectedLabel = slskdPathBasename(task.slskdDirectory) ?? `${ task.artist } - ${ task.album }`;
+      const downloadsPathLabel = settings.downloads_path ?? '(downloads_path not set)';
+
+      callbacks?.onPhase?.(task, 'finding_files', `Looking for "${ expectedLabel }" in ${ downloadsPathLabel }`);
 
       const found = await this.findDownloadedFiles(task);
 
       if (!found) {
-        const result: OrganizeResult = { status: 'skipped', message: 'No matching files found' };
+        const result: OrganizeResult = {
+          status:  'skipped',
+          message: `No matching files found for "${ expectedLabel }" in ${ downloadsPathLabel }`,
+        };
 
         callbacks?.onTaskComplete?.(task, result);
+
+        logger.debug('No matching files found', {
+          taskId:          task.id,
+          downloadPath:    task.downloadPath ?? null,
+          slskdUsername:   task.slskdUsername ?? null,
+          slskdDirectory:  task.slskdDirectory ?? null,
+          expectedLabel,
+          downloadsPathLabel,
+        });
 
         return result;
       }
@@ -448,6 +640,21 @@ export class LibraryOrganizeService {
       const sourceStat = await fs.promises.stat(found.sourcePath);
       const baseDestination = this.computeDestinationPath(task, found.sourceDirName);
       const destinationPath = sourceStat.isFile() && settings.organization === 'artist_album'? path.join(baseDestination, path.basename(found.sourcePath)): baseDestination;
+
+      if (await pathExists(destinationPath)) {
+        await task.update({ organizedAt: new Date() });
+
+        const result: OrganizeResult = {
+          status:          'skipped',
+          message:         `Destination already exists: ${ destinationPath }`,
+          sourcePath:      found.sourcePath,
+          destinationPath: destinationPath,
+        };
+
+        callbacks?.onTaskComplete?.(task, result);
+
+        return result;
+      }
 
       callbacks?.onPhase?.(task, 'transferring', destinationPath);
 
@@ -459,10 +666,7 @@ export class LibraryOrganizeService {
 
       callbacks?.onPhase?.(task, 'cleanup');
 
-      await DownloadTask.update(
-        { organizedAt: new Date() },
-        { where: { id: task.id } }
-      );
+      await task.update({ organizedAt: new Date() });
 
       const result: OrganizeResult = {
         status:          'organized',

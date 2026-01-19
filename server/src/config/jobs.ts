@@ -2,6 +2,8 @@
  * Job configuration and intervals
  */
 
+import { getConfig } from '@server/config/settings';
+
 /**
  * Convert seconds to cron expression
  * Handles common intervals: hourly, every N hours, daily, weekly
@@ -55,9 +57,18 @@ export const JOB_INTERVALS = {
     cron:    secondsToCron(parseInt(process.env.LIBRARY_SYNC_INTERVAL || '86400', 10)),
   },
   libraryOrganize: {
-    seconds: parseInt(process.env.LIBRARY_ORGANIZE_INTERVAL || '0', 10), // disabled/manual by default
+    seconds: (() => {
+      const configSeconds = getConfig().library_organize?.interval;
+
+      if (typeof configSeconds === 'number') {
+        return configSeconds;
+      }
+
+      return parseInt(process.env.LIBRARY_ORGANIZE_INTERVAL || '0', 10);
+    })(), // disabled/manual by default
     cron:    (() => {
-      const seconds = parseInt(process.env.LIBRARY_ORGANIZE_INTERVAL || '0', 10);
+      const configSeconds = getConfig().library_organize?.interval;
+      const seconds = typeof configSeconds === 'number' ? configSeconds : parseInt(process.env.LIBRARY_ORGANIZE_INTERVAL || '0', 10);
 
       return seconds > 0 ? secondsToCron(seconds) : 'manual';
     })(),

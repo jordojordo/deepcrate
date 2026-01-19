@@ -101,6 +101,13 @@ export const retryRequestSchema = z.object({ ids: z.array(z.string().uuid()).min
 export type RetryRequest = z.infer<typeof retryRequestSchema>;
 
 /**
+ * Delete request schema
+ */
+export const deleteRequestSchema = z.object({ ids: z.array(z.string().uuid()).min(1) });
+
+export type DeleteRequest = z.infer<typeof deleteRequestSchema>;
+
+/**
  * Download stats schema
  */
 export const downloadStatsSchema = z.object({

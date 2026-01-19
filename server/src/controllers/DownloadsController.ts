@@ -8,6 +8,7 @@ import logger from '@server/config/logger';
 import {
   getDownloadsQuerySchema,
   retryRequestSchema,
+  deleteRequestSchema,
   downloadStatsSchema,
 } from '@server/types/downloads';
 import { sendValidationError } from '@server/utils/errorHandler';
@@ -35,6 +36,7 @@ class DownloadsController extends BaseController {
       album:           task.album,
       type:            task.type,
       status:          task.status,
+      downloadPath:    task.downloadPath ?? null,
       slskdUsername:   task.slskdUsername,
       slskdDirectory:  task.slskdDirectory,
       fileCount:       task.fileCount,
@@ -188,6 +190,37 @@ class DownloadsController extends BaseController {
       return res.json(response);
     } catch(error) {
       return this.handleError(res, error as Error, 'Failed to retry downloads');
+    }
+  };
+
+  /**
+   * Delete downloads by IDs
+   * DELETE /api/v1/downloads
+   */
+  delete = async(req: Request, res: Response): Promise<Response> => {
+    try {
+      // Validate request body
+      const parseResult = deleteRequestSchema.safeParse(req.body);
+
+      if (!parseResult.success) {
+        return sendValidationError(res, 'Invalid request body', { errors: parseResult.error.issues });
+      }
+
+      const { ids } = parseResult.data;
+
+      // Delete downloads
+      const result = await this.downloadService.delete(ids);
+
+      const response = {
+        success:  true,
+        count:    result.success,
+        message:  `Deleted ${ result.success } download(s)`,
+        failures: result.failures,
+      };
+
+      return res.json(response);
+    } catch(error) {
+      return this.handleError(res, error as Error, 'Failed to delete downloads');
     }
   };
 

@@ -8,5 +8,8 @@ router.get('/stats', LibraryController.getStats);
 router.post('/sync', LibraryController.triggerSync);
 router.post('/organize', LibraryController.triggerOrganize);
 router.get('/organize/status', LibraryController.getOrganizeStatus);
+router.get('/organize/config', LibraryController.getOrganizeConfig);
+router.put('/organize/config', LibraryController.updateOrganizeConfig);
+router.get('/organize/tasks', LibraryController.getUnorganizedTasks);
 
 export default router;

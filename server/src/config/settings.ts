@@ -77,11 +77,29 @@ const BeetsSettingsSchema = z.object({
   command: z.string().min(1).default('beet import --quiet'),
 });
 
+const PathStringSchema = z.preprocess((value) => {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const trimmed = value.trim();
+
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"'))
+    || (trimmed.startsWith('\'') && trimmed.endsWith('\''))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+
+  return trimmed;
+}, z.string().min(1));
+
 const LibraryOrganizeSettingsSchema = z.object({
   enabled:           z.boolean(),
-  downloads_path:    z.string().min(1).optional(),
-  library_path:      z.string().min(1).optional(),
+  downloads_path:    PathStringSchema.optional(),
+  library_path:      PathStringSchema.optional(),
   organization:      z.enum(['flat', 'artist_album']).default('artist_album'),
+  interval:          z.number().int().min(0).default(0),
   auto_organize:     z.boolean().default(false),
   delete_after_move: z.boolean().default(true),
   navidrome_rescan:  z.boolean().default(false),
@@ -262,6 +280,36 @@ export function getConfig(): Config {
  */
 export function clearConfigCache(): void {
   cachedConfig = null;
+}
+
+export async function updateConfig(section: string, updates: Record<string, unknown>): Promise<void> {
+  const configPath = resolveConfigPath();
+  let rawConfig: Record<string, unknown> = {};
+
+  if (fs.existsSync(configPath)) {
+    const fileContent = await fs.promises.readFile(configPath, 'utf-8');
+
+    rawConfig = yaml.load(fileContent) as Record<string, unknown> || {};
+  }
+
+  const currentSection = rawConfig[section];
+  const nextSection = deepMerge(isPlainObject(currentSection) ? currentSection : {}, updates);
+
+  rawConfig[section] = nextSection;
+
+  const mergedConfig = deepMerge(DEFAULT_CONFIG, rawConfig);
+  const result = ConfigSchema.safeParse(mergedConfig);
+
+  if (!result.success) {
+    const errors = result.error.issues.map((issue) => `  ${ issue.path.join('.') }: ${ issue.message }`).join('\n');
+
+    throw new Error(`Invalid configuration:\n${ errors }`);
+  }
+
+  const output = yaml.dump(rawConfig, { noRefs: true, lineWidth: 120 });
+
+  await fs.promises.writeFile(configPath, output, 'utf-8');
+  clearConfigCache();
 }
 
 /**
