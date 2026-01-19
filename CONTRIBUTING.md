@@ -16,7 +16,7 @@ Thank you for your interest in contributing to Resonance! This document provides
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/jordonet/resonance.git
+git clone https://github.com/jordojordo/resonance.git
 cd resonance
 ```
 
@@ -245,7 +245,7 @@ Look for issues labeled `good first issue`:
 
 ## Questions?
 
-- Open a [GitHub Discussion](https://github.com/jordonet/resonance/discussions)
+- Open a [GitHub Discussion](https://github.com/jordojordo/resonance/discussions)
 - Check existing issues for similar questions
 - Read the [documentation](docs/)
 

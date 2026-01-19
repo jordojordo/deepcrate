@@ -1,7 +1,7 @@
 # Resonance
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fjordonet%2Fresonance-blue)](https://ghcr.io/jordonet/resonance)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fjordojordo%2Fresonance-blue)](https://ghcr.io/jordojordo/resonance)
 
 **Resonance** is a self-hosted music discovery pipeline that automatically finds and downloads music based on your listening habits and existing library. It combines multiple discovery sources into a unified approval workflow with a modern web UI.
 
@@ -120,7 +120,7 @@ Create `docker-compose.yaml`:
 ```yaml
 services:
   resonance:
-    image: ghcr.io/jordonet/resonance:latest
+    image: ghcr.io/jordojordo/resonance:latest
     container_name: resonance
     volumes:
       - ./config.yaml:/config/config.yaml:ro
@@ -291,7 +291,7 @@ Resonance needs network access to:
 ### Building from source
 
 ```bash
-git clone https://github.com/jordonet/resonance.git
+git clone https://github.com/jordojordo/resonance.git
 cd resonance
 docker build -t resonance .
 ```

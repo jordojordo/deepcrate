@@ -308,7 +308,7 @@ slskd:
 ```yaml
 services:
   resonance:
-    image: ghcr.io/jordonet/resonance:latest
+    image: ghcr.io/jordojordo/resonance:latest
     environment:
       - LB_FETCH_INTERVAL=21600
       - CATALOG_INTERVAL=604800
