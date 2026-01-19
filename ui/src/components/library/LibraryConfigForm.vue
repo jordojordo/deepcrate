@@ -79,6 +79,7 @@ const intervalText = computed({
 
     if (!Number.isFinite(parsed) || parsed < 0) {
       form.interval = 0;
+
       return;
     }
 

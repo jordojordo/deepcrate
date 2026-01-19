@@ -7,13 +7,13 @@ import Message from 'primevue/message';
 import OrganizeProgressDisplay from '@/components/library/OrganizeProgressDisplay.vue';
 
 defineProps<{
-  status:             LibraryOrganizeStatus | null;
-  progress:           OrganizeProgress | null;
-  running:            boolean;
-  triggerLoading?:    boolean;
-  cancelLoading?:     boolean;
-  onTrigger:          () => void | Promise<void>;
-  onCancel:           () => void | Promise<void>;
+  status:          LibraryOrganizeStatus | null;
+  progress:        OrganizeProgress | null;
+  running:         boolean;
+  triggerLoading?: boolean;
+  cancelLoading?:  boolean;
+  onTrigger:       () => void | Promise<void>;
+  onCancel:        () => void | Promise<void>;
 }>();
 </script>
 

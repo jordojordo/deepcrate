@@ -34,8 +34,8 @@ export interface PaginatedUnorganizedTasks {
 }
 
 export interface OrganizeProgress {
-  message: string;
+  message:  string;
   current?: number;
-  total?: number;
+  total?:   number;
 }
 

@@ -25,9 +25,7 @@ export async function updateOrganizeConfig(config: LibraryOrganizeConfig): Promi
 }
 
 export async function getUnorganizedTasks(limit: number, offset: number): Promise<PaginatedUnorganizedTasks> {
-  const response = await client.get<PaginatedUnorganizedTasks>('/library/organize/tasks', {
-    params: { limit, offset },
-  });
+  const response = await client.get<PaginatedUnorganizedTasks>('/library/organize/tasks', { params: { limit, offset } });
 
   return response.data;
 }
