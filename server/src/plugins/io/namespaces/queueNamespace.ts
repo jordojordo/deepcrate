@@ -44,7 +44,7 @@ export function emitQueueItemAdded(event: QueueItemAddedEvent): void {
 
   try {
     namespaceInstance.emit('queue:item:added', event);
-    logger.debug(`[socket:queue] Emitted queue:item:added for ${ event.item.mbid }`);
+    logger.silly(`[socket:queue] Emitted queue:item:added for ${ event.item.mbid }`);
   } catch(error) {
     logger.error('[socket:queue] Error emitting queue:item:added:', { error });
   }
@@ -60,7 +60,7 @@ export function emitQueueItemUpdated(event: QueueItemUpdatedEvent): void {
 
   try {
     namespaceInstance.emit('queue:item:updated', event);
-    logger.debug(`[socket:queue] Emitted queue:item:updated for ${ event.mbid }`);
+    logger.silly(`[socket:queue] Emitted queue:item:updated for ${ event.mbid }`);
   } catch(error) {
     logger.error('[socket:queue] Error emitting queue:item:updated:', { error });
   }
@@ -76,7 +76,7 @@ export function emitQueueStatsUpdated(event: QueueStatsUpdatedEvent): void {
 
   try {
     namespaceInstance.emit('queue:stats:updated', event);
-    logger.debug('[socket:queue] Emitted queue:stats:updated');
+    logger.silly('[socket:queue] Emitted queue:stats:updated');
   } catch(error) {
     logger.error('[socket:queue] Error emitting queue:stats:updated:', { error });
   }

@@ -52,6 +52,14 @@ const COLUMN_MIGRATIONS: ColumnMigration[] = [
       allowNull: true,
     },
   },
+  {
+    table:      'download_tasks',
+    column:     'wishlist_item_id',
+    definition: {
+      type:      DataTypes.UUID,
+      allowNull: true,
+    },
+  },
 ];
 
 /**

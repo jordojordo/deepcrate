@@ -1,5 +1,6 @@
 import type { PartialBy } from '@sequelize/utils';
-import { DataTypes, Model } from '@sequelize/core';
+
+import { DataTypes, Model, sql } from '@sequelize/core';
 import { sequelize } from '@server/config/db/sequelize';
 
 /**
@@ -18,7 +19,8 @@ export type DownloadTaskType = 'album' | 'track';
  */
 export interface DownloadTaskAttributes {
   id:              string;           // UUID
-  wishlistKey:     string;           // Format: "artist - album" (unique)
+  wishlistKey:     string;           // Format: "artist - album" (unique) - @deprecated use wishlistItemId
+  wishlistItemId?: string;           // UUID FK to WishlistItem
   artist:          string;
   album:           string;
   type:            DownloadTaskType;
@@ -52,6 +54,7 @@ export type DownloadTaskCreationAttributes = PartialBy<
 class DownloadTask extends Model<DownloadTaskAttributes, DownloadTaskCreationAttributes> implements DownloadTaskAttributes {
   declare id:              string;
   declare wishlistKey:     string;
+  declare wishlistItemId?: string;
   declare artist:          string;
   declare album:           string;
   declare type:            DownloadTaskType;
@@ -78,14 +81,20 @@ DownloadTask.init(
     id: {
       type:         DataTypes.UUID,
       primaryKey:   true,
-      defaultValue: DataTypes.UUIDV4,
+      defaultValue: sql.uuidV4,
     },
     wishlistKey: {
       type:       DataTypes.STRING(1000),
       allowNull:  false,
       unique:     true,
       columnName: 'wishlist_key',
-      comment:    'Unique key from wishlist (format: "artist - album")',
+      comment:    '@deprecated Use wishlistItemId FK instead. Unique key from wishlist (format: "artist - album")',
+    },
+    wishlistItemId: {
+      type:       DataTypes.UUID,
+      allowNull:  true,
+      columnName: 'wishlist_item_id',
+      comment:    'FK to wishlist_items table',
     },
     artist: {
       type:      DataTypes.STRING(500),
@@ -193,6 +202,7 @@ DownloadTask.init(
       { fields: ['status'] },
       { fields: ['organized_at'] },
       { fields: ['queued_at'] },
+      { fields: ['wishlist_item_id'] },
       // Note: wishlist_key already has unique constraint at column level
     ],
   },

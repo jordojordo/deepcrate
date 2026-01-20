@@ -6,6 +6,7 @@ import ProcessedRecording from '@server/models/ProcessedRecording';
 import CatalogArtist from '@server/models/CatalogArtist';
 import DiscoveredArtist from '@server/models/DiscoveredArtist';
 import DownloadedItem from '@server/models/DownloadedItem';
+import WishlistItem from '@server/models/WishlistItem';
 
 // Export models for use in services
 export {
@@ -14,6 +15,7 @@ export {
   CatalogArtist,
   DiscoveredArtist,
   DownloadedItem,
+  WishlistItem,
 };
 
 // Models don't have any associations for now

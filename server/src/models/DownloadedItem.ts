@@ -6,6 +6,10 @@ import { sequelize } from '@server/config/db/sequelize';
  * DownloadedItem attributes.
  * Tracks items that have been sent to slskd for download
  * to prevent duplicate download requests.
+ *
+ * @deprecated This model is replaced by WishlistItem.processedAt.
+ * Retained for backward compatibility during migration.
+ * Will be removed in a future version.
  */
 export interface DownloadedItemAttributes {
   id:           number;
@@ -20,6 +24,10 @@ export type DownloadedItemCreationAttributes = PartialBy<DownloadedItemAttribute
 /**
  * Sequelize model for downloaded items.
  * Prevents slskd-downloader from requesting the same item multiple times.
+ *
+ * @deprecated This model is replaced by WishlistItem.processedAt.
+ * Retained for backward compatibility during migration.
+ * Will be removed in a future version.
  */
 class DownloadedItem extends Model<DownloadedItemAttributes, DownloadedItemCreationAttributes> implements DownloadedItemAttributes {
   declare id:           number;

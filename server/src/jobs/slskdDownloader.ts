@@ -1,5 +1,4 @@
 import type {
-  WishlistEntry,
   SearchConfig,
   SearchAttemptResult,
   FileSelectionOptions,
@@ -12,9 +11,8 @@ import path from 'path';
 import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
 import { getConfig, SlskdSearchSettings } from '@server/config/settings';
-import DownloadedItem from '@server/models/DownloadedItem';
 import DownloadTask from '@server/models/DownloadTask';
-import QueueItem from '@server/models/QueueItem';
+import WishlistItem from '@server/models/WishlistItem';
 import { DownloadService } from '@server/services/DownloadService';
 import { WishlistService } from '@server/services/WishlistService';
 import { SearchQueryBuilder } from '@server/services/SearchQueryBuilder';
@@ -89,31 +87,32 @@ export async function slskdDownloaderJob(): Promise<void> {
       throw new Error('Job cancelled');
     }
 
-    const entries = wishlistService.readAll();
+    // Get unprocessed wishlist items from database
+    const wishlistItems = await wishlistService.getUnprocessed();
 
-    if (entries.length === 0) {
-      logger.debug('Wishlist is empty');
+    if (wishlistItems.length === 0) {
+      logger.debug('No unprocessed wishlist items');
     }
 
-    const entriesByKey = new Map<string, WishlistEntry>();
+    // Build map by wishlist key for existing task lookup
+    const itemsByKey = new Map<string, WishlistItem>();
 
-    for (const entry of entries) {
-      const wishlistKey = buildWishlistKey(entry.artist, entry.title);
+    for (const item of wishlistItems) {
+      const wishlistKey = buildWishlistKey(item.artist, item.album);
 
-      if (!entriesByKey.has(wishlistKey)) {
-        entriesByKey.set(wishlistKey, entry);
+      if (!itemsByKey.has(wishlistKey)) {
+        itemsByKey.set(wishlistKey, item);
       }
     }
 
-    const wishlistKeys = Array.from(entriesByKey.keys());
+    const wishlistKeys = Array.from(itemsByKey.keys());
     const tasksByKey = await loadExistingTasks(wishlistKeys);
-    const downloadedKeys = await loadDownloadedKeys(wishlistKeys);
 
     let queuedCount = 0;
     let skippedCount = 0;
     let failedCount = 0;
 
-    for (const [wishlistKey, entry] of entriesByKey.entries()) {
+    for (const [wishlistKey, wishlistItem] of itemsByKey.entries()) {
       if (isJobCancelled(JOB_NAMES.SLSKD)) {
         logger.info('Job cancelled during processing');
         throw new Error('Job cancelled');
@@ -127,30 +126,17 @@ export async function slskdDownloaderJob(): Promise<void> {
           continue;
         }
 
-        if (!existingTask && downloadedKeys.has(wishlistKey)) {
-          logger.debug(`Skipping already-downloaded wishlist entry: ${ wishlistKey }`);
-          skippedCount++;
-          continue;
-        }
-
-        // Lookup year from QueueItem if not already on the task
-        let year = undefined;
-
-        if (!existingTask) {
-          year = await getYearForEntry(entry.artist, entry.title);
-        }
-
-        const task = existingTask || await findOrCreateTask(entry, wishlistKey, year);
+        // Create task with wishlistItemId FK
+        const task = existingTask || await findOrCreateTask(wishlistItem, wishlistKey);
 
         if (!existingTask) {
           tasksByKey.set(wishlistKey, task);
+          // Mark wishlist item as processed
+          await wishlistService.markProcessed(wishlistItem.id);
         }
 
-        // Add year to entry for query building
-        const entryWithYear: WishlistEntry = { ...entry, year: task.year };
-
         const processed = await processWishlistEntry({
-          entry: entryWithYear,
+          wishlistItem,
           task,
           wishlistKey,
           slskdClient,
@@ -193,16 +179,6 @@ async function loadExistingTasks(wishlistKeys: string[]): Promise<Map<string, Do
   return new Map(tasks.map(task => [task.wishlistKey, task]));
 }
 
-async function loadDownloadedKeys(wishlistKeys: string[]): Promise<Set<string>> {
-  if (wishlistKeys.length === 0) {
-    return new Set();
-  }
-
-  const downloadedItems = await DownloadedItem.findAll({ where: { wishlistKey: { [Op.in]: wishlistKeys } } });
-
-  return new Set(downloadedItems.map(item => item.wishlistKey));
-}
-
 function shouldSkipTask(task: DownloadTask): boolean {
   if (task.status === 'completed') {
     logger.debug(`Skipping completed download task: ${ task.wishlistKey }`);
@@ -225,42 +201,27 @@ function shouldSkipTask(task: DownloadTask): boolean {
   return false;
 }
 
-async function findOrCreateTask(entry: WishlistEntry, wishlistKey: string, year?: number): Promise<DownloadTask> {
+async function findOrCreateTask(wishlistItem: WishlistItem, wishlistKey: string): Promise<DownloadTask> {
   const [task] = await DownloadTask.findOrCreate({
     where:    { wishlistKey },
     defaults: {
       wishlistKey,
-      artist:     entry.artist,
-      album:      entry.title,
-      type:       entry.type,
-      status:     'pending',
-      retryCount: 0,
-      queuedAt:   new Date(),
-      year,
+      wishlistItemId: wishlistItem.id,
+      artist:         wishlistItem.artist,
+      album:          wishlistItem.album,
+      type:           wishlistItem.type,
+      status:         'pending',
+      retryCount:     0,
+      queuedAt:       new Date(),
+      year:           wishlistItem.year ?? undefined,
     },
   });
 
   return task;
 }
 
-/**
- * Lookup year metadata from QueueItem for a wishlist entry.
- */
-async function getYearForEntry(artist: string, album: string): Promise<number | undefined> {
-  const item = await QueueItem.findOne({
-    where: {
-      artist,
-      album,
-      status: 'approved',
-    },
-    order: [['processedAt', 'DESC']],
-  });
-
-  return item?.year ?? undefined;
-}
-
 async function processWishlistEntry(params: {
-  entry:           WishlistEntry;
+  wishlistItem:    WishlistItem;
   task:            DownloadTask;
   wishlistKey:     string;
   slskdClient:     SlskdClient;
@@ -268,19 +229,19 @@ async function processWishlistEntry(params: {
   searchConfig:    SearchConfig;
 }): Promise<'queued' | 'failed' | 'skipped' | 'deferred'> {
   const {
-    entry, task, wishlistKey, slskdClient, downloadService, searchConfig
+    wishlistItem, task, wishlistKey, slskdClient, downloadService, searchConfig
   } = params;
 
-  // Build query context
+  // Build query context from wishlist item
   const queryContext: QueryContext = {
-    artist: entry.artist,
-    album:  entry.type === 'album' ? entry.title : undefined,
-    title:  entry.type === 'track' ? entry.title : undefined,
-    year:   entry.year,
-    type:   entry.type,
+    artist: wishlistItem.artist,
+    album:  wishlistItem.type === 'album' ? wishlistItem.album : undefined,
+    title:  wishlistItem.type === 'track' ? wishlistItem.album : undefined,
+    year:   wishlistItem.year ?? undefined,
+    type:   wishlistItem.type,
   };
 
-  const minFiles = entry.type === 'track' ? MIN_FILES_TRACK : searchConfig.minResponseFiles;
+  const minFiles = wishlistItem.type === 'track' ? MIN_FILES_TRACK : searchConfig.minResponseFiles;
 
   // Try to find usable results, with retry logic if enabled
   const searchResult = await executeSearchWithRetry({

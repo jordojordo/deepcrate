@@ -8,6 +8,7 @@ import { startJobs, stopJobs } from '@server/plugins/jobs';
 import { initIo, stopIo } from '@server/plugins/io';
 import { startProgressSync, stopProgressSync } from '@server/plugins/progressSync';
 import { migrateJsonToSqlite } from './scripts/migrate-json-to-sqlite';
+import { migrateWishlistToDb } from './scripts/migrate-wishlist-to-db';
 
 const PORT = parseInt(process.env.PORT || '8080', 10);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -24,6 +25,7 @@ async function startServer(): Promise<void> {
 
     logger.info('Checking for data migration...');
     await migrateJsonToSqlite();
+    await migrateWishlistToDb();
 
     server = http.createServer(app);
 

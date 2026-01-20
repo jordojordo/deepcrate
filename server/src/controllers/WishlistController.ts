@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
-import type { WishlistResponse, AddToWishlistResponse } from '@server/types/wishlist';
+import type { WishlistResponse, AddToWishlistResponse, DeleteFromWishlistResponse } from '@server/types/wishlist';
 
 import { BaseController } from '@server/controllers/BaseController';
 import { WishlistService } from '@server/services/WishlistService';
 import { addToWishlistRequestSchema } from '@server/types/wishlist';
-import { sendValidationError } from '@server/utils/errorHandler';
+import { sendValidationError, sendNotFoundError } from '@server/utils/errorHandler';
 
 /**
  * Wishlist controller for managing wishlist entries
@@ -23,7 +23,20 @@ class WishlistController extends BaseController {
    */
   getWishlist = async(_req: Request, res: Response): Promise<Response> => {
     try {
-      const entries = this.wishlistService.readAll();
+      const items = await this.wishlistService.getAll();
+
+      const entries = items.map(item => ({
+        id:          item.id,
+        artist:      item.artist,
+        title:       item.album,
+        type:        item.type,
+        year:        item.year ?? null,
+        mbid:        item.mbid ?? null,
+        source:      item.source ?? null,
+        coverUrl:    item.coverUrl ?? null,
+        addedAt:     item.addedAt,
+        processedAt: item.processedAt ?? null,
+      }));
 
       const response: WishlistResponse = {
         entries,
@@ -49,24 +62,69 @@ class WishlistController extends BaseController {
         return sendValidationError(res, 'Invalid request body', { errors: parseResult.error.issues });
       }
 
-      const { artist, title, type } = parseResult.data;
+      const {
+        artist, title, type, year, mbid
+      } = parseResult.data;
 
       // Add to wishlist
-      const isAlbum = type === 'album';
-
-      this.wishlistService.append(artist, title, isAlbum);
+      const wishlistItem = await this.wishlistService.append({
+        artist,
+        album:  title,
+        type,
+        year,
+        mbid,
+        source: 'manual',
+      });
 
       const response: AddToWishlistResponse = {
         success: true,
         message: `Added ${ type } to wishlist: ${ artist } - ${ title }`,
         entry:   {
-          artist, title, type
+          id:          wishlistItem.id,
+          artist:      wishlistItem.artist,
+          title:       wishlistItem.album,
+          type:        wishlistItem.type,
+          year:        wishlistItem.year ?? null,
+          mbid:        wishlistItem.mbid ?? null,
+          source:      wishlistItem.source ?? null,
+          coverUrl:    wishlistItem.coverUrl ?? null,
+          addedAt:     wishlistItem.addedAt,
+          processedAt: wishlistItem.processedAt ?? null,
         },
       };
 
       return res.status(201).json(response);
     } catch(error) {
       return this.handleError(res, error as Error, 'Failed to add to wishlist');
+    }
+  };
+
+  /**
+   * Delete a wishlist entry by ID
+   * DELETE /api/v1/wishlist/:id
+   */
+  deleteFromWishlist = async(req: Request, res: Response): Promise<Response> => {
+    try {
+      const id = req.params.id;
+
+      if (!id || typeof id !== 'string') {
+        return sendValidationError(res, 'Missing or invalid id parameter');
+      }
+
+      const removed = await this.wishlistService.removeById(id);
+
+      if (!removed) {
+        return sendNotFoundError(res, 'Wishlist item not found');
+      }
+
+      const response: DeleteFromWishlistResponse = {
+        success: true,
+        message: 'Removed from wishlist',
+      };
+
+      return res.json(response);
+    } catch(error) {
+      return this.handleError(res, error as Error, 'Failed to delete from wishlist');
     }
   };
 }

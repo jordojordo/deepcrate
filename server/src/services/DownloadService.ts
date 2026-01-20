@@ -7,7 +7,6 @@ import logger from '@server/config/logger';
 import { JOB_INTERVALS } from '@server/config/jobs';
 import { getConfig } from '@server/config/settings';
 import { JOB_NAMES } from '@server/constants/jobs';
-import DownloadedItem from '@server/models/DownloadedItem';
 import DownloadTask, { DownloadTaskType, DownloadTaskStatus } from '@server/models/DownloadTask';
 import {
   emitDownloadTaskCreated,
@@ -518,18 +517,20 @@ export class DownloadService {
 
     for (const task of tasks) {
       try {
-        // Add to wishlist BEFORE updating task status to prevent race conditions:
+        // Re-create wishlist item BEFORE updating task status to prevent race conditions:
         // If we updated task status first, the downloader job could see the pending
-        // task but find an empty wishlist, causing the retry to be skipped.
-        this.wishlistService.append(
-          task.artist,
-          task.album,
-          task.type === 'album'
-        );
+        // task but find no unprocessed wishlist item, causing the retry to be skipped.
+        const wishlistItem = await this.wishlistService.append({
+          artist: task.artist,
+          album:  task.album,
+          type:   task.type,
+          year:   task.year,
+        });
 
-        // Then reset task status to pending
+        // Then reset task status to pending and link to the new/existing wishlist item
         await task.update({
           status:          'pending',
+          wishlistItemId:  wishlistItem.id,
           errorMessage:    undefined,
           retryCount:      task.retryCount + 1,
           downloadPath:    undefined,
@@ -609,7 +610,7 @@ export class DownloadService {
         await task.destroy();
 
         // Remove from wishlist to prevent re-processing
-        this.wishlistService.remove(task.artist, task.album);
+        await this.wishlistService.remove(task.artist, task.album);
 
         successCount++;
         logger.info(`Deleted download task: ${ task.wishlistKey }`);
@@ -805,21 +806,14 @@ export class DownloadService {
 
     await DownloadTask.update(updateData, { where: { id } });
 
-    // Create DownloadedItem record when download completes successfully
+    // Handle completed downloads
     if (status === 'completed') {
       const task = await DownloadTask.findByPk(id);
 
       if (task) {
-        await DownloadedItem.findOrCreate({
-          where:    { wishlistKey: task.wishlistKey },
-          defaults: {
-            wishlistKey:  task.wishlistKey,
-            downloadedAt: new Date(),
-          },
-        });
-
         // Remove from wishlist since download is complete
-        this.wishlistService.remove(task.artist, task.album);
+        // Note: WishlistItem.processedAt is already set when the task was created
+        await this.wishlistService.remove(task.artist, task.album);
 
         // Auto-trigger library organize if enabled and not manual-only
         const config = getConfig();

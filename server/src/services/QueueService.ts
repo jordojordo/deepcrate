@@ -108,13 +108,17 @@ export class QueueService {
 
     // Add to wishlist
     const wishlistItems = items.map(item => ({
-      artist: item.artist,
-      album:  item.album,
-      title:  item.title,
-      type:   item.type,
+      artist:   item.artist,
+      album:    item.album,
+      title:    item.title,
+      type:     item.type,
+      year:     item.year,
+      mbid:     item.mbid,
+      source:   item.source,
+      coverUrl: item.coverUrl,
     }));
 
-    this.wishlistService.processApproved(wishlistItems);
+    await this.wishlistService.processApproved(wishlistItems);
 
     logger.info(`Approved ${ items.length } items`);
 

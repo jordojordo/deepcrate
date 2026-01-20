@@ -1,201 +1,236 @@
-import fs from 'fs';
-import path from 'path';
-import { getDataPath } from '@server/config/settings';
+import type { CreateWishlistItemOptions, ProcessApprovedItem } from '@server/types/wishlist';
+
 import logger from '@server/config/logger';
+import WishlistItem, { WishlistItemSource, WishlistItemType } from '@server/models/WishlistItem';
 
 /**
- * WishlistService manages the wishlist.txt file.
- * This file is read directly by slskd for downloads.
- *
- * Format:
- * - Albums: a:"Artist - Album"
- * - Tracks: "Artist - Track"
+ * WishlistService manages wishlist items in the database.
+ * Replaces the file-based wishlist.txt approach.
  */
 export class WishlistService {
-  private wishlistPath: string;
-
-  constructor() {
-    this.wishlistPath = path.join(getDataPath(), 'wishlist.txt');
-    this.ensureWishlistExists();
+  /**
+   * Get all wishlist items
+   */
+  async getAll(): Promise<WishlistItem[]> {
+    return WishlistItem.findAll({ order: [['addedAt', 'DESC']] });
   }
 
   /**
-   * Ensure wishlist.txt exists
+   * Get paginated wishlist items
    */
-  private ensureWishlistExists(): void {
-    const dataPath = getDataPath();
+  async getPaginated(params: {
+    limit?:  number;
+    offset?: number;
+  }): Promise<{ items: WishlistItem[]; total: number }> {
+    const { limit = 50, offset = 0 } = params;
 
-    if (!fs.existsSync(dataPath)) {
-      fs.mkdirSync(dataPath, { recursive: true });
+    const { rows, count } = await WishlistItem.findAndCountAll({
+      order: [['addedAt', 'DESC']],
+      limit,
+      offset,
+    });
+
+    return {
+      items: rows,
+      total: count,
+    };
+  }
+
+  /**
+   * Find a wishlist item by ID
+   */
+  async findById(id: string): Promise<WishlistItem | null> {
+    return WishlistItem.findByPk(id);
+  }
+
+  /**
+   * Find a wishlist item by artist, album, and type
+   */
+  async findByArtistAlbum(artist: string, album: string, type: WishlistItemType = 'album'): Promise<WishlistItem | null> {
+    return WishlistItem.findOne({
+      where: {
+        artist,
+        album,
+        type,
+      },
+    });
+  }
+
+  /**
+   * Get unprocessed wishlist items (items awaiting download)
+   */
+  async getUnprocessed(): Promise<WishlistItem[]> {
+    return WishlistItem.findAll({
+      where:  { processedAt: null },
+      order: [['addedAt', 'ASC']],
+    });
+  }
+
+  /**
+   * Mark a wishlist item as processed (download task created)
+   */
+  async markProcessed(id: string): Promise<void> {
+    await WishlistItem.update(
+      { processedAt: new Date() },
+      { where: { id } }
+    );
+    logger.debug(`Marked wishlist item ${ id } as processed`);
+  }
+
+  /**
+   * Append a single entry to the wishlist.
+   * Returns the created or existing WishlistItem.
+   */
+  async append(options: CreateWishlistItemOptions): Promise<WishlistItem> {
+    const {
+      artist, album, type, year, mbid, source, coverUrl
+    } = options;
+
+    // Check for existing item with same artist/album/type
+    const existing = await this.findByArtistAlbum(artist, album, type);
+
+    if (existing) {
+      logger.debug(`Wishlist item already exists: ${ artist } - ${ album }`);
+
+      return existing;
     }
 
-    if (!fs.existsSync(this.wishlistPath)) {
-      fs.writeFileSync(this.wishlistPath, '', 'utf-8');
-    }
+    const wishlistItem = await WishlistItem.create({
+      artist,
+      album,
+      type,
+      year,
+      mbid,
+      source:   source ?? 'manual',
+      coverUrl,
+      addedAt:  new Date(),
+    });
+
+    logger.info(`Added to wishlist: ${ artist } - ${ album }`);
+
+    return wishlistItem;
   }
 
   /**
-   * Escape double quotes in text for wishlist format
+   * Process approved queue items and add them to wishlist.
+   * Returns the number of items added.
    */
-  private escapeQuotes(text: string): string {
-    return text.replace(/"/g, '\\"');
-  }
-
-  /**
-   * Append a single entry to the wishlist
-   */
-  append(artist: string, title: string, isAlbum: boolean = true): void {
-    const artistEscaped = this.escapeQuotes(artist);
-    const titleEscaped = this.escapeQuotes(title);
-
-    const prefix = isAlbum ? 'a:' : '';
-    const line = `${ prefix }"${ artistEscaped } - ${ titleEscaped }"\n`;
-
-    fs.appendFileSync(this.wishlistPath, line, 'utf-8');
-    logger.info(`Added to wishlist: ${ artist } - ${ title }`);
-  }
-
-  /**
-   * Process approved queue items and add them to wishlist
-   */
-  processApproved(items: Array<{ artist: string; album?: string; title?: string; type?: string }>): number {
+  async processApproved(items: ProcessApprovedItem[]): Promise<number> {
     if (!items.length) {
       return 0;
     }
 
     let count = 0;
-    const lines: string[] = [];
 
     for (const item of items) {
       const artist = item.artist;
 
-      // Determine if album or track
-      let title: string;
+      // Determine album/title and type
+      let album: string;
       let isAlbum: boolean;
 
       if (item.album) {
-        title = item.album;
+        album = item.album;
         isAlbum = true;
       } else if (item.title) {
-        title = item.title;
+        album = item.title;
         isAlbum = item.type === 'album';
       } else {
         logger.warn(`Skipping item with missing album/title: ${ JSON.stringify(item) }`);
         continue;
       }
 
-      if (!artist || !title) {
+      if (!artist || !album) {
         logger.warn(`Skipping item with missing artist or title: ${ JSON.stringify(item) }`);
         continue;
       }
 
-      const artistEscaped = this.escapeQuotes(artist);
-      const titleEscaped = this.escapeQuotes(title);
+      const type: WishlistItemType = isAlbum ? 'album' : 'track';
 
-      const prefix = isAlbum ? 'a:' : '';
-      const line = `${ prefix }"${ artistEscaped } - ${ titleEscaped }"\n`;
+      // Check for existing item
+      const existing = await this.findByArtistAlbum(artist, album, type);
 
-      lines.push(line);
+      if (existing) {
+        logger.debug(`Wishlist item already exists: ${ artist } - ${ album }`);
+        continue;
+      }
+
+      await WishlistItem.create({
+        artist,
+        album,
+        type,
+        year:     item.year,
+        mbid:     item.mbid,
+        source:   (item.source as WishlistItemSource) ?? 'manual',
+        coverUrl: item.coverUrl,
+        addedAt:  new Date(),
+      });
+
       count++;
-      logger.info(`Added to wishlist: ${ artist } - ${ title }`);
-    }
-
-    if (lines.length > 0) {
-      fs.appendFileSync(this.wishlistPath, lines.join(''), 'utf-8');
+      logger.info(`Added to wishlist: ${ artist } - ${ album }`);
     }
 
     return count;
   }
 
   /**
-   * Read all wishlist entries as raw strings
+   * Read all wishlist entries (for backward compatibility).
+   * Returns entries in the format expected by existing consumers.
    */
-  readAllRaw(): string[] {
-    if (!fs.existsSync(this.wishlistPath)) {
-      return [];
-    }
+  async readAll(): Promise<Array<{ artist: string; title: string; type: 'album' | 'track' }>> {
+    const items = await WishlistItem.findAll({ order: [['addedAt', 'ASC']] });
 
-    const content = fs.readFileSync(this.wishlistPath, 'utf-8');
-
-    return content.split('\n').filter(line => line.trim().length > 0);
+    return items.map(item => ({
+      artist: item.artist,
+      title:  item.album,
+      type:   item.type,
+    }));
   }
 
   /**
-   * Read all wishlist entries and parse them into structured objects
+   * Remove an entry from the wishlist by artist and album.
+   * Returns true if entry was found and removed.
    */
-  readAll(): Array<{ artist: string; title: string; type: 'album' | 'track' }> {
-    const lines = this.readAllRaw();
-    const entries: Array<{ artist: string; title: string; type: 'album' | 'track' }> = [];
+  async remove(artist: string, album: string): Promise<boolean> {
+    const deleted = await WishlistItem.destroy({
+      where: {
+        artist,
+        album,
+      },
+    });
 
-    for (const line of lines) {
-      const isAlbum = line.startsWith('a:');
-      const content = isAlbum ? line.slice(2) : line;
+    if (deleted > 0) {
+      logger.info(`Removed from wishlist: ${ artist } - ${ album }`);
 
-      // Parse format: "Artist - Title"
-      const match = content.match(/^"(.+) - (.+)"$/);
-
-      if (match) {
-        const [, artist, title] = match;
-
-        entries.push({
-          artist: artist.replace(/\\"/g, '"'), // Unescape quotes
-          title:  title.replace(/\\"/g, '"'),
-          type:   isAlbum ? 'album' : 'track',
-        });
-      }
+      return true;
     }
 
-    return entries;
+    return false;
   }
 
   /**
-   * Remove an entry from the wishlist by artist and title
-   * Removes both album (a:"...") and track ("...") formats
+   * Remove a wishlist item by ID.
    * @returns true if entry was found and removed
    */
-  remove(artist: string, title: string): boolean {
-    if (!fs.existsSync(this.wishlistPath)) {
+  async removeById(id: string): Promise<boolean> {
+    const item = await WishlistItem.findByPk(id);
+
+    if (!item) {
       return false;
     }
 
-    const content = fs.readFileSync(this.wishlistPath, 'utf-8');
-    const lines = content.split('\n');
+    await item.destroy();
+    logger.info(`Removed from wishlist: ${ item.artist } - ${ item.album }`);
 
-    // Build the search pattern - the content inside quotes
-    const artistEscaped = this.escapeQuotes(artist);
-    const titleEscaped = this.escapeQuotes(title);
-    const searchContent = `"${ artistEscaped } - ${ titleEscaped }"`;
+    return true;
+  }
 
-    // Count non-empty lines before filtering
-    const nonEmptyLinesBefore = lines.filter(line => line.trim().length > 0).length;
-
-    // Filter out matching lines (both a:"..." and "..." formats)
-    const filteredLines = lines.filter(line => {
-      const trimmed = line.trim();
-
-      if (trimmed.length === 0) {
-        return false; // Remove empty lines
-      }
-
-      // Check if this line contains the search content
-      // Handle both album format (a:"...") and track format ("...")
-      const lineContent = trimmed.startsWith('a:') ? trimmed.slice(2) : trimmed;
-
-      return lineContent !== searchContent;
-    });
-
-    const removed = nonEmptyLinesBefore !== filteredLines.length;
-
-    // Rewrite file (add trailing newline if there are entries)
-    const newContent = filteredLines.length > 0 ? filteredLines.join('\n') + '\n' : '';
-
-    fs.writeFileSync(this.wishlistPath, newContent, 'utf-8');
-
-    if (removed) {
-      logger.info(`Removed from wishlist: ${ artist } - ${ title }`);
-    }
-
-    return removed;
+  /**
+   * Build a wishlist key from artist and album (for backward compatibility).
+   * Format: "Artist - Album"
+   */
+  buildWishlistKey(artist: string, album: string): string {
+    return `${ artist } - ${ album }`;
   }
 }
 

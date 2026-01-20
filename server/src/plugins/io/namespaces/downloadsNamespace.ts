@@ -49,7 +49,7 @@ export function emitDownloadTaskCreated(event: DownloadTaskCreatedEvent): void {
 
   try {
     namespaceInstance.emit('download:task:created', event);
-    logger.debug(`[socket:downloads] Emitted download:task:created for ${ event.task.id }`);
+    logger.silly(`[socket:downloads] Emitted download:task:created for ${ event.task.id }`);
   } catch(error) {
     logger.error('[socket:downloads] Error emitting download:task:created:', { error });
   }
@@ -65,7 +65,7 @@ export function emitDownloadTaskUpdated(event: DownloadTaskUpdatedEvent): void {
 
   try {
     namespaceInstance.emit('download:task:updated', event);
-    logger.debug(`[socket:downloads] Emitted download:task:updated for ${ event.id }`);
+    logger.silly(`[socket:downloads] Emitted download:task:updated for ${ event.id }`);
 
     // Clean up throttle map when task completes or fails
     if (event.status === 'completed' || event.status === 'failed') {
@@ -112,7 +112,7 @@ export function emitDownloadStatsUpdated(event: DownloadStatsUpdatedEvent): void
 
   try {
     namespaceInstance.emit('download:stats:updated', event);
-    logger.debug('[socket:downloads] Emitted download:stats:updated');
+    logger.silly('[socket:downloads] Emitted download:stats:updated');
   } catch(error) {
     logger.error('[socket:downloads] Error emitting download:stats:updated:', { error });
   }

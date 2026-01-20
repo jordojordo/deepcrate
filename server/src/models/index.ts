@@ -48,3 +48,11 @@ export type {
   LibraryAlbumAttributes,
   LibraryAlbumCreationAttributes,
 } from './LibraryAlbum';
+
+export { default as WishlistItem } from './WishlistItem';
+export type {
+  WishlistItemAttributes,
+  WishlistItemCreationAttributes,
+  WishlistItemType,
+  WishlistItemSource,
+} from './WishlistItem';
