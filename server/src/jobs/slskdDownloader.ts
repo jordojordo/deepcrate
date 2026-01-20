@@ -1,33 +1,64 @@
+import type {
+  WishlistEntry,
+  SearchConfig,
+  SearchAttemptResult,
+  FileSelectionOptions,
+} from '@server/types/slskd';
+import type { SlskdFile, SlskdSearchResponse } from '@server/types/slskd-client';
+import type { QueryContext } from '@server/types/search-query';
+
 import path from 'path';
+
 import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
-import { JOB_NAMES } from '@server/constants/jobs';
-import { getConfig } from '@server/config/settings';
+import { getConfig, SlskdSearchSettings } from '@server/config/settings';
 import DownloadedItem from '@server/models/DownloadedItem';
 import DownloadTask from '@server/models/DownloadTask';
+import QueueItem from '@server/models/QueueItem';
 import { DownloadService } from '@server/services/DownloadService';
 import { WishlistService } from '@server/services/WishlistService';
-import {
-  SlskdClient,
-  SlskdFile,
-  SlskdSearchResponse,
-} from '@server/services/clients/SlskdClient';
+import { SearchQueryBuilder } from '@server/services/SearchQueryBuilder';
+import { SlskdClient } from '@server/services/clients/SlskdClient';
 import { isJobCancelled } from '@server/plugins/jobs';
 
-interface WishlistEntry {
-  artist: string;
-  title:  string;
-  type:   'album' | 'track';
+import { JOB_NAMES } from '@server/constants/jobs';
+import {
+  SEARCH_TIMEOUT_MS,
+  SEARCH_POLL_INTERVAL_MS,
+  SEARCH_MAX_WAIT_MS,
+  MIN_FILES_ALBUM,
+  MIN_FILES_TRACK,
+  MB_TO_BYTES,
+  MUSIC_EXTENSIONS,
+} from '@server/constants/slskd';
+
+/**
+ * Build SearchConfig from configuration settings.
+ */
+function buildSearchConfig(searchSettings?: SlskdSearchSettings, legacyTimeout?: number, legacyMinTracks?: number): SearchConfig {
+  const s = searchSettings;
+
+  return {
+    queryBuilder: new SearchQueryBuilder({
+      albumQueryTemplate: s?.album_query_template ?? '{artist} - {album}',
+      trackQueryTemplate: s?.track_query_template ?? '{artist} - {title}',
+      fallbackQueries:    s?.fallback_queries ?? [],
+      excludeTerms:       s?.exclude_terms ?? [],
+    }),
+    searchTimeoutMs:      s?.search_timeout_ms ?? legacyTimeout ?? SEARCH_TIMEOUT_MS,
+    maxWaitMs:            s?.max_wait_ms ?? SEARCH_MAX_WAIT_MS,
+    minResponseFiles:     s?.min_response_files ?? legacyMinTracks ?? MIN_FILES_ALBUM,
+    maxResponsesToEval:   s?.max_responses_to_evaluate ?? 50,
+    minFileSizeBytes:     (s?.min_file_size_mb ?? 1) * MB_TO_BYTES,
+    maxFileSizeBytes:     (s?.max_file_size_mb ?? 500) * MB_TO_BYTES,
+    preferCompleteAlbums: s?.prefer_complete_albums ?? true,
+    preferAlbumFolder:    s?.prefer_album_folder ?? true,
+    retryEnabled:         s?.retry?.enabled ?? false,
+    maxRetryAttempts:     s?.retry?.max_attempts ?? 3,
+    simplifyOnRetry:      s?.retry?.simplify_on_retry ?? true,
+    retryDelayMs:         s?.retry?.delay_between_retries_ms ?? 5000,
+  };
 }
-
-const SEARCH_TIMEOUT_MS = 15000;
-const SEARCH_POLL_INTERVAL_MS = 1000;
-const SEARCH_MAX_WAIT_MS = 20000;
-const MIN_FILES_ALBUM = 3;
-const MIN_FILES_TRACK = 1;
-
-/** Common music file extensions to filter search results */
-const MUSIC_EXTENSIONS = ['.mp3', '.flac', '.m4a', '.ogg', '.opus', '.wav', '.aac', '.wma', '.alac'];
 
 /**
  * slskd Downloader Job
@@ -50,8 +81,7 @@ export async function slskdDownloaderJob(): Promise<void> {
   const slskdClient = new SlskdClient(slskdConfig.host, slskdConfig.api_key, slskdConfig.url_base);
   const downloadService = new DownloadService();
   const wishlistService = new WishlistService();
-  const searchTimeoutMs = slskdConfig.search_timeout ?? SEARCH_TIMEOUT_MS;
-  const minAlbumFiles = slskdConfig.min_album_tracks ?? MIN_FILES_ALBUM;
+  const searchConfig = buildSearchConfig(slskdConfig.search, slskdConfig.search_timeout, slskdConfig.min_album_tracks);
 
   try {
     if (isJobCancelled(JOB_NAMES.SLSKD)) {
@@ -103,20 +133,29 @@ export async function slskdDownloaderJob(): Promise<void> {
           continue;
         }
 
-        const task = existingTask || await findOrCreateTask(entry, wishlistKey);
+        // Lookup year from QueueItem if not already on the task
+        let year = undefined;
+
+        if (!existingTask) {
+          year = await getYearForEntry(entry.artist, entry.title);
+        }
+
+        const task = existingTask || await findOrCreateTask(entry, wishlistKey, year);
 
         if (!existingTask) {
           tasksByKey.set(wishlistKey, task);
         }
 
+        // Add year to entry for query building
+        const entryWithYear: WishlistEntry = { ...entry, year: task.year };
+
         const processed = await processWishlistEntry({
-          entry,
+          entry: entryWithYear,
           task,
           wishlistKey,
           slskdClient,
           downloadService,
-          searchTimeoutMs,
-          minAlbumFiles,
+          searchConfig,
         });
 
         if (processed === 'queued') {
@@ -186,7 +225,7 @@ function shouldSkipTask(task: DownloadTask): boolean {
   return false;
 }
 
-async function findOrCreateTask(entry: WishlistEntry, wishlistKey: string): Promise<DownloadTask> {
+async function findOrCreateTask(entry: WishlistEntry, wishlistKey: string, year?: number): Promise<DownloadTask> {
   const [task] = await DownloadTask.findOrCreate({
     where:    { wishlistKey },
     defaults: {
@@ -197,10 +236,27 @@ async function findOrCreateTask(entry: WishlistEntry, wishlistKey: string): Prom
       status:     'pending',
       retryCount: 0,
       queuedAt:   new Date(),
+      year,
     },
   });
 
   return task;
+}
+
+/**
+ * Lookup year metadata from QueueItem for a wishlist entry.
+ */
+async function getYearForEntry(artist: string, album: string): Promise<number | undefined> {
+  const item = await QueueItem.findOne({
+    where: {
+      artist,
+      album,
+      status: 'approved',
+    },
+    order: [['processedAt', 'DESC']],
+  });
+
+  return item?.year ?? undefined;
 }
 
 async function processWishlistEntry(params: {
@@ -209,98 +265,43 @@ async function processWishlistEntry(params: {
   wishlistKey:     string;
   slskdClient:     SlskdClient;
   downloadService: DownloadService;
-  searchTimeoutMs: number;
-  minAlbumFiles:   number;
+  searchConfig:    SearchConfig;
 }): Promise<'queued' | 'failed' | 'skipped' | 'deferred'> {
   const {
-    entry, task, wishlistKey, slskdClient, downloadService, searchTimeoutMs, minAlbumFiles
+    entry, task, wishlistKey, slskdClient, downloadService, searchConfig
   } = params;
-  const query = wishlistKey;
-  const minFiles = entry.type === 'track' ? MIN_FILES_TRACK : minAlbumFiles;
 
-  // Reuse existing search if task was deferred (timed out) or is still searching
-  let searchId = (task.status === 'searching' || task.status === 'deferred') ? task.slskdSearchId || null : null;
+  // Build query context
+  const queryContext: QueryContext = {
+    artist: entry.artist,
+    album:  entry.type === 'album' ? entry.title : undefined,
+    title:  entry.type === 'track' ? entry.title : undefined,
+    year:   entry.year,
+    type:   entry.type,
+  };
 
-  if (!searchId) {
-    searchId = await slskdClient.search(query, searchTimeoutMs, minFiles);
+  const minFiles = entry.type === 'track' ? MIN_FILES_TRACK : searchConfig.minResponseFiles;
 
-    if (!searchId) {
-      await downloadService.updateTaskStatus(task.id, 'failed', { errorMessage: 'Failed to start slskd search' });
-
-      return 'failed';
-    }
-
-    logger.debug(`Started slskd search ${ searchId } for ${ wishlistKey }`);
-  }
-
-  await downloadService.updateTaskStatus(task.id, 'searching', {
-    slskdSearchId: searchId,
-    errorMessage:  undefined,
+  // Try to find usable results, with retry logic if enabled
+  const searchResult = await executeSearchWithRetry({
+    queryContext,
+    wishlistKey,
+    task,
+    slskdClient,
+    downloadService,
+    searchConfig,
+    minFiles,
   });
 
-  const searchResult = await waitForSearchCompletion(slskdClient, searchId);
-
-  logger.debug(`slskd search ${ searchId } for ${ wishlistKey } returned state ${ searchResult }`);
-
-  if (searchResult === 'TimedOut') {
-    logger.info(`Search still in progress for ${ wishlistKey }, will retry later`);
-    await downloadService.updateTaskStatus(task.id, 'deferred', {
-      slskdSearchId: searchId,
-      errorMessage:  undefined,
-    });
-
+  if (searchResult.status === 'deferred') {
     return 'deferred';
   }
 
-  if (searchResult !== 'Completed') {
-    await downloadService.updateTaskStatus(task.id, 'failed', {
-      slskdSearchId: searchId,
-      errorMessage:  `Search ${ searchResult.toLowerCase() }`,
-    });
-
-    await slskdClient.deleteSearch(searchId);
-
+  if (searchResult.status === 'failed') {
     return 'failed';
   }
 
-  const responses = await slskdClient.getSearchResponses(searchId);
-
-  if (responses.length === 0) {
-    await downloadService.updateTaskStatus(task.id, 'failed', {
-      slskdSearchId: searchId,
-      errorMessage:  'No search results from slskd',
-    });
-
-    await slskdClient.deleteSearch(searchId);
-
-    return 'failed';
-  }
-
-  const response = pickBestResponse(responses);
-
-  if (!response) {
-    await downloadService.updateTaskStatus(task.id, 'failed', {
-      slskdSearchId: searchId,
-      errorMessage:  'No usable search results from slskd',
-    });
-
-    await slskdClient.deleteSearch(searchId);
-
-    return 'failed';
-  }
-
-  const selection = selectDownloadFiles(response);
-
-  if (!selection || selection.files.length === 0) {
-    await downloadService.updateTaskStatus(task.id, 'failed', {
-      slskdSearchId: searchId,
-      errorMessage:  'Search response contained no files',
-    });
-
-    await slskdClient.deleteSearch(searchId);
-
-    return 'failed';
-  }
+  const { response, searchId, selection } = searchResult;
 
   if (selection.files.length < response.files.length) {
     logger.debug(`Selected ${ selection.files.length }/${ response.files.length } files for ${ wishlistKey } from ${ response.username }`);
@@ -348,6 +349,188 @@ async function processWishlistEntry(params: {
   return 'queued';
 }
 
+/**
+ * Execute search with retry logic.
+ * Tries primary query, then fallback queries if retry is enabled.
+ */
+async function executeSearchWithRetry(params: {
+  queryContext:    QueryContext;
+  wishlistKey:     string;
+  task:            DownloadTask;
+  slskdClient:     SlskdClient;
+  downloadService: DownloadService;
+  searchConfig:    SearchConfig;
+  minFiles:        number;
+}): Promise<SearchAttemptResult> {
+  const {
+    queryContext, wishlistKey, task, slskdClient, downloadService, searchConfig, minFiles
+  } = params;
+  const {
+    queryBuilder, retryEnabled, maxRetryAttempts, simplifyOnRetry, retryDelayMs
+  } = searchConfig;
+
+  // Try primary query first
+  const primaryQuery = queryBuilder.buildQuery(queryContext);
+  const primaryResult = await attemptSearch({
+    query: primaryQuery,
+    wishlistKey,
+    task,
+    slskdClient,
+    downloadService,
+    searchConfig,
+    minFiles,
+  });
+
+  if (primaryResult.status === 'success' || primaryResult.status === 'deferred') {
+    return primaryResult;
+  }
+
+  // If retry not enabled, return the failure
+  if (!retryEnabled) {
+    return primaryResult;
+  }
+
+  // Retry with fallback queries
+  for (let attempt = 0; attempt < maxRetryAttempts - 1; attempt++) {
+    if (isJobCancelled(JOB_NAMES.SLSKD)) {
+      throw new Error('Job cancelled');
+    }
+
+    const fallbackQuery = queryBuilder.buildFallbackQuery(queryContext, attempt, simplifyOnRetry);
+
+    if (!fallbackQuery) {
+      // No more fallbacks available
+      break;
+    }
+
+    logger.debug(`Retry ${ attempt + 1 } for ${ wishlistKey }: "${ fallbackQuery }"`);
+
+    // Wait before retry
+    await sleep(retryDelayMs);
+
+    const retryResult = await attemptSearch({
+      query: fallbackQuery,
+      wishlistKey,
+      task,
+      slskdClient,
+      downloadService,
+      searchConfig,
+      minFiles,
+    });
+
+    if (retryResult.status === 'success' || retryResult.status === 'deferred') {
+      return retryResult;
+    }
+  }
+
+  // All retries exhausted
+  await downloadService.updateTaskStatus(task.id, 'failed', { errorMessage: `No results after ${ maxRetryAttempts } search attempts` });
+
+  return { status: 'failed' };
+}
+
+/**
+ * Attempt a single search query.
+ */
+async function attemptSearch(params: {
+  query:           string;
+  wishlistKey:     string;
+  task:            DownloadTask;
+  slskdClient:     SlskdClient;
+  downloadService: DownloadService;
+  searchConfig:    SearchConfig;
+  minFiles:        number;
+}): Promise<SearchAttemptResult> {
+  const {
+    query, wishlistKey, task, slskdClient, downloadService, searchConfig, minFiles
+  } = params;
+  const {
+    searchTimeoutMs, maxWaitMs, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes, preferCompleteAlbums, preferAlbumFolder
+  } = searchConfig;
+
+  // Reuse existing search if task was deferred (timed out) or is still searching
+  let searchId = (task.status === 'searching' || task.status === 'deferred') ? task.slskdSearchId || null : null;
+
+  if (!searchId) {
+    logger.debug(`Starting slskd search for "${ query }"`);
+    searchId = await slskdClient.search(query, searchTimeoutMs, minFiles);
+
+    if (!searchId) {
+      await downloadService.updateTaskStatus(task.id, 'failed', { errorMessage: 'Failed to start slskd search' });
+
+      return { status: 'failed' };
+    }
+  }
+
+  await downloadService.updateTaskStatus(task.id, 'searching', {
+    slskdSearchId: searchId,
+    errorMessage:  undefined,
+  });
+
+  const searchState = await waitForSearchCompletion(slskdClient, searchId, maxWaitMs);
+
+  logger.debug(`slskd search ${ searchId } for ${ wishlistKey } returned state ${ searchState }`);
+
+  if (searchState === 'TimedOut') {
+    logger.info(`Search still in progress for ${ wishlistKey }, will retry later`);
+    await downloadService.updateTaskStatus(task.id, 'deferred', {
+      slskdSearchId: searchId,
+      errorMessage:  undefined,
+    });
+
+    return { status: 'deferred' };
+  }
+
+  if (searchState !== 'Completed') {
+    await downloadService.updateTaskStatus(task.id, 'failed', {
+      slskdSearchId: searchId,
+      errorMessage:  `Search ${ searchState.toLowerCase() }`,
+    });
+
+    await slskdClient.deleteSearch(searchId);
+
+    return { status: 'failed' };
+  }
+
+  const responses = await slskdClient.getSearchResponses(searchId);
+
+  if (responses.length === 0) {
+    await slskdClient.deleteSearch(searchId);
+
+    // Don't update task status here, let the caller handle it for retry logic
+    return { status: 'failed' };
+  }
+
+  const response = pickBestResponse(responses, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes);
+
+  if (!response) {
+    await slskdClient.deleteSearch(searchId);
+
+    return { status: 'failed' };
+  }
+
+  const selection = selectDownloadFiles(response, {
+    minFileSizeBytes,
+    maxFileSizeBytes,
+    preferCompleteAlbums,
+    preferAlbumFolder,
+    minFiles,
+  });
+
+  if (!selection || selection.files.length === 0) {
+    await slskdClient.deleteSearch(searchId);
+
+    return { status: 'failed' };
+  }
+
+  return {
+    status: 'success',
+    response,
+    searchId,
+    selection,
+  };
+}
+
 function buildWishlistKey(artist: string, title: string): string {
   return `${ artist } - ${ title }`;
 }
@@ -364,11 +547,36 @@ function isMusicFile(filename: string): boolean {
   return MUSIC_EXTENSIONS.includes(ext);
 }
 
-function pickBestResponse(responses: SlskdSearchResponse[]): SlskdSearchResponse | null {
-  const scored = responses
+function pickBestResponse(
+  responses: SlskdSearchResponse[],
+  maxToEvaluate: number,
+  minFileSizeBytes: number,
+  maxFileSizeBytes: number,
+): SlskdSearchResponse | null {
+  // Limit responses to evaluate for performance
+  const toEvaluate = responses.slice(0, maxToEvaluate);
+
+  const scored = toEvaluate
     .map((response) => {
-      // Count only music files for scoring
-      const musicFiles = response.files.filter(f => isMusicFile(f.filename));
+      // Count only music files within size constraints for scoring
+      const musicFiles = response.files.filter((f) => {
+        if (!isMusicFile(f.filename)) {
+          return false;
+        }
+
+        const size = f.size || 0;
+
+        // Filter by size constraints
+        if (minFileSizeBytes > 0 && size < minFileSizeBytes) {
+          return false;
+        }
+
+        if (maxFileSizeBytes > 0 && size > maxFileSizeBytes) {
+          return false;
+        }
+
+        return true;
+      });
 
       return {
         response,
@@ -403,11 +611,34 @@ function pickBestResponse(responses: SlskdSearchResponse[]): SlskdSearchResponse
   return scored[0].response;
 }
 
-function selectDownloadFiles(response: SlskdSearchResponse): { directory: string; files: SlskdFile[] } | null {
+function selectDownloadFiles(
+  response: SlskdSearchResponse,
+  options: FileSelectionOptions,
+): { directory: string; files: SlskdFile[] } | null {
+  const {
+    minFileSizeBytes, maxFileSizeBytes, preferCompleteAlbums, preferAlbumFolder, minFiles
+  } = options;
+
   const directoryMap = new Map<string, { files: Map<string, SlskdFile>; totalSize: number }>();
 
-  // Filter to music files only to avoid downloading non-audio files
-  const musicFiles = response.files.filter(f => f.filename && isMusicFile(f.filename));
+  // Filter to music files within size constraints
+  const musicFiles = response.files.filter((f) => {
+    if (!f.filename || !isMusicFile(f.filename)) {
+      return false;
+    }
+
+    const size = f.size || 0;
+
+    if (minFileSizeBytes > 0 && size < minFileSizeBytes) {
+      return false;
+    }
+
+    if (maxFileSizeBytes > 0 && size > maxFileSizeBytes) {
+      return false;
+    }
+
+    return true;
+  });
 
   for (const file of musicFiles) {
     const normalizedFilename = normalizeSlskdPath(file.filename);
@@ -429,19 +660,49 @@ function selectDownloadFiles(response: SlskdSearchResponse): { directory: string
     return null;
   }
 
-  const sortedGroups = Array.from(directoryMap.entries()).sort((a, b) => {
-    if (b[1].files.size !== a[1].files.size) {
-      return b[1].files.size - a[1].files.size;
+  // Score and sort directories
+  const scoredGroups = Array.from(directoryMap.entries()).map(([dir, group]) => {
+    let score = 0;
+
+    // Base score: +100 per music file
+    score += group.files.size * 100;
+
+    // Bonus for album folder structure (contains artist/album-like path)
+    if (preferAlbumFolder && hasAlbumFolderStructure(dir)) {
+      score += 50;
     }
 
-    if (b[1].totalSize !== a[1].totalSize) {
-      return b[1].totalSize - a[1].totalSize;
+    // Bonus for meeting minimum track count (complete album indicator)
+    if (preferCompleteAlbums && group.files.size >= minFiles) {
+      score += 25;
     }
 
-    return a[0].localeCompare(b[0]);
+    return {
+      directory: dir, group, score
+    };
   });
 
-  const [directory, group] = sortedGroups[0];
+  scoredGroups.sort((a, b) => {
+    // Primary: score descending
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+
+    // Secondary: file count descending
+    if (b.group.files.size !== a.group.files.size) {
+      return b.group.files.size - a.group.files.size;
+    }
+
+    // Tertiary: total size descending
+    if (b.group.totalSize !== a.group.totalSize) {
+      return b.group.totalSize - a.group.totalSize;
+    }
+
+    // Final: alphabetical
+    return a.directory.localeCompare(b.directory);
+  });
+
+  const { directory, group } = scoredGroups[0];
   const files = Array.from(group.files.values());
 
   return {
@@ -450,10 +711,31 @@ function selectDownloadFiles(response: SlskdSearchResponse): { directory: string
   };
 }
 
-async function waitForSearchCompletion(slskdClient: SlskdClient, searchId: string): Promise<'Completed' | 'Cancelled' | 'TimedOut' | 'Unknown'> {
+/**
+ * Check if a path looks like an album folder structure (e.g., "Artist/Album" or "Artist - Album").
+ */
+function hasAlbumFolderStructure(directory: string): boolean {
+  // Has at least one directory level
+  if (directory.includes('/') && directory.split('/').length >= 2) {
+    return true;
+  }
+
+  // Contains a separator that suggests "Artist - Album" format
+  if (directory.includes(' - ')) {
+    return true;
+  }
+
+  return false;
+}
+
+async function waitForSearchCompletion(
+  slskdClient: SlskdClient,
+  searchId: string,
+  maxWaitMs: number = SEARCH_MAX_WAIT_MS,
+): Promise<'Completed' | 'Cancelled' | 'TimedOut' | 'Unknown'> {
   const startTime = Date.now();
 
-  while (Date.now() - startTime < SEARCH_MAX_WAIT_MS) {
+  while (Date.now() - startTime < maxWaitMs) {
     if (isJobCancelled(JOB_NAMES.SLSKD)) {
       logger.info('Job cancelled while waiting for search results');
       throw new Error('Job cancelled');

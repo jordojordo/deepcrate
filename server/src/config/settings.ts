@@ -56,12 +56,52 @@ const ListenBrainzSettingsSchema = z.object({
   approval_mode: z.enum(['auto', 'manual']).default('manual'),
 });
 
+const SlskdSearchRetrySchema = z.object({
+  enabled:                  z.boolean().default(false),
+  max_attempts:             z.number().int().min(1).max(10)
+    .default(3),
+  simplify_on_retry:        z.boolean().default(true),
+  delay_between_retries_ms: z.number().int().min(0).default(5000),
+});
+
+const SlskdSearchSchema = z.object({
+  // Query templates - variables: {artist}, {album}, {title}, {year}
+  album_query_template:      z.string().default('{artist} - {album}'),
+  track_query_template:      z.string().default('{artist} - {title}'),
+  fallback_queries:          z.array(z.string()).default([]),
+  exclude_terms:             z.array(z.string()).default([]),
+
+  // Search timing
+  search_timeout_ms:         z.number().int().positive().default(15000),
+  max_wait_ms:               z.number().int().positive().default(20000),
+
+  // Response filtering
+  min_response_files:        z.number().int().min(1).default(3),
+  max_responses_to_evaluate: z.number().int().min(1).default(50),
+
+  // File size constraints (MB)
+  min_file_size_mb:          z.number().min(0).default(1),
+  max_file_size_mb:          z.number().min(0).default(500),
+
+  // Album preferences (soft, not strict)
+  prefer_complete_albums:    z.boolean().default(true),
+  prefer_album_folder:       z.boolean().default(true),
+
+  retry: SlskdSearchRetrySchema.default({
+    enabled:                  false,
+    max_attempts:             3,
+    simplify_on_retry:        true,
+    delay_between_retries_ms: 5000,
+  }),
+});
+
 const SlskdSettingsSchema = z.object({
   host:             z.string(),
   api_key:          z.string(),
   url_base:         z.string().default('/'),
   search_timeout:   z.number().int().positive().default(15000),
   min_album_tracks: z.number().int().positive().default(3),
+  search:           SlskdSearchSchema.optional(),
 });
 
 const NavidromeSettingsSchema = z.object({
@@ -220,6 +260,8 @@ export type AuthSettings = z.infer<typeof AuthSettingsSchema>;
 export type UISettings = z.infer<typeof UISettingsSchema>;
 export type ListenBrainzSettings = z.infer<typeof ListenBrainzSettingsSchema>;
 export type SlskdSettings = z.infer<typeof SlskdSettingsSchema>;
+export type SlskdSearchSettings = z.infer<typeof SlskdSearchSchema>;
+export type SlskdSearchRetrySettings = z.infer<typeof SlskdSearchRetrySchema>;
 export type CatalogDiscoverySettings = z.infer<typeof CatalogDiscoverySettingsSchema>;
 export type LibraryDuplicateSettings = z.infer<typeof LibraryDuplicateSettingsSchema>;
 export type LibraryOrganizeSettings = z.infer<typeof LibraryOrganizeSettingsSchema>;

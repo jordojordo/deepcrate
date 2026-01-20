@@ -44,6 +44,14 @@ const COLUMN_MIGRATIONS: ColumnMigration[] = [
       allowNull: true,
     },
   },
+  {
+    table:      'download_tasks',
+    column:     'year',
+    definition: {
+      type:      DataTypes.INTEGER,
+      allowNull: true,
+    },
+  },
 ];
 
 /**

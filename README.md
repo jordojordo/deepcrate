@@ -85,6 +85,13 @@ fetch_count: 100
 slskd:
   host: "http://slskd:5030"
   api_key: "your_slskd_api_key"
+  # Optional: Advanced search configuration (see docs/configuration.md)
+  # search:
+  #   album_query_template: "{artist} {album}"
+  #   exclude_terms: ["live", "remix", "cover"]
+  #   retry:
+  #     enabled: true
+  #     max_attempts: 3
 
 # Catalog discovery (based on library artists → Last.fm similar)
 catalog_discovery:

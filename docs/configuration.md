@@ -52,12 +52,54 @@ slskd:
   # URL base path (usually "/")
   url_base: "/"
 
-  # Search timeout in milliseconds
+  # Search timeout in milliseconds (legacy, prefer search.search_timeout_ms)
   search_timeout: 15000
 
-  # Minimum tracks to consider a valid album result
+  # Minimum tracks to consider a valid album result (legacy, prefer search.min_response_files)
   # Helps filter out incomplete uploads
   min_album_tracks: 3
+
+  # Advanced search configuration (optional)
+  search:
+    # Query templates - variables: {artist}, {album}, {title}, {year}
+    album_query_template: "{artist} {album}"
+    track_query_template: "{artist} {title}"
+
+    # Fallback queries to try if primary search returns no results
+    # Tried in order when retry is enabled
+    fallback_queries:
+      - "{album}"
+      - "{artist} {album} {year}"
+
+    # Terms to remove when simplifying queries (e.g., on retry)
+    exclude_terms:
+      - "live"
+      - "remix"
+      - "cover"
+      - "karaoke"
+
+    # Search timing
+    search_timeout_ms: 15000      # Timeout for slskd search API call
+    max_wait_ms: 20000            # Max time to wait for search completion
+
+    # Response filtering
+    min_response_files: 3         # Minimum files to consider a valid result
+    max_responses_to_evaluate: 50 # Limit responses to evaluate (performance)
+
+    # File size constraints (MB) - filters out suspiciously small/large files
+    min_file_size_mb: 1
+    max_file_size_mb: 500
+
+    # Album preferences (soft scoring, not strict filters)
+    prefer_complete_albums: true  # Bonus score for results with enough tracks
+    prefer_album_folder: true     # Bonus score for proper folder structure
+
+    # Retry configuration
+    retry:
+      enabled: false              # Enable retry with fallback queries
+      max_attempts: 3             # Total attempts including primary
+      simplify_on_retry: true     # Simplify query (remove diacritics, special chars)
+      delay_between_retries_ms: 5000
 
 # =============================================================================
 # Catalog Discovery
@@ -244,8 +286,38 @@ Note: Use double underscore `__` for nested keys.
 | `host` | string | Yes | - | slskd API URL |
 | `api_key` | string | Yes | - | slskd API key |
 | `url_base` | string | No | `/` | URL base path |
-| `search_timeout` | int | No | `15000` | Search timeout (ms) |
-| `min_album_tracks` | int | No | `3` | Min tracks for album |
+| `search_timeout` | int | No | `15000` | Search timeout (ms), legacy - prefer `search.search_timeout_ms` |
+| `min_album_tracks` | int | No | `3` | Min tracks for album, legacy - prefer `search.min_response_files` |
+
+### slskd Search (Advanced)
+
+Optional advanced search configuration under `slskd.search`:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `album_query_template` | string | `{artist} - {album}` | Template for album searches. Variables: `{artist}`, `{album}`, `{year}` |
+| `track_query_template` | string | `{artist} - {title}` | Template for track searches. Variables: `{artist}`, `{title}` |
+| `fallback_queries` | string[] | `[]` | Queries to try if primary fails (e.g., `["{album}", "{artist} {album} {year}"]`) |
+| `exclude_terms` | string[] | `[]` | Terms to remove from queries (e.g., `["live", "remix"]`) |
+| `search_timeout_ms` | int | `15000` | Timeout for slskd search API call |
+| `max_wait_ms` | int | `20000` | Max time to wait for search completion |
+| `min_response_files` | int | `3` | Minimum files to consider a valid result |
+| `max_responses_to_evaluate` | int | `50` | Limit responses to evaluate (performance) |
+| `min_file_size_mb` | float | `1` | Minimum file size in MB |
+| `max_file_size_mb` | float | `500` | Maximum file size in MB |
+| `prefer_complete_albums` | bool | `true` | Bonus score for results with enough tracks |
+| `prefer_album_folder` | bool | `true` | Bonus score for proper folder structure |
+
+### slskd Search Retry
+
+Optional retry configuration under `slskd.search.retry`:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `enabled` | bool | `false` | Enable retry with fallback queries |
+| `max_attempts` | int | `3` | Total attempts including primary |
+| `simplify_on_retry` | bool | `true` | Simplify query on retry (remove diacritics, special chars) |
+| `delay_between_retries_ms` | int | `5000` | Delay between retry attempts |
 
 ### Catalog Discovery
 

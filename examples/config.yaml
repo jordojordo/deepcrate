@@ -56,11 +56,53 @@ slskd:
   # URL base path (useful if slskd is behind a reverse proxy path)
   url_base: "/"
 
-  # Search timeout in milliseconds (passed to slskd)
+  # Search timeout in milliseconds (legacy, prefer search.search_timeout_ms)
   search_timeout: 15000
 
-  # Minimum tracks to consider a valid album result (helps filter incomplete uploads)
+  # Minimum tracks to consider a valid album result (legacy, prefer search.min_response_files)
   min_album_tracks: 3
+
+  # Advanced search configuration (optional)
+  search:
+    # Query templates - variables: {artist}, {album}, {title}, {year}
+    album_query_template: "{artist} {album}"
+    track_query_template: "{artist} {title}"
+
+    # Fallback queries to try if primary search returns no results
+    # Tried in order when retry is enabled
+    fallback_queries:
+      - "{album}"
+      - "{artist} {album} {year}"
+
+    # Terms to remove when normalizing/simplifying queries
+    exclude_terms:
+      - "live"
+      - "remix"
+      - "cover"
+      - "karaoke"
+
+    # Search timing
+    search_timeout_ms: 15000      # Timeout for slskd search API call
+    max_wait_ms: 20000            # Max time to wait for search completion
+
+    # Response filtering
+    min_response_files: 3         # Minimum files to consider a valid result
+    max_responses_to_evaluate: 50 # Limit responses to evaluate (performance)
+
+    # File size constraints (MB) - filters out suspiciously small/large files
+    min_file_size_mb: 1
+    max_file_size_mb: 500
+
+    # Album preferences (soft scoring, not strict filters)
+    prefer_complete_albums: true  # Bonus score for results with enough tracks
+    prefer_album_folder: true     # Bonus score for proper folder structure
+
+    # Retry configuration
+    retry:
+      enabled: false              # Enable retry with fallback queries
+      max_attempts: 3             # Total attempts including primary
+      simplify_on_retry: true     # Simplify query (remove diacritics, special chars)
+      delay_between_retries_ms: 5000
 
 # -----------------------------------------------------------------------------
 # Catalog Discovery (Optional)

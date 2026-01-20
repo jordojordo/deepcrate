@@ -23,6 +23,7 @@ export interface DownloadTaskAttributes {
   album:           string;
   type:            DownloadTaskType;
   status:          DownloadTaskStatus;
+  year?:           number;           // Release year for search queries
   organizedAt?:    Date;             // When moved to library
   downloadPath?:   string;           // Relative path under downloads root
   slskdSearchId?:  string;           // Search ID from slskd
@@ -55,6 +56,7 @@ class DownloadTask extends Model<DownloadTaskAttributes, DownloadTaskCreationAtt
   declare album:           string;
   declare type:            DownloadTaskType;
   declare status:          DownloadTaskStatus;
+  declare year?:           number;
   declare organizedAt?:    Date;
   declare downloadPath?:   string;
   declare slskdSearchId?:  string;
@@ -102,6 +104,11 @@ DownloadTask.init(
       type:         DataTypes.STRING(20),
       allowNull:    false,
       defaultValue: 'pending',
+    },
+    year: {
+      type:      DataTypes.INTEGER,
+      allowNull: true,
+      comment:   'Release year for search query templates',
     },
     organizedAt: {
       type:       DataTypes.DATE,

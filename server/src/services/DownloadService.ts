@@ -1,5 +1,5 @@
 import type { ActiveDownload, DownloadProgress, DownloadStats } from '@server/types/downloads';
-import type { SlskdTransferFile, SlskdUserTransfers } from './clients/SlskdClient';
+import type { SlskdTransferFile, SlskdUserTransfers } from '@server/types/slskd-client';
 
 import fs from 'fs';
 import { Op } from '@sequelize/core';
