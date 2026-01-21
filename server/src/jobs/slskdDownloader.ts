@@ -105,58 +105,61 @@ export async function slskdDownloaderJob(): Promise<void> {
       throw new Error('Job cancelled');
     }
 
-    // Get unprocessed wishlist items from database
-    const wishlistItems = await wishlistService.getUnprocessed();
+    // 1) Create download tasks for new wishlist items.
+    //    Note: WishlistItem.processedAt indicates the item has a DownloadTask record.
+    const unprocessedWishlistItems = await wishlistService.getUnprocessed();
 
-    if (wishlistItems.length === 0) {
+    if (unprocessedWishlistItems.length === 0) {
       logger.debug('No unprocessed wishlist items');
-    }
+    } else {
+      for (const wishlistItem of unprocessedWishlistItems) {
+        if (isJobCancelled(JOB_NAMES.SLSKD)) {
+          logger.info('Job cancelled during wishlist task creation');
+          throw new Error('Job cancelled');
+        }
 
-    // Build map by wishlist key for existing task lookup
-    const itemsByKey = new Map<string, WishlistItem>();
+        const wishlistKey = buildWishlistKey(wishlistItem.artist, wishlistItem.album);
 
-    for (const item of wishlistItems) {
-      const wishlistKey = buildWishlistKey(item.artist, item.album);
+        try {
+          const task = await findOrCreateTask(wishlistItem, wishlistKey);
 
-      if (!itemsByKey.has(wishlistKey)) {
-        itemsByKey.set(wishlistKey, item);
+          // Backfill FK in case an older task exists without linkage.
+          if (!task.wishlistItemId) {
+            await task.update({ wishlistItemId: wishlistItem.id });
+          }
+
+          await wishlistService.markProcessed(wishlistItem.id);
+        } catch(error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorStack = error instanceof Error ? error.stack : undefined;
+
+          logger.error(`Failed to create download task for wishlist entry ${ wishlistKey }: ${ errorMessage }`, { stack: errorStack });
+        }
       }
     }
 
-    const wishlistKeys = Array.from(itemsByKey.keys());
-    const tasksByKey = await loadExistingTasks(wishlistKeys);
+    // 2) Process any pending/deferred search tasks, regardless of WishlistItem.processedAt.
+    const tasksToProcess = await loadProcessableTasks();
 
     let queuedCount = 0;
     let skippedCount = 0;
     let failedCount = 0;
 
-    for (const [wishlistKey, wishlistItem] of itemsByKey.entries()) {
+    for (const task of tasksToProcess) {
       if (isJobCancelled(JOB_NAMES.SLSKD)) {
         logger.info('Job cancelled during processing');
         throw new Error('Job cancelled');
       }
 
       try {
-        const existingTask = tasksByKey.get(wishlistKey) || null;
-
-        if (existingTask && shouldSkipTask(existingTask)) {
+        if (shouldSkipTask(task)) {
           skippedCount++;
           continue;
         }
 
-        // Create task with wishlistItemId FK
-        const task = existingTask || await findOrCreateTask(wishlistItem, wishlistKey);
-
-        if (!existingTask) {
-          tasksByKey.set(wishlistKey, task);
-          // Mark wishlist item as processed
-          await wishlistService.markProcessed(wishlistItem.id);
-        }
-
-        const processed = await processWishlistEntry({
-          wishlistItem,
+        const processed = await processDownloadTask({
           task,
-          wishlistKey,
+          wishlistKey: task.wishlistKey,
           slskdClient,
           downloadService,
           searchConfig,
@@ -172,7 +175,7 @@ export async function slskdDownloaderJob(): Promise<void> {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorStack = error instanceof Error ? error.stack : undefined;
 
-        logger.error(`Failed to process wishlist entry ${ wishlistKey }: ${ errorMessage }`, { stack: errorStack });
+        logger.error(`Failed to process download task ${ task.wishlistKey }: ${ errorMessage }`, { stack: errorStack });
       }
     }
 
@@ -187,14 +190,11 @@ export async function slskdDownloaderJob(): Promise<void> {
   }
 }
 
-async function loadExistingTasks(wishlistKeys: string[]): Promise<Map<string, DownloadTask>> {
-  if (wishlistKeys.length === 0) {
-    return new Map();
-  }
-
-  const tasks = await DownloadTask.findAll({ where: { wishlistKey: { [Op.in]: wishlistKeys } } });
-
-  return new Map(tasks.map(task => [task.wishlistKey, task]));
+async function loadProcessableTasks(): Promise<DownloadTask[]> {
+  return DownloadTask.findAll({
+    where: { status: { [Op.in]: ['pending', 'searching', 'deferred'] } },
+    order: [['queuedAt', 'ASC']],
+  });
 }
 
 function shouldSkipTask(task: DownloadTask): boolean {
@@ -238,8 +238,7 @@ async function findOrCreateTask(wishlistItem: WishlistItem, wishlistKey: string)
   return task;
 }
 
-async function processWishlistEntry(params: {
-  wishlistItem:    WishlistItem;
+async function processDownloadTask(params: {
   task:            DownloadTask;
   wishlistKey:     string;
   slskdClient:     SlskdClient;
@@ -247,19 +246,19 @@ async function processWishlistEntry(params: {
   searchConfig:    SearchConfig;
 }): Promise<'queued' | 'failed' | 'skipped' | 'deferred'> {
   const {
-    wishlistItem, task, wishlistKey, slskdClient, downloadService, searchConfig
+    task, wishlistKey, slskdClient, downloadService, searchConfig
   } = params;
 
-  // Build query context from wishlist item
+  // Build query context from the task (wishlist item may have been processed/removed).
   const queryContext: QueryContext = {
-    artist: wishlistItem.artist,
-    album:  wishlistItem.type === 'album' ? wishlistItem.album : undefined,
-    title:  wishlistItem.type === 'track' ? wishlistItem.album : undefined,
-    year:   wishlistItem.year ?? undefined,
-    type:   wishlistItem.type,
+    artist: task.artist,
+    album:  task.type === 'album' ? task.album : undefined,
+    title:  task.type === 'track' ? task.album : undefined,
+    year:   task.year ?? undefined,
+    type:   task.type,
   };
 
-  const minFiles = wishlistItem.type === 'track' ? MIN_FILES_TRACK : searchConfig.minResponseFiles;
+  const minFiles = task.type === 'track' ? MIN_FILES_TRACK : searchConfig.minResponseFiles;
 
   // Try to find usable results, with retry logic if enabled
   const searchResult = await executeSearchWithRetry({
