@@ -6,6 +6,8 @@ import type {
   DownloadTaskUpdatedEvent,
   DownloadProgressEvent,
   DownloadStatsUpdatedEvent,
+  DownloadPendingSelectionEvent,
+  DownloadSelectionExpiredEvent,
 } from '@server/types/socket';
 
 import logger from '@server/config/logger';
@@ -115,5 +117,37 @@ export function emitDownloadStatsUpdated(event: DownloadStatsUpdatedEvent): void
     logger.silly('[socket:downloads] Emitted download:stats:updated');
   } catch(error) {
     logger.error('[socket:downloads] Error emitting download:stats:updated:', { error });
+  }
+}
+
+/**
+ * Emit download:pending_selection event
+ */
+export function emitDownloadPendingSelection(event: DownloadPendingSelectionEvent): void {
+  if (!namespaceInstance) {
+    return;
+  }
+
+  try {
+    namespaceInstance.emit('download:pending_selection', event);
+    logger.silly(`[socket:downloads] Emitted download:pending_selection for ${ event.id }`);
+  } catch(error) {
+    logger.error('[socket:downloads] Error emitting download:pending_selection:', { error });
+  }
+}
+
+/**
+ * Emit download:selection_expired event
+ */
+export function emitDownloadSelectionExpired(event: DownloadSelectionExpiredEvent): void {
+  if (!namespaceInstance) {
+    return;
+  }
+
+  try {
+    namespaceInstance.emit('download:selection_expired', event);
+    logger.silly(`[socket:downloads] Emitted download:selection_expired for ${ event.id }`);
+  } catch(error) {
+    logger.error('[socket:downloads] Error emitting download:selection_expired:', { error });
   }
 }

@@ -26,6 +26,7 @@ export type QualityInfo = z.infer<typeof qualityInfoSchema>;
 export const downloadStatusSchema = z.enum([
   'pending',
   'searching',
+  'pending_selection',
   'deferred',
   'queued',
   'downloading',
@@ -53,19 +54,21 @@ export type DownloadProgress = z.infer<typeof downloadProgressSchema>;
  * Active download schema (database record + real-time progress)
  */
 export const activeDownloadSchema = z.object({
-  id:              z.string().uuid(),
-  wishlistKey:     z.string(),
-  artist:          z.string(),
-  album:           z.string(),
-  type:            z.enum(['album', 'track']),
-  status:          downloadStatusSchema,
-  slskdUsername:   z.string().nullable(),
-  slskdDirectory:  z.string().nullable(),
-  fileCount:       z.number().int().positive().nullable(),
-  quality:         qualityInfoSchema.nullable(),
-  progress:        downloadProgressSchema.nullable(),
-  queuedAt:        z.coerce.date(),
-  startedAt:       z.coerce.date().nullable(),
+  id:                  z.string().uuid(),
+  wishlistKey:         z.string(),
+  artist:              z.string(),
+  album:               z.string(),
+  type:                z.enum(['album', 'track']),
+  status:              downloadStatusSchema,
+  slskdUsername:       z.string().nullable(),
+  slskdDirectory:      z.string().nullable(),
+  fileCount:           z.number().int().positive().nullable(),
+  quality:             qualityInfoSchema.nullable(),
+  progress:            downloadProgressSchema.nullable(),
+  searchQuery:         z.string().nullable().optional(),
+  selectionExpiresAt:  z.coerce.date().nullable().optional(),
+  queuedAt:            z.coerce.date(),
+  startedAt:           z.coerce.date().nullable(),
 });
 
 export type ActiveDownload = z.infer<typeof activeDownloadSchema>;
@@ -140,3 +143,89 @@ export const downloadStatsSchema = z.object({
 });
 
 export type DownloadStats = z.infer<typeof downloadStatsSchema>;
+
+/**
+ * Directory group for search results UI
+ */
+export const directoryGroupSchema = z.object({
+  path:        z.string(),
+  files:       z.array(z.object({
+    filename:   z.string(),
+    size:       z.number().optional(),
+    bitRate:    z.number().optional(),
+    bitDepth:   z.number().optional(),
+    sampleRate: z.number().optional(),
+    length:     z.number().optional(),
+  })),
+  totalSize:   z.number(),
+  qualityInfo: qualityInfoSchema.nullable(),
+});
+
+export type DirectoryGroup = z.infer<typeof directoryGroupSchema>;
+
+/**
+ * Scored search response for UI display
+ */
+export const scoredSearchResponseSchema = z.object({
+  response: z.object({
+    username:          z.string(),
+    files:             z.array(z.object({
+      filename:   z.string(),
+      size:       z.number().optional(),
+      bitRate:    z.number().optional(),
+      bitDepth:   z.number().optional(),
+      sampleRate: z.number().optional(),
+      length:     z.number().optional(),
+    })),
+    hasFreeUploadSlot: z.boolean().optional(),
+    uploadSpeed:       z.number().optional(),
+  }),
+  score:          z.number(),
+  musicFileCount: z.number(),
+  totalSize:      z.number(),
+  qualityInfo:    qualityInfoSchema.nullable(),
+  directories:    z.array(directoryGroupSchema),
+});
+
+export type ScoredSearchResponse = z.infer<typeof scoredSearchResponseSchema>;
+
+/**
+ * Search results response for selection endpoint
+ */
+export const searchResultsResponseSchema = z.object({
+  task: z.object({
+    id:                 z.string().uuid(),
+    artist:             z.string(),
+    album:              z.string(),
+    searchQuery:        z.string(),
+    selectionExpiresAt: z.coerce.date().nullable(),
+  }),
+  results:          z.array(scoredSearchResponseSchema),
+  skippedUsernames: z.array(z.string()),
+});
+
+export type SearchResultsResponse = z.infer<typeof searchResultsResponseSchema>;
+
+/**
+ * Select result request schema
+ */
+export const selectResultRequestSchema = z.object({
+  username:  z.string(),
+  directory: z.string().optional(),
+});
+
+export type SelectResultRequest = z.infer<typeof selectResultRequestSchema>;
+
+/**
+ * Skip result request schema
+ */
+export const skipResultRequestSchema = z.object({ username: z.string() });
+
+export type SkipResultRequest = z.infer<typeof skipResultRequestSchema>;
+
+/**
+ * Retry search request schema
+ */
+export const retrySearchRequestSchema = z.object({ query: z.string().optional() });
+
+export type RetrySearchRequest = z.infer<typeof retrySearchRequestSchema>;

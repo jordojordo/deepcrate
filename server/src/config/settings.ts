@@ -109,6 +109,11 @@ const SlskdSearchSchema = z.object({
   quality_preferences: SlskdQualityPreferencesSchema.optional(),
 });
 
+const SlskdSelectionSchema = z.object({
+  mode:          z.enum(['auto', 'manual']).default('auto'),
+  timeout_hours: z.number().int().min(0).default(24),  // 0 = no timeout
+});
+
 const SlskdSettingsSchema = z.object({
   host:             z.string(),
   api_key:          z.string(),
@@ -116,6 +121,7 @@ const SlskdSettingsSchema = z.object({
   search_timeout:   z.number().int().positive().default(15000),
   min_album_tracks: z.number().int().positive().default(3),
   search:           SlskdSearchSchema.optional(),
+  selection:        SlskdSelectionSchema.optional(),
 });
 
 const NavidromeSettingsSchema = z.object({
@@ -277,6 +283,7 @@ export type SlskdSettings = z.infer<typeof SlskdSettingsSchema>;
 export type SlskdSearchSettings = z.infer<typeof SlskdSearchSchema>;
 export type SlskdSearchRetrySettings = z.infer<typeof SlskdSearchRetrySchema>;
 export type SlskdQualityPreferencesSettings = z.infer<typeof SlskdQualityPreferencesSchema>;
+export type SlskdSelectionSettings = z.infer<typeof SlskdSelectionSchema>;
 export type CatalogDiscoverySettings = z.infer<typeof CatalogDiscoverySettingsSchema>;
 export type LibraryDuplicateSettings = z.infer<typeof LibraryDuplicateSettingsSchema>;
 export type LibraryOrganizeSettings = z.infer<typeof LibraryOrganizeSettingsSchema>;

@@ -1,5 +1,8 @@
-import type { ActiveDownload, DownloadProgress, DownloadStats } from '@server/types/downloads';
-import type { SlskdTransferFile, SlskdUserTransfers } from '@server/types/slskd-client';
+import type {
+  ActiveDownload, DownloadProgress, DownloadStats, ScoredSearchResponse, DirectoryGroup
+} from '@server/types/downloads';
+import type { SlskdTransferFile, SlskdUserTransfers, SlskdSearchResponse, SlskdFile } from '@server/types/slskd-client';
+import type { QualityPreferences } from '@server/types/slskd';
 
 import fs from 'fs';
 import { Op } from '@sequelize/core';
@@ -13,14 +16,23 @@ import {
   emitDownloadTaskUpdated,
   emitDownloadProgress,
   emitDownloadStatsUpdated,
+  emitDownloadSelectionExpired,
 } from '@server/plugins/io/namespaces/downloadsNamespace';
 import { triggerJob } from '@server/plugins/jobs';
 
 import SlskdClient from './clients/SlskdClient';
 import WishlistService from './WishlistService';
 import {
-  joinDownloadsPath, normalizeSlskdPath, slskdDirectoryToRelativeDownloadPath, slskdPathBasename, toSafeRelativePath 
+  joinDownloadsPath, normalizeSlskdPath, slskdDirectoryToRelativeDownloadPath, slskdPathBasename, toSafeRelativePath
 } from '@server/utils/slskdPaths';
+import {
+  extractQualityInfo,
+  getDominantQualityInfo,
+  calculateAverageQualityScore,
+  shouldRejectFile,
+} from '@server/utils/audioQuality';
+import path from 'path';
+import { MUSIC_EXTENSIONS, QUALITY_SCORES, DEFAULT_PREFERRED_FORMATS } from '@server/constants/slskd';
 
 async function pathExists(candidatePath: string): Promise<boolean> {
   try {
@@ -72,7 +84,7 @@ export class DownloadService {
     const { limit = 50, offset = 0 } = params;
 
     let { rows, count } = await DownloadTask.findAndCountAll({
-      where: { status: { [Op.in]: ['pending', 'searching', 'queued', 'downloading', 'deferred'] } },
+      where: { status: { [Op.in]: ['pending', 'searching', 'pending_selection', 'queued', 'downloading', 'deferred'] } },
       order: [['queuedAt', 'DESC']],
       limit,
       offset,
@@ -106,16 +118,16 @@ export class DownloadService {
       const progress = this.calculateProgress(task, slskdTransfers);
 
       return {
-        id:             task.id,
-        wishlistKey:    task.wishlistKey,
-        artist:         task.artist,
-        album:          task.album,
-        type:           task.type,
-        status:         task.status,
-        slskdUsername:  task.slskdUsername || null,
-        slskdDirectory: task.slskdDirectory || null,
-        fileCount:      task.fileCount || null,
-        quality:        task.qualityFormat ? {
+        id:                  task.id,
+        wishlistKey:         task.wishlistKey,
+        artist:              task.artist,
+        album:               task.album,
+        type:                task.type,
+        status:              task.status,
+        slskdUsername:       task.slskdUsername || null,
+        slskdDirectory:      task.slskdDirectory || null,
+        fileCount:           task.fileCount || null,
+        quality:             task.qualityFormat ? {
           format:     task.qualityFormat,
           bitRate:    task.qualityBitRate ?? null,
           bitDepth:   task.qualityBitDepth ?? null,
@@ -123,8 +135,10 @@ export class DownloadService {
           tier:       task.qualityTier ?? 'unknown',
         } : null,
         progress,
-        queuedAt:       task.queuedAt,
-        startedAt:      task.startedAt || null,
+        searchQuery:         task.searchQuery || null,
+        selectionExpiresAt:  task.selectionExpiresAt || null,
+        queuedAt:            task.queuedAt,
+        startedAt:           task.startedAt || null,
       };
     });
 
@@ -583,7 +597,7 @@ export class DownloadService {
   }> {
     if (!ids.length) {
       return {
-        success: 0, failed: 0, failures: [] 
+        success: 0, failed: 0, failures: []
       };
     }
 
@@ -591,7 +605,7 @@ export class DownloadService {
 
     if (!tasks.length) {
       return {
-        success: 0, failed: 0, failures: [] 
+        success: 0, failed: 0, failures: []
       };
     }
 
@@ -639,7 +653,7 @@ export class DownloadService {
     emitDownloadStatsUpdated(stats);
 
     return {
-      success: successCount, failed: failedCount, failures 
+      success: successCount, failed: failedCount, failures
     };
   }
 
@@ -648,7 +662,7 @@ export class DownloadService {
    */
   async getStats(): Promise<DownloadStats> {
     const [active, queued, completed, failed] = await Promise.all([
-      DownloadTask.count({ where: { status: { [Op.in]: ['pending', 'searching', 'downloading'] } } }),
+      DownloadTask.count({ where: { status: { [Op.in]: ['pending', 'searching', 'pending_selection', 'downloading'] } } }),
       DownloadTask.count({ where: { status: 'queued' } }),
       DownloadTask.count({ where: { status: 'completed' } }),
       DownloadTask.count({ where: { status: 'failed' } }),
@@ -855,6 +869,488 @@ export class DownloadService {
     const stats = await this.getStats();
 
     emitDownloadStatsUpdated(stats);
+  }
+
+  /**
+   * Get search results for a pending_selection task
+   */
+  async getSearchResults(taskId: string): Promise<{
+    task: {
+      id:                 string;
+      artist:             string;
+      album:              string;
+      searchQuery:        string;
+      selectionExpiresAt: Date | null;
+    };
+    results:          ScoredSearchResponse[];
+    skippedUsernames: string[];
+  } | null> {
+    const task = await DownloadTask.findByPk(taskId);
+
+    if (!task || task.status !== 'pending_selection') {
+      return null;
+    }
+
+    if (!task.searchResults) {
+      return null;
+    }
+
+    let responses: SlskdSearchResponse[];
+
+    try {
+      responses = JSON.parse(task.searchResults) as SlskdSearchResponse[];
+    } catch {
+      logger.error(`Failed to parse search results for task ${ taskId }`);
+
+      return null;
+    }
+
+    const skippedUsernames = task.skippedUsernames || [];
+    const config = getConfig();
+    const qualityPrefs = config.slskd?.search?.quality_preferences;
+    const qualityPreferences: QualityPreferences | undefined = qualityPrefs ? {
+      enabled:          qualityPrefs.enabled ?? true,
+      preferredFormats: qualityPrefs.preferred_formats ?? [...DEFAULT_PREFERRED_FORMATS],
+      minBitrate:       qualityPrefs.min_bitrate ?? 256,
+      preferLossless:   qualityPrefs.prefer_lossless ?? true,
+      rejectLowQuality: qualityPrefs.reject_low_quality ?? false,
+      rejectLossless:   qualityPrefs.reject_lossless ?? false,
+    } : undefined;
+
+    const scoredResults = this.scoreSearchResponses(
+      responses,
+      skippedUsernames,
+      qualityPreferences
+    );
+
+    return {
+      task: {
+        id:                 task.id,
+        artist:             task.artist,
+        album:              task.album,
+        searchQuery:        task.searchQuery || `${ task.artist } - ${ task.album }`,
+        selectionExpiresAt: task.selectionExpiresAt || null,
+      },
+      results: scoredResults,
+      skippedUsernames,
+    };
+  }
+
+  /**
+   * Score and group search responses for UI display
+   */
+  private scoreSearchResponses(
+    responses: SlskdSearchResponse[],
+    skippedUsernames: string[],
+    qualityPreferences?: QualityPreferences
+  ): ScoredSearchResponse[] {
+    const config = getConfig();
+    const searchSettings = config.slskd?.search;
+    const minFileSizeBytes = (searchSettings?.min_file_size_mb ?? 1) * 1024 * 1024;
+    const maxFileSizeBytes = (searchSettings?.max_file_size_mb ?? 500) * 1024 * 1024;
+
+    return responses
+      .filter(response => !skippedUsernames.includes(response.username))
+      .map(response => {
+        // Filter to music files within size constraints
+        let musicFiles = response.files.filter((f) => {
+          if (!this.isMusicFile(f.filename)) {
+            return false;
+          }
+
+          const size = f.size || 0;
+
+          if (minFileSizeBytes > 0 && size < minFileSizeBytes) {
+            return false;
+          }
+
+          if (maxFileSizeBytes > 0 && size > maxFileSizeBytes) {
+            return false;
+          }
+
+          return true;
+        });
+
+        // Apply quality rejection filter if enabled
+        if (qualityPreferences?.enabled && qualityPreferences.rejectLowQuality) {
+          musicFiles = musicFiles.filter(f => {
+            const qualityInfo = extractQualityInfo(f);
+
+            return !shouldRejectFile(qualityInfo, qualityPreferences);
+          });
+        }
+
+        const qualityScore = qualityPreferences?.enabled? calculateAverageQualityScore(musicFiles, qualityPreferences): QUALITY_SCORES.unknown;
+
+        const hasSlot = response.hasFreeUploadSlot ? 1000 : 0;
+        const uploadSpeedBonus = Math.min(response.uploadSpeed || 0, 1000000) / 10000; // Max 100 points for 1MB/s
+        const score = hasSlot + qualityScore + (musicFiles.length * 10) + uploadSpeedBonus;
+
+        const directories = this.groupFilesByDirectory(musicFiles);
+
+        return {
+          response,
+          score,
+          musicFileCount: musicFiles.length,
+          totalSize:      musicFiles.reduce((sum, f) => sum + (f.size || 0), 0),
+          qualityInfo:    getDominantQualityInfo(musicFiles),
+          directories,
+        };
+      })
+      .filter(scored => scored.musicFileCount > 0)
+      .sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * Group files by directory path
+   */
+  private groupFilesByDirectory(files: SlskdFile[]): DirectoryGroup[] {
+    const directoryMap = new Map<string, SlskdFile[]>();
+
+    for (const file of files) {
+      const dirPath = path.posix.dirname(file.filename.replace(/\\/g, '/'));
+      const existing = directoryMap.get(dirPath) || [];
+
+      existing.push(file);
+      directoryMap.set(dirPath, existing);
+    }
+
+    return Array.from(directoryMap.entries()).map(([dirPath, dirFiles]) => ({
+      path:        dirPath,
+      files:       dirFiles,
+      totalSize:   dirFiles.reduce((sum, f) => sum + (f.size || 0), 0),
+      qualityInfo: getDominantQualityInfo(dirFiles),
+    }));
+  }
+
+  /**
+   * Check if a file is a music file
+   */
+  private isMusicFile(filename: string): boolean {
+    const ext = path.extname(filename).toLowerCase();
+
+    return MUSIC_EXTENSIONS.includes(ext);
+  }
+
+  /**
+   * User selects a specific search result
+   */
+  async selectSearchResult(
+    taskId: string,
+    username: string,
+    directory?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const task = await DownloadTask.findByPk(taskId);
+
+    if (!task) {
+      return { success: false, error: 'Task not found' };
+    }
+
+    if (task.status !== 'pending_selection') {
+      return { success: false, error: `Task is not pending selection (status: ${ task.status })` };
+    }
+
+    if (!task.searchResults) {
+      return { success: false, error: 'No search results available' };
+    }
+
+    let responses: SlskdSearchResponse[];
+
+    try {
+      responses = JSON.parse(task.searchResults) as SlskdSearchResponse[];
+    } catch {
+      return { success: false, error: 'Failed to parse search results' };
+    }
+
+    const selectedResponse = responses.find(r => r.username === username);
+
+    if (!selectedResponse) {
+      return { success: false, error: `User ${ username } not found in search results` };
+    }
+
+    if (!this.slskdClient) {
+      return { success: false, error: 'slskd client not configured' };
+    }
+
+    // Select files from the specified directory or all music files
+    const config = getConfig();
+    const searchSettings = config.slskd?.search;
+    const minFileSizeBytes = (searchSettings?.min_file_size_mb ?? 1) * 1024 * 1024;
+    const maxFileSizeBytes = (searchSettings?.max_file_size_mb ?? 500) * 1024 * 1024;
+
+    const filesToEnqueue = selectedResponse.files.filter(f => {
+      if (!this.isMusicFile(f.filename)) {
+        return false;
+      }
+
+      const size = f.size || 0;
+
+      if (minFileSizeBytes > 0 && size < minFileSizeBytes) {
+        return false;
+      }
+
+      if (maxFileSizeBytes > 0 && size > maxFileSizeBytes) {
+        return false;
+      }
+
+      if (directory) {
+        const fileDir = path.posix.dirname(f.filename.replace(/\\/g, '/'));
+
+        return fileDir === directory || f.filename.replace(/\\/g, '/').startsWith(directory + '/');
+      }
+
+      return true;
+    });
+
+    if (filesToEnqueue.length === 0) {
+      return { success: false, error: 'No valid files to download' };
+    }
+
+    const selectedDirectory = directory || path.posix.dirname(filesToEnqueue[0].filename.replace(/\\/g, '/'));
+
+    const enqueueResult = await this.slskdClient.enqueue(username, filesToEnqueue);
+
+    if (!enqueueResult || enqueueResult.enqueued.length === 0) {
+      await this.updateTaskStatus(task.id, 'failed', {
+        slskdUsername: username,
+        errorMessage:  `slskd rejected all ${ filesToEnqueue.length } files`,
+      });
+
+      return { success: false, error: 'Failed to enqueue files' };
+    }
+
+    const fileIds = enqueueResult.enqueued.map(f => f.id).filter((id): id is string => typeof id === 'string');
+    const qualityInfo = getDominantQualityInfo(filesToEnqueue);
+
+    if (task.slskdSearchId) {
+      try {
+        await this.slskdClient.deleteSearch(task.slskdSearchId);
+      } catch {
+        // Ignore errors deleting search
+      }
+    }
+
+    await task.update({
+      status:             'queued',
+      slskdUsername:      username,
+      slskdDirectory:     selectedDirectory,
+      slskdFileIds:       fileIds.length > 0 ? fileIds : undefined,
+      fileCount:          enqueueResult.enqueued.length,
+      qualityFormat:      qualityInfo?.format,
+      qualityBitRate:     qualityInfo?.bitRate ?? undefined,
+      qualityBitDepth:    qualityInfo?.bitDepth ?? undefined,
+      qualitySampleRate:  qualityInfo?.sampleRate ?? undefined,
+      qualityTier:        qualityInfo?.tier,
+      searchResults:      undefined,
+      selectionExpiresAt: undefined,
+      skippedUsernames:   undefined,
+      errorMessage:       undefined,
+    });
+
+    emitDownloadTaskUpdated({
+      id:            task.id,
+      status:        'queued',
+      slskdUsername: username,
+      fileCount:     enqueueResult.enqueued.length,
+    });
+
+    const stats = await this.getStats();
+
+    emitDownloadStatsUpdated(stats);
+
+    const qualityDesc = qualityInfo ? `${ qualityInfo.format }/${ qualityInfo.tier }` : 'unknown';
+
+    logger.info(`Selected download: ${ task.wishlistKey } (${ username }, ${ enqueueResult.enqueued.length } files, ${ qualityDesc })`);
+
+    return { success: true };
+  }
+
+  /**
+   * User skips a search result (hide from list)
+   */
+  async skipSearchResult(taskId: string, username: string): Promise<{ success: boolean; error?: string }> {
+    const task = await DownloadTask.findByPk(taskId);
+
+    if (!task) {
+      return { success: false, error: 'Task not found' };
+    }
+
+    if (task.status !== 'pending_selection') {
+      return { success: false, error: `Task is not pending selection (status: ${ task.status })` };
+    }
+
+    const skippedUsernames = task.skippedUsernames || [];
+
+    if (!skippedUsernames.includes(username)) {
+      skippedUsernames.push(username);
+    }
+
+    await task.update({ skippedUsernames });
+
+    logger.debug(`Skipped user ${ username } for task ${ task.wishlistKey }`);
+
+    return { success: true };
+  }
+
+  /**
+   * User triggers a new search with optional modified query
+   */
+  async retrySearch(taskId: string, query?: string): Promise<{ success: boolean; error?: string }> {
+    const task = await DownloadTask.findByPk(taskId);
+
+    if (!task) {
+      return { success: false, error: 'Task not found' };
+    }
+
+    if (task.status !== 'pending_selection') {
+      return { success: false, error: `Task is not pending selection (status: ${ task.status })` };
+    }
+
+    if (!this.slskdClient) {
+      return { success: false, error: 'slskd client not configured' };
+    }
+
+    if (task.slskdSearchId) {
+      try {
+        await this.slskdClient.deleteSearch(task.slskdSearchId);
+      } catch {
+        // Ignore
+      }
+    }
+
+    const searchQuery = query || task.searchQuery || `${ task.artist } - ${ task.album }`;
+
+    await task.update({
+      status:             'searching',
+      searchQuery,
+      searchResults:      undefined,
+      selectionExpiresAt: undefined,
+      skippedUsernames:   undefined,
+      slskdSearchId:      undefined,
+      errorMessage:       undefined,
+    });
+
+    emitDownloadTaskUpdated({
+      id:     task.id,
+      status: 'searching',
+    });
+
+    logger.info(`Retry search requested for ${ task.wishlistKey } with query: ${ searchQuery }`);
+
+    triggerJob(JOB_NAMES.SLSKD);
+
+    return { success: true };
+  }
+
+  /**
+   * User chooses to auto-select the best result
+   */
+  async autoSelectBest(taskId: string): Promise<{ success: boolean; error?: string }> {
+    const task = await DownloadTask.findByPk(taskId);
+
+    if (!task) {
+      return { success: false, error: 'Task not found' };
+    }
+
+    if (task.status !== 'pending_selection') {
+      return { success: false, error: `Task is not pending selection (status: ${ task.status })` };
+    }
+
+    if (!task.searchResults) {
+      return { success: false, error: 'No search results available' };
+    }
+
+    let responses: SlskdSearchResponse[];
+
+    try {
+      responses = JSON.parse(task.searchResults) as SlskdSearchResponse[];
+    } catch {
+      return { success: false, error: 'Failed to parse search results' };
+    }
+
+    const skippedUsernames = task.skippedUsernames || [];
+    const config = getConfig();
+    const qualityPrefs = config.slskd?.search?.quality_preferences;
+    const qualityPreferences: QualityPreferences | undefined = qualityPrefs ? {
+      enabled:          qualityPrefs.enabled ?? true,
+      preferredFormats: qualityPrefs.preferred_formats ?? [...DEFAULT_PREFERRED_FORMATS],
+      minBitrate:       qualityPrefs.min_bitrate ?? 256,
+      preferLossless:   qualityPrefs.prefer_lossless ?? true,
+      rejectLowQuality: qualityPrefs.reject_low_quality ?? false,
+      rejectLossless:   qualityPrefs.reject_lossless ?? false,
+    } : undefined;
+
+    const scoredResults = this.scoreSearchResponses(responses, skippedUsernames, qualityPreferences);
+
+    if (scoredResults.length === 0) {
+      return { success: false, error: 'No valid results after filtering' };
+    }
+
+    const best = scoredResults[0];
+
+    return this.selectSearchResult(taskId, best.response.username);
+  }
+
+  /**
+   * Process expired selections and mark them as failed
+   */
+  async processExpiredSelections(): Promise<number> {
+    const now = new Date();
+
+    const expiredTasks = await DownloadTask.findAll({
+      where: {
+        status:             'pending_selection',
+        selectionExpiresAt: { [Op.lt]: now },
+      },
+    });
+
+    let processedCount = 0;
+
+    for (const task of expiredTasks) {
+      try {
+        if (this.slskdClient && task.slskdSearchId) {
+          try {
+            await this.slskdClient.deleteSearch(task.slskdSearchId);
+          } catch {
+            // Ignore
+          }
+        }
+
+        await task.update({
+          status:             'failed',
+          errorMessage:       'Selection timeout expired',
+          completedAt:        now,
+          searchResults:      undefined,
+          selectionExpiresAt: undefined,
+          skippedUsernames:   undefined,
+        });
+
+        emitDownloadSelectionExpired({
+          id:     task.id,
+          artist: task.artist,
+          album:  task.album,
+        });
+
+        emitDownloadTaskUpdated({
+          id:           task.id,
+          status:       'failed',
+          errorMessage: 'Selection timeout expired',
+        });
+
+        logger.info(`Selection expired for: ${ task.wishlistKey }`);
+        processedCount++;
+      } catch(error) {
+        logger.error(`Failed to process expired selection for ${ task.wishlistKey }:`, { error });
+      }
+    }
+
+    if (processedCount > 0) {
+      const stats = await this.getStats();
+
+      emitDownloadStatsUpdated(stats);
+    }
+
+    return processedCount;
   }
 }
 

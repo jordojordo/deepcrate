@@ -43,6 +43,20 @@ export interface DownloadProgressEvent {
 
 export interface DownloadStatsUpdatedEvent extends DownloadStats {}
 
+export interface DownloadPendingSelectionEvent {
+  id:                 string;
+  artist:             string;
+  album:              string;
+  resultCount:        number;
+  selectionExpiresAt: Date | null;
+}
+
+export interface DownloadSelectionExpiredEvent {
+  id:     string;
+  artist: string;
+  album:  string;
+}
+
 /**
  * Jobs namespace event payloads
  */
@@ -81,10 +95,12 @@ export interface QueueServerToClientEvents {
 }
 
 export interface DownloadsServerToClientEvents {
-  'download:task:created':  (_event: DownloadTaskCreatedEvent) => void;
-  'download:task:updated':  (_event: DownloadTaskUpdatedEvent) => void;
-  'download:progress':      (_event: DownloadProgressEvent) => void;
-  'download:stats:updated': (_event: DownloadStatsUpdatedEvent) => void;
+  'download:task:created':      (_event: DownloadTaskCreatedEvent) => void;
+  'download:task:updated':      (_event: DownloadTaskUpdatedEvent) => void;
+  'download:progress':          (_event: DownloadProgressEvent) => void;
+  'download:stats:updated':     (_event: DownloadStatsUpdatedEvent) => void;
+  'download:pending_selection': (_event: DownloadPendingSelectionEvent) => void;
+  'download:selection_expired': (_event: DownloadSelectionExpiredEvent) => void;
 }
 
 export interface JobsServerToClientEvents {

@@ -3,6 +3,7 @@ import type {
   SearchAttemptResult,
   FileSelectionOptions,
   QualityPreferences,
+  SearchPendingSelectionResult,
 } from '@server/types/slskd';
 import type { SlskdFile, SlskdSearchResponse } from '@server/types/slskd-client';
 import type { QueryContext } from '@server/types/search-query';
@@ -42,7 +43,12 @@ import {
 /**
  * Build SearchConfig from configuration settings.
  */
-function buildSearchConfig(searchSettings?: SlskdSearchSettings, legacyTimeout?: number, legacyMinTracks?: number): SearchConfig {
+function buildSearchConfig(
+  searchSettings?: SlskdSearchSettings,
+  selectionSettings?: { mode?: 'auto' | 'manual'; timeout_hours?: number },
+  legacyTimeout?: number,
+  legacyMinTracks?: number
+): SearchConfig {
   const s = searchSettings;
   const qp = s?.quality_preferences;
 
@@ -73,6 +79,10 @@ function buildSearchConfig(searchSettings?: SlskdSearchSettings, legacyTimeout?:
       rejectLowQuality: qp.reject_low_quality ?? false,
       rejectLossless:   qp.reject_lossless ?? false,
     } : undefined,
+    selection: {
+      mode:         selectionSettings?.mode ?? 'auto',
+      timeoutHours: selectionSettings?.timeout_hours ?? 24,
+    },
   };
 }
 
@@ -97,7 +107,12 @@ export async function slskdDownloaderJob(): Promise<void> {
   const slskdClient = new SlskdClient(slskdConfig.host, slskdConfig.api_key, slskdConfig.url_base);
   const downloadService = new DownloadService();
   const wishlistService = new WishlistService();
-  const searchConfig = buildSearchConfig(slskdConfig.search, slskdConfig.search_timeout, slskdConfig.min_album_tracks);
+  const searchConfig = buildSearchConfig(
+    slskdConfig.search,
+    slskdConfig.selection,
+    slskdConfig.search_timeout,
+    slskdConfig.min_album_tracks
+  );
 
   try {
     if (isJobCancelled(JOB_NAMES.SLSKD)) {
@@ -144,6 +159,7 @@ export async function slskdDownloaderJob(): Promise<void> {
     let queuedCount = 0;
     let skippedCount = 0;
     let failedCount = 0;
+    let pendingSelectionCount = 0;
 
     for (const task of tasksToProcess) {
       if (isJobCancelled(JOB_NAMES.SLSKD)) {
@@ -169,6 +185,8 @@ export async function slskdDownloaderJob(): Promise<void> {
           queuedCount++;
         } else if (processed === 'failed') {
           failedCount++;
+        } else if (processed === 'pending_selection') {
+          pendingSelectionCount++;
         }
       } catch(error) {
         failedCount++;
@@ -179,11 +197,25 @@ export async function slskdDownloaderJob(): Promise<void> {
       }
     }
 
+    // Process expired selections
+    const expiredCount = await downloadService.processExpiredSelections();
+
+    if (expiredCount > 0) {
+      logger.info(`Processed ${ expiredCount } expired selection(s)`);
+    }
+
     const transfers = await slskdClient.getDownloads();
 
     await downloadService.syncTaskStatusesFromTransfers(transfers);
 
-    logger.info(`slskd downloader completed (${ queuedCount } queued, ${ skippedCount } skipped, ${ failedCount } failed)`);
+    const parts = [`${ queuedCount } queued`];
+
+    if (pendingSelectionCount > 0) {
+      parts.push(`${ pendingSelectionCount } pending selection`);
+    }
+
+    parts.push(`${ skippedCount } skipped`, `${ failedCount } failed`);
+    logger.info(`slskd downloader completed (${ parts.join(', ') })`);
   } catch(error) {
     logger.error('slskd downloader job failed:', { error });
     throw error;
@@ -244,7 +276,7 @@ async function processDownloadTask(params: {
   slskdClient:     SlskdClient;
   downloadService: DownloadService;
   searchConfig:    SearchConfig;
-}): Promise<'queued' | 'failed' | 'skipped' | 'deferred'> {
+}): Promise<'queued' | 'failed' | 'skipped' | 'deferred' | 'pending_selection'> {
   const {
     task, wishlistKey, slskdClient, downloadService, searchConfig
   } = params;
@@ -273,6 +305,10 @@ async function processDownloadTask(params: {
 
   if (searchResult.status === 'deferred') {
     return 'deferred';
+  }
+
+  if (searchResult.status === 'pending_selection') {
+    return 'pending_selection';
   }
 
   if (searchResult.status === 'failed') {
@@ -369,7 +405,7 @@ async function executeSearchWithRetry(params: {
     minFiles,
   });
 
-  if (primaryResult.status === 'success' || primaryResult.status === 'deferred') {
+  if (primaryResult.status === 'success' || primaryResult.status === 'deferred' || primaryResult.status === 'pending_selection') {
     return primaryResult;
   }
 
@@ -406,7 +442,7 @@ async function executeSearchWithRetry(params: {
       minFiles,
     });
 
-    if (retryResult.status === 'success' || retryResult.status === 'deferred') {
+    if (retryResult.status === 'success' || retryResult.status === 'deferred' || retryResult.status === 'pending_selection') {
       return retryResult;
     }
   }
@@ -433,7 +469,7 @@ async function attemptSearch(params: {
     query, wishlistKey, task, slskdClient, downloadService, searchConfig, minFiles
   } = params;
   const {
-    searchTimeoutMs, maxWaitMs, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes, preferCompleteAlbums, preferAlbumFolder, qualityPreferences
+    searchTimeoutMs, maxWaitMs, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes, preferCompleteAlbums, preferAlbumFolder, qualityPreferences, selection
   } = searchConfig;
 
   // Reuse existing search if task was deferred (timed out) or is still searching
@@ -489,6 +525,50 @@ async function attemptSearch(params: {
     return { status: 'failed' };
   }
 
+  // In manual selection mode, store the results and wait for user selection
+  if (selection.mode === 'manual') {
+    // Calculate selection expiration time
+    let selectionExpiresAt: Date | undefined;
+
+    if (selection.timeoutHours > 0) {
+      selectionExpiresAt = new Date(Date.now() + selection.timeoutHours * 60 * 60 * 1000);
+    }
+
+    // Store the search results in the database
+    await DownloadTask.update(
+      {
+        status:             'pending_selection',
+        searchResults:      JSON.stringify(responses.slice(0, maxResponsesToEval)),
+        searchQuery:        query,
+        selectionExpiresAt,
+        slskdSearchId:      searchId,
+        errorMessage:       undefined,
+      },
+      { where: { id: task.id } }
+    );
+
+    // Emit WebSocket event
+    const { emitDownloadPendingSelection } = await import('@server/plugins/io/namespaces/downloadsNamespace');
+
+    emitDownloadPendingSelection({
+      id:                 task.id,
+      artist:             task.artist,
+      album:              task.album,
+      resultCount:        Math.min(responses.length, maxResponsesToEval),
+      selectionExpiresAt: selectionExpiresAt ?? null,
+    });
+
+    logger.info(`Manual selection required for ${ wishlistKey } (${ responses.length } results)`);
+
+    return {
+      status:      'pending_selection',
+      responses:   responses.slice(0, maxResponsesToEval),
+      searchId,
+      searchQuery: query,
+    } as SearchPendingSelectionResult;
+  }
+
+  // Auto mode: pick the best response automatically
   const response = pickBestResponse(responses, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes, qualityPreferences);
 
   if (!response) {
@@ -497,7 +577,7 @@ async function attemptSearch(params: {
     return { status: 'failed' };
   }
 
-  const selection = selectDownloadFiles(response, {
+  const fileSelection = selectDownloadFiles(response, {
     minFileSizeBytes,
     maxFileSizeBytes,
     preferCompleteAlbums,
@@ -505,17 +585,17 @@ async function attemptSearch(params: {
     minFiles,
   });
 
-  if (!selection || selection.files.length === 0) {
+  if (!fileSelection || fileSelection.files.length === 0) {
     await slskdClient.deleteSearch(searchId);
 
     return { status: 'failed' };
   }
 
   return {
-    status: 'success',
+    status:    'success',
     response,
     searchId,
-    selection,
+    selection: fileSelection,
   };
 }
 
