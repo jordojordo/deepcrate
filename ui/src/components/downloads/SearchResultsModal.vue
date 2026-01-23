@@ -5,6 +5,7 @@ import {
   ref, computed, watch, onMounted, onUnmounted
 } from 'vue';
 import { formatFileSize, formatSpeed } from '@/utils/formatters';
+import { getSearchResults } from '@/services/downloads';
 
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
@@ -108,7 +109,6 @@ async function loadResults() {
   expandedRows.value = {};
 
   try {
-    const { getSearchResults } = await import('@/services/downloads');
     const results = await getSearchResults(props.taskId);
 
     searchResults.value = results;

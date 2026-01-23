@@ -239,6 +239,12 @@ export const useDownloadsStore = defineStore('downloads', () => {
     }
   }
 
+  /**
+   * Skip a search result source.
+   * Note: Unlike other selection methods, this doesn't use selectionLoading state
+   * because the component performs optimistic local UI updates before calling this
+   * method (removing the result from the list immediately for better UX).
+   */
   async function skipResult(taskId: string, username: string) {
     try {
       await downloadsApi.skipResult(taskId, username);
