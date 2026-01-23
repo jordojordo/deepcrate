@@ -10,15 +10,16 @@ export interface QueryContext {
   album?: string;
   title?: string;
   year?:  number;
-  type:   'album' | 'track';
+  type:   'artist' | 'album' | 'track';
 }
 
 /**
  * Configuration options for SearchQueryBuilder
  */
 export interface SearchQueryBuilderConfig {
-  albumQueryTemplate: string;
-  trackQueryTemplate: string;
-  fallbackQueries:    string[];
-  excludeTerms:       string[];
+  artistQueryTemplate: string;
+  albumQueryTemplate:  string;
+  trackQueryTemplate:  string;
+  fallbackQueries:     string[];
+  excludeTerms:        string[];
 }

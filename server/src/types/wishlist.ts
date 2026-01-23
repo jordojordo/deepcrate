@@ -9,7 +9,7 @@ export const wishlistEntrySchema = z.object({
   id:          z.uuid(),
   artist:      z.string(),
   title:       z.string(),
-  type:        z.enum(['album', 'track']),
+  type:        z.enum(['album', 'track', 'artist']),
   year:        z.number().int().positive().optional()
     .nullable(),
   mbid:        z.string().optional().nullable(),
@@ -27,11 +27,14 @@ export type WishlistEntry = z.infer<typeof wishlistEntrySchema>;
  */
 export const addToWishlistRequestSchema = z.object({
   artist: z.string().min(1, 'Artist is required'),
-  title:  z.string().min(1, 'Title is required'),
-  type:   z.enum(['album', 'track']),
+  title:  z.string(),
+  type:   z.enum(['album', 'track', 'artist']),
   year:   z.number().int().positive().optional(),
   mbid:   z.string().optional(),
-});
+}).refine(
+  (data) => data.type === 'artist' || data.title.length >= 1,
+  { message: 'Title is required for album and track types', path: ['title'] }
+);
 
 export type AddToWishlistRequest = z.infer<typeof addToWishlistRequestSchema>;
 

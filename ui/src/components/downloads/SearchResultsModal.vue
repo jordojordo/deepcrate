@@ -232,7 +232,7 @@ function handleAutoSelect() {
         <div class="modal-header__title">
           <h3>Select Download Source</h3>
           <p v-if="searchResults" class="modal-header__subtitle">
-            {{ searchResults.task.artist }} - {{ searchResults.task.album }}
+            {{ searchResults.task.artist }}{{ searchResults.task.album ? ` - ${searchResults.task.album}` : '' }}
           </p>
         </div>
         <div v-if="timeRemaining" class="modal-header__countdown">

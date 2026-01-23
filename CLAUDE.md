@@ -100,6 +100,8 @@ SQLite via Sequelize 7 alpha. DB file at `$DATA_PATH/resonance.sqlite` (default 
 - Server uses `@stylistic/eslint-plugin` with specific formatting: 2-space indent, single quotes, aligned object values
 - UI uses Vue 3 Composition API with `<script setup lang="ts">`
 - Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`
+- Prefer small, focused functions over large ones (aim for <30 lines per function)
+- New services should follow existing patterns in `services/`—check before creating new abstractions
 
 ## Configuration
 
@@ -136,3 +138,10 @@ When asked to implement a feature:
 - New features require tests before the implementation is considered complete
 - Run `pnpm run test:run` to verify changes don't break existing tests
 
+### Command Patterns
+
+When a prompt includes "plan" or "planning", produce ONLY:
+- Clarifying questions (if any)
+- A numbered implementation plan
+
+Do not write any code until explicitly told "begin implementation" or "implement step N".

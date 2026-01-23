@@ -18,10 +18,11 @@ export class SearchQueryBuilder {
 
   constructor(config?: Partial<SearchQueryBuilderConfig>) {
     this.config = {
-      albumQueryTemplate: config?.albumQueryTemplate ?? DEFAULT_SEARCH_QUERY_CONFIG.albumQueryTemplate,
-      trackQueryTemplate: config?.trackQueryTemplate ?? DEFAULT_SEARCH_QUERY_CONFIG.trackQueryTemplate,
-      fallbackQueries:    config?.fallbackQueries ?? DEFAULT_SEARCH_QUERY_CONFIG.fallbackQueries,
-      excludeTerms:       config?.excludeTerms ?? DEFAULT_SEARCH_QUERY_CONFIG.excludeTerms,
+      artistQueryTemplate: config?.artistQueryTemplate ?? DEFAULT_SEARCH_QUERY_CONFIG.artistQueryTemplate,
+      albumQueryTemplate:  config?.albumQueryTemplate ?? DEFAULT_SEARCH_QUERY_CONFIG.albumQueryTemplate,
+      trackQueryTemplate:  config?.trackQueryTemplate ?? DEFAULT_SEARCH_QUERY_CONFIG.trackQueryTemplate,
+      fallbackQueries:     config?.fallbackQueries ?? DEFAULT_SEARCH_QUERY_CONFIG.fallbackQueries,
+      excludeTerms:        config?.excludeTerms ?? DEFAULT_SEARCH_QUERY_CONFIG.excludeTerms,
     };
   }
 
@@ -29,7 +30,15 @@ export class SearchQueryBuilder {
    * Build the primary search query from template and context.
    */
   buildQuery(context: QueryContext): string {
-    const template = context.type === 'album'? this.config.albumQueryTemplate: this.config.trackQueryTemplate;
+    let template: string;
+
+    if (context.type === 'album') {
+      template = this.config.albumQueryTemplate;
+    } else if (context.type === 'artist') {
+      template = this.config.artistQueryTemplate;
+    } else {
+      template = this.config.trackQueryTemplate;
+    }
 
     return this.applyTemplate(template, context);
   }

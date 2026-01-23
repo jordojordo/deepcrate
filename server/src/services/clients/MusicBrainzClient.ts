@@ -1,39 +1,22 @@
+import type { AlbumSearchResult, ArtistSearchResult, RecordingSearchResult } from '@server/types/search';
+import type {
+  AlbumInfo,
+  RecordingInfo,
+  ReleaseGroup,
+  ReleaseGroupTrack,
+  SearchResults,
+} from '@server/types/musicbrainz';
+
 import axios from 'axios';
 import logger from '@server/config/logger';
 
 const USER_AGENT = 'resonance/1.0 (music-discovery)';
 const BASE_URL = 'https://musicbrainz.org/ws/2';
 
-export interface RecordingInfo {
-  artist: string;
-  title:  string;
-  mbid:   string;
-}
-
-export interface AlbumInfo {
-  artist:        string;
-  title:         string;
-  mbid:          string;  // Release-group MBID
-  recordingMbid: string;
-  trackTitle:    string;
-  year?:         number;
-}
-
-export interface ReleaseGroup {
-  id:                    string;
-  title:                 string;
-  'primary-type'?:       string;
-  'first-release-date'?: string;
-}
-
-export interface ReleaseGroupTrack {
-  title:    string;
-  position: number;
-}
-
 /**
  * MusicBrainzClient provides access to MusicBrainz metadata API.
  * https://musicbrainz.org/doc/MusicBrainz_API
+ * https://musicbrainz.org/doc/MusicBrainz_API/Search#Recording
  */
 export class MusicBrainzClient {
   /**
@@ -222,7 +205,7 @@ export class MusicBrainzClient {
   async searchAlbums(
     query: string,
     limit: number = 20
-  ): Promise<{ results: Array<{ mbid: string; title: string; artist: string; type: string | null; year: number | null }>; total: number }> {
+  ): Promise<SearchResults<AlbumSearchResult>> {
     const url = `${ BASE_URL }/release-group`;
 
     try {
@@ -250,7 +233,7 @@ export class MusicBrainzClient {
           title:  rg.title,
           artist,
           type:   rg['primary-type'] || null,
-          year:   isNaN(year!) ? null : year,
+          year:   (year !== null && !isNaN(year)) ? year : null,
         };
       });
 
@@ -267,12 +250,68 @@ export class MusicBrainzClient {
   }
 
   /**
+   * Search for recordings (tracks) by query string
+   */
+  async searchRecordings(
+    query: string,
+    limit: number = 20
+  ): Promise<SearchResults<RecordingSearchResult>> {
+    const url = `${ BASE_URL }/recording`;
+
+    try {
+      const response = await axios.get(url, {
+        headers: { 'User-Agent': USER_AGENT },
+        params:  {
+          query,
+          limit,
+          fmt: 'json',
+        },
+        timeout: 15000,
+      });
+
+      const recordings = response.data.recordings || [];
+      const total = response.data.count || recordings.length;
+
+      const results = recordings.map((rec: any) => {
+        const artistCredit = rec['artist-credit'] || [];
+        const artist = artistCredit.map((ac: any) => ac.artist?.name || '').join(' & ') || 'Unknown Artist';
+
+        // Get album from first release
+        const releases = rec.releases || [];
+        const album = releases.length > 0 ? releases[0].title : null;
+
+        // Get year from first release date
+        const firstReleaseDate = releases.length > 0 ? releases[0].date || '' : '';
+        const year = firstReleaseDate ? parseInt(firstReleaseDate.substring(0, 4), 10) : null;
+
+        return {
+          mbid:  rec.id,
+          title: rec.title,
+          artist,
+          album,
+          year:  (year !== null && !isNaN(year)) ? year : null,
+        };
+      });
+
+      return { results, total };
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.error(`Failed to search recordings for "${ query }": ${ error.message }`);
+      } else {
+        logger.error(`Failed to search recordings for "${ query }": ${ String(error) }`);
+      }
+
+      return { results: [], total: 0 };
+    }
+  }
+
+  /**
    * Search for artists by query string
    */
   async searchArtists(
     query: string,
     limit: number = 20
-  ): Promise<{ results: Array<{ mbid: string; name: string; country: string | null; type: string | null; beginYear: number | null; endYear: number | null; disambiguation: string | null }>; total: number }> {
+  ): Promise<SearchResults<ArtistSearchResult>> {
     const url = `${ BASE_URL }/artist`;
 
     try {
@@ -299,8 +338,8 @@ export class MusicBrainzClient {
           name:           artist.name,
           country:        artist.country || null,
           type:           artist.type || null,
-          beginYear:      isNaN(beginYear!) ? null : beginYear,
-          endYear:        isNaN(endYear!) ? null : endYear,
+          beginYear:      (beginYear !== null && !isNaN(beginYear)) ? beginYear : null,
+          endYear:        (endYear !== null && !isNaN(endYear)) ? endYear : null,
           disambiguation: artist.disambiguation || null,
         };
       });

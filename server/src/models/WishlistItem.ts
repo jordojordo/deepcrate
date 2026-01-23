@@ -4,9 +4,9 @@ import { DataTypes, Model, sql } from '@sequelize/core';
 import { sequelize } from '@server/config/db/sequelize';
 
 /**
- * Type of wishlist item (album or track)
+ * Type of wishlist item (artist, album, or track)
  */
-export type WishlistItemType = 'album' | 'track';
+export type WishlistItemType = 'artist' | 'album' | 'track';
 
 /**
  * Source of the wishlist entry

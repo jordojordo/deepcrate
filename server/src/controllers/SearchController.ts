@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { AlbumSearchResult, ArtistSearchResult, MusicBrainzSearchResponse } from '@server/types/search';
+import type { AlbumSearchResult, ArtistSearchResult, RecordingSearchResult, MusicBrainzSearchResponse } from '@server/types/search';
 
 import { BaseController } from '@server/controllers/BaseController';
 import { MusicBrainzClient } from '@server/services/clients/MusicBrainzClient';
@@ -32,7 +32,7 @@ class SearchController extends BaseController {
 
       const { q, type, limit } = parseResult.data;
 
-      let results: AlbumSearchResult[] | ArtistSearchResult[];
+      let results: AlbumSearchResult[] | ArtistSearchResult[] | RecordingSearchResult[];
       let total: number;
 
       if (type === 'album') {
@@ -40,6 +40,11 @@ class SearchController extends BaseController {
 
         results = albumResults.results;
         total = albumResults.total;
+      } else if (type === 'track') {
+        const recordingResults = await this.musicBrainzClient.searchRecordings(q, limit);
+
+        results = recordingResults.results;
+        total = recordingResults.total;
       } else {
         const artistResults = await this.musicBrainzClient.searchArtists(q, limit);
 

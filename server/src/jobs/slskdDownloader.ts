@@ -55,10 +55,11 @@ function buildSearchConfig(
 
   return {
     queryBuilder: new SearchQueryBuilder({
-      albumQueryTemplate: s?.album_query_template ?? '{artist} - {album}',
-      trackQueryTemplate: s?.track_query_template ?? '{artist} - {title}',
-      fallbackQueries:    s?.fallback_queries ?? [],
-      excludeTerms:       s?.exclude_terms ?? [],
+      artistQueryTemplate: s?.artist_query_template ?? '{artist}',
+      albumQueryTemplate:  s?.album_query_template ?? '{artist} - {album}',
+      trackQueryTemplate:  s?.track_query_template ?? '{artist} - {title}',
+      fallbackQueries:     s?.fallback_queries ?? [],
+      excludeTerms:        s?.exclude_terms ?? [],
     }),
     searchTimeoutMs:      s?.search_timeout_ms ?? legacyTimeout ?? SEARCH_TIMEOUT_MS,
     maxWaitMs:            s?.max_wait_ms ?? SEARCH_MAX_WAIT_MS,

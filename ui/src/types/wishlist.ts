@@ -2,7 +2,7 @@ export interface WishlistEntry {
   id:           string;
   artist:       string;
   title:        string;
-  type:         'album' | 'track';
+  type:         'artist' | 'album' | 'track';
   year?:        number | null;
   mbid?:        string | null;
   source?:      'listenbrainz' | 'catalog' | 'manual' | null;
@@ -14,7 +14,7 @@ export interface WishlistEntry {
 export interface AddWishlistRequest {
   artist: string;
   title:  string;
-  type:   'album' | 'track';
+  type:   'artist' | 'album' | 'track';
   year?:  number;
   mbid?:  string;
 }

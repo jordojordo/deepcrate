@@ -5,7 +5,7 @@ import { z } from 'zod';
  */
 export const musicBrainzSearchQuerySchema = z.object({
   q:     z.string().min(1, 'Search query is required'),
-  type:  z.enum(['album', 'artist']),
+  type:  z.enum(['album', 'artist', 'track']),
   limit: z.coerce.number().int().positive().max(100)
     .default(20),
 });
@@ -41,12 +41,25 @@ export const artistSearchResultSchema = z.object({
 export type ArtistSearchResult = z.infer<typeof artistSearchResultSchema>;
 
 /**
+ * Recording (track) search result schema
+ */
+export const recordingSearchResultSchema = z.object({
+  mbid:   z.string(),
+  title:  z.string(),
+  artist: z.string(),
+  album:  z.string().nullable(),
+  year:   z.number().int().nullable(),
+});
+
+export type RecordingSearchResult = z.infer<typeof recordingSearchResultSchema>;
+
+/**
  * MusicBrainz search response schema
  */
 export const musicBrainzSearchResponseSchema = z.object({
   query:   z.string(),
-  type:    z.enum(['album', 'artist']),
-  results: z.array(z.union([albumSearchResultSchema, artistSearchResultSchema])),
+  type:    z.enum(['album', 'artist', 'track']),
+  results: z.array(z.union([albumSearchResultSchema, artistSearchResultSchema, recordingSearchResultSchema])),
   total:   z.number().int().nonnegative(),
 });
 

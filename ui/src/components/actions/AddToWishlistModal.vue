@@ -17,7 +17,7 @@ import { useToast } from '@/composables/useToast';
 const visible = defineModel<boolean>('visible', { default: false });
 
 const searchQuery = ref('');
-const searchType = ref<'album' | 'artist'>('album');
+const searchType = ref<'album' | 'artist' | 'track'>('album');
 const results = ref<SearchResult[]>([]);
 const loading = ref(false);
 const addingMbid = ref<string | null>(null);
@@ -25,11 +25,13 @@ const addingMbid = ref<string | null>(null);
 const typeOptions = [
   { label: 'Album', value: 'album' },
   { label: 'Artist', value: 'artist' },
+  { label: 'Track', value: 'track' },
 ];
 
 const { showSuccess, showError } = useToast();
 
 let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
+let abortController: AbortController | null = null;
 
 watch(searchQuery, (newQuery) => {
   if (debounceTimeout) {
@@ -54,6 +56,12 @@ watch(searchType, () => {
 });
 
 async function performSearch() {
+  if (abortController) {
+    abortController.abort();
+  }
+
+  abortController = new AbortController();
+
   if (searchQuery.value.trim().length < 2) {
     return;
   }
@@ -85,12 +93,29 @@ async function handleAdd(item: SearchResult) {
   addingMbid.value = item.mbid;
 
   try {
+    // Map search type to wishlist type
+    const wishlistType = searchType.value;
+
+    // For artists, title is empty (search will use just artist name)
+    const title = searchType.value === 'artist' ? '' : item.title;
+
     await addToWishlist({
       artist: item.artist,
-      title:  item.title,
-      type:   searchType.value === 'album' ? 'album' : 'track',
+      title,
+      type:   wishlistType,
     });
-    showSuccess('Added to wishlist', `${ item.artist } - ${ item.title }`);
+
+    let displayText: string;
+
+    if (searchType.value === 'artist') {
+      displayText = item.artist;
+    } else if (searchType.value === 'track' && item.album) {
+      displayText = `${ item.artist } - ${ item.title } (from ${ item.album })`;
+    } else {
+      displayText = `${ item.artist } - ${ item.title }`;
+    }
+
+    showSuccess('Added to wishlist', displayText);
   } catch(e) {
     const message = e instanceof Error ? e.message : 'Failed to add to wishlist';
 
@@ -119,7 +144,7 @@ function handleClose() {
     <!-- Search Section -->
     <div class="flex flex-column gap-4">
       <div class="flex flex-wrap align-items-end gap-3">
-        <div class="flex flex-column gap-2 flex-grow-1">
+        <div class="flex flex-column gap-2 grow">
           <label for="search-query" class="text-sm font-medium">Search</label>
           <InputText
             id="search-query"
@@ -148,64 +173,67 @@ function handleClose() {
         />
       </div>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="flex justify-content-center py-6">
-        <ProgressSpinner style="width: 48px; height: 48px" />
-      </div>
+      <div class="results-container relative" style="min-height: 400px">
+        <div
+          v-if="loading"
+          class="absolute top-0 left-0 right-0 bottom-0 flex align-items-center justify-content-center z-1"
+          style="background: rgba(var(--surface-ground-rgb), 0.7)"
+        >
+          <ProgressSpinner style="width: 48px; height: 48px" />
+        </div>
 
-      <!-- Results Section -->
-      <div v-else-if="results.length > 0">
-        <DataTable :value="results" :paginator="false" class="p-datatable-sm">
-          <Column header="Cover" style="width: 60px">
-            <template #body="{ data }">
-              <img
-                v-if="data.coverArt"
-                :src="data.coverArt"
-                :alt="`${ data.artist } - ${ data.title }`"
-                class="border-round"
-                style="width: 50px; height: 50px; object-fit: cover"
-              />
-              <div
-                v-else
-                class="border-round bg-surface-200 dark:bg-surface-700 flex align-items-center justify-content-center"
-                style="width: 50px; height: 50px"
-              >
-                <i class="pi pi-image text-muted"></i>
-              </div>
-            </template>
-          </Column>
-          <Column field="artist" header="Artist" />
-          <Column field="title" header="Title" />
-          <Column field="year" header="Year" style="width: 80px" />
-          <Column header="Actions" style="width: 100px">
-            <template #body="{ data }">
-              <Button
-                icon="pi pi-plus"
-                size="small"
-                rounded
-                outlined
-                :loading="addingMbid === data.mbid"
-                :disabled="addingMbid !== null"
-                @click="handleAdd(data)"
-              />
-            </template>
-          </Column>
-        </DataTable>
-      </div>
+        <div v-if="results.length > 0">
+          <DataTable :value="results" :paginator="false" class="p-datatable-sm">
+            <Column header="Cover" style="width: 60px">
+              <template #body="{ data }">
+                <img
+                  v-if="data.coverArt"
+                  :src="data.coverArt"
+                  :alt="`${ data.artist } - ${ data.title }`"
+                  class="border-round"
+                  style="width: 50px; height: 50px; object-fit: cover"
+                />
+                <div
+                  v-else
+                  class="border-round bg-surface-200 dark:bg-surface-700 flex align-items-center justify-content-center"
+                  style="width: 50px; height: 50px"
+                >
+                  <i class="pi pi-image text-muted"></i>
+                </div>
+              </template>
+            </Column>
+            <Column field="artist" header="Artist" />
+            <Column field="title" header="Title" />
+            <Column v-if="searchType === 'track'" field="album" header="Album" />
+            <Column field="year" header="Year" style="width: 80px" />
+            <Column header="Actions" style="width: 100px">
+              <template #body="{ data }">
+                <Button
+                  icon="pi pi-plus"
+                  size="small"
+                  rounded
+                  outlined
+                  :loading="addingMbid === data.mbid"
+                  :disabled="addingMbid !== null"
+                  @click="handleAdd(data)"
+                />
+              </template>
+            </Column>
+          </DataTable>
+        </div>
 
-      <!-- Empty State -->
-      <div
-        v-else-if="searchQuery.trim().length >= 2 && !loading"
-        class="text-center py-6 text-muted"
-      >
-        <i class="pi pi-search text-4xl mb-3"></i>
-        <p>No results found. Try a different search term.</p>
-      </div>
+        <div
+          v-else-if="searchQuery.trim().length >= 2 && !loading"
+          class="text-center py-6 text-muted"
+        >
+          <i class="pi pi-search text-4xl mb-3"></i>
+          <p>No results found. Try a different search term.</p>
+        </div>
 
-      <!-- Initial State -->
-      <div v-else class="text-center py-6 text-muted">
-        <i class="pi pi-search text-4xl mb-3"></i>
-        <p>Enter a search term to find albums or artists.</p>
+        <div v-else-if="!loading" class="text-center py-6 text-muted">
+          <i class="pi pi-search text-4xl mb-3"></i>
+          <p>Enter a search term to find albums, artists, or tracks.</p>
+        </div>
       </div>
     </div>
   </Dialog>

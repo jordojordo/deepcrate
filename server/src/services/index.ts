@@ -4,20 +4,20 @@
 
 // Types
 export type { QueryContext, SearchQueryBuilderConfig } from '@server/types/search-query';
-export type { ListenBrainzRecommendation } from './clients/ListenBrainzClient';
 export type {
   RecordingInfo,
   AlbumInfo,
   ReleaseGroup,
-} from './clients/MusicBrainzClient';
-export type { SimilarArtist } from './clients/LastFmClient';
-export type { NavidromeArtist } from './clients/NavidromeClient';
+} from '@server/types/musicbrainz';
 export type {
   SlskdSearchResponse,
   SlskdFile,
   SlskdSearchResult,
   SlskdSearchState,
 } from '@server/types/slskd-client';
+export type { ListenBrainzRecommendation } from './clients/ListenBrainzClient';
+export type { SimilarArtist } from './clients/LastFmClient';
+export type { NavidromeArtist } from './clients/NavidromeClient';
 
 // Core services
 export { QueueService, default as QueueServiceDefault } from './QueueService';

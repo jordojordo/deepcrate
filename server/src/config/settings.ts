@@ -78,6 +78,7 @@ const SlskdQualityPreferencesSchema = z.object({
 
 const SlskdSearchSchema = z.object({
   // Query templates - variables: {artist}, {album}, {title}, {year}
+  artist_query_template:     z.string().default('{artist}'),
   album_query_template:      z.string().default('{artist} - {album}'),
   track_query_template:      z.string().default('{artist} - {title}'),
   fallback_queries:          z.array(z.string()).default([]),

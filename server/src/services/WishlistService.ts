@@ -177,7 +177,7 @@ export class WishlistService {
    * Read all wishlist entries (for backward compatibility).
    * Returns entries in the format expected by existing consumers.
    */
-  async readAll(): Promise<Array<{ artist: string; title: string; type: 'album' | 'track' }>> {
+  async readAll(): Promise<Array<{ artist: string; title: string; type: 'artist' | 'album' | 'track' }>> {
     const items = await WishlistItem.findAll({ order: [['addedAt', 'ASC']] });
 
     return items.map(item => ({

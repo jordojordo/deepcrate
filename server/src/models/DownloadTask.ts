@@ -12,9 +12,9 @@ export type DownloadTaskStatus =
   'queued' | 'downloading' | 'completed' | 'failed';
 
 /**
- * Type of music item (album or track)
+ * Type of music item (artist, album, or track)
  */
-export type DownloadTaskType = 'album' | 'track';
+export type DownloadTaskType = 'artist' | 'album' | 'track';
 
 /**
  * DownloadTask attributes for tracking download lifecycle.
