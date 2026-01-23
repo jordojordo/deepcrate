@@ -10,9 +10,10 @@ export interface SearchResults<T> {
  * Recording info returned from resolveRecording
  */
 export interface RecordingInfo {
-  artist: string;
-  title:  string;
-  mbid:   string;
+  artist:            string;
+  title:             string;
+  mbid:              string;
+  releaseGroupMbid?: string;  // For cover art lookup
 }
 
 /**

@@ -94,6 +94,9 @@ export async function listenbrainzFetchJob(): Promise<void> {
           continue;
         }
 
+        // Get cover art URL if we have a release-group MBID
+        const coverUrl = trackInfo.releaseGroupMbid? coverClient.getCoverUrl(trackInfo.releaseGroupMbid): null;
+
         // Add to queue
         if (approvalMode === 'manual') {
           // Check if already in pending queue
@@ -104,12 +107,13 @@ export async function listenbrainzFetchJob(): Promise<void> {
           }
 
           await queueService.addPending({
-            artist: trackInfo.artist,
-            title:  trackInfo.title,
-            mbid:   trackInfo.mbid,
-            type:   'track',
-            score:  scorePercent,
-            source: 'listenbrainz',
+            artist:   trackInfo.artist,
+            title:    trackInfo.title,
+            mbid:     trackInfo.mbid,
+            type:     'track',
+            score:    scorePercent,
+            source:   'listenbrainz',
+            coverUrl: coverUrl || undefined,
           });
 
           logger.info(`  ? ${ trackInfo.artist } - ${ trackInfo.title } (pending approval)`);

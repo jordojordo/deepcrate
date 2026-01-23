@@ -20,7 +20,7 @@ const BASE_URL = 'https://musicbrainz.org/ws/2';
  */
 export class MusicBrainzClient {
   /**
-   * Resolve a recording MBID to artist + title
+   * Resolve a recording MBID to artist + title + release-group MBID
    */
   async resolveRecording(mbid: string): Promise<RecordingInfo | null> {
     const url = `${ BASE_URL }/recording/${ mbid }`;
@@ -29,7 +29,7 @@ export class MusicBrainzClient {
       const response = await axios.get(url, {
         headers: { 'User-Agent': USER_AGENT },
         params:  {
-          inc: 'artists',
+          inc: 'artists+releases+release-groups',
           fmt: 'json',
         },
         timeout: 15000,
@@ -49,11 +49,40 @@ export class MusicBrainzClient {
       const artist = artists.join(' & ');
       const title = data.title;
 
+      // Extract release-group MBID for cover art
+      let releaseGroupMbid: string | undefined;
+      const releases = data.releases || [];
+
+      if (releases.length > 0) {
+        // Prefer official albums over singles/EPs/compilations
+        let bestRelease = null;
+
+        for (const release of releases) {
+          const rg = release['release-group'] || {};
+          const primaryType = rg['primary-type'] || '';
+
+          if (primaryType === 'Album') {
+            bestRelease = release;
+            break;
+          }
+        }
+
+        // Fall back to first release if no album found
+        if (!bestRelease) {
+          bestRelease = releases[0];
+        }
+
+        const rg = bestRelease['release-group'] || {};
+
+        releaseGroupMbid = rg.id;
+      }
+
       if (artist && title) {
         return {
           artist,
           title,
           mbid,
+          releaseGroupMbid,
         };
       }
     } catch(error) {
