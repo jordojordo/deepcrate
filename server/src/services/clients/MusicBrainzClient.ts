@@ -233,7 +233,7 @@ export class MusicBrainzClient {
           title:  rg.title,
           artist,
           type:   rg['primary-type'] || null,
-          year:   isNaN(year!) ? null : year,
+          year:   (year !== null && !isNaN(year)) ? year : null,
         };
       });
 
@@ -289,7 +289,7 @@ export class MusicBrainzClient {
           title: rec.title,
           artist,
           album,
-          year:  isNaN(year!) ? null : year,
+          year:  (year !== null && !isNaN(year)) ? year : null,
         };
       });
 
@@ -338,8 +338,8 @@ export class MusicBrainzClient {
           name:           artist.name,
           country:        artist.country || null,
           type:           artist.type || null,
-          beginYear:      isNaN(beginYear!) ? null : beginYear,
-          endYear:        isNaN(endYear!) ? null : endYear,
+          beginYear:      (beginYear !== null && !isNaN(beginYear)) ? beginYear : null,
+          endYear:        (endYear !== null && !isNaN(endYear)) ? endYear : null,
           disambiguation: artist.disambiguation || null,
         };
       });

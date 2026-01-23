@@ -31,6 +31,7 @@ const typeOptions = [
 const { showSuccess, showError } = useToast();
 
 let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
+let abortController: AbortController | null = null;
 
 watch(searchQuery, (newQuery) => {
   if (debounceTimeout) {
@@ -55,6 +56,12 @@ watch(searchType, () => {
 });
 
 async function performSearch() {
+  if (abortController) {
+    abortController.abort();
+  }
+
+  abortController = new AbortController();
+
   if (searchQuery.value.trim().length < 2) {
     return;
   }
