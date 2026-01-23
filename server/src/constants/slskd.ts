@@ -49,3 +49,6 @@ export const DEFAULT_PREFERRED_FORMATS = ['flac', 'wav', 'alac', 'mp3', 'm4a', '
 
 /** Quality tier order from highest to lowest quality */
 export const QUALITY_TIER_ORDER = ['lossless', 'high', 'standard', 'low', 'unknown'] as const;
+
+/** Maximum search results to store for manual selection (limits memory usage) */
+export const MAX_STORED_SELECTION_RESULTS = 15;

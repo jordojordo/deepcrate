@@ -10,6 +10,9 @@ import {
   retryRequestSchema,
   deleteRequestSchema,
   downloadStatsSchema,
+  selectResultRequestSchema,
+  skipResultRequestSchema,
+  retrySearchRequestSchema,
 } from '@server/types/downloads';
 import { sendValidationError } from '@server/utils/errorHandler';
 import { DownloadService } from '@server/services/DownloadService';
@@ -244,6 +247,177 @@ class DownloadsController extends BaseController {
       return res.json(response);
     } catch(error) {
       return this.handleError(res, error as Error, 'Failed to fetch download stats');
+    }
+  };
+
+  /**
+   * Get search results for a pending_selection task
+   * GET /api/v1/downloads/:id/search-results
+   */
+  getSearchResults = async(req: Request, res: Response): Promise<Response> => {
+    try {
+      const id = req.params.id as string;
+
+      const result = await this.downloadService.getSearchResults(id);
+
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          error:   'Task not found or not pending selection',
+        });
+      }
+
+      return res.json(result);
+    } catch(error) {
+      return this.handleError(res, error as Error, 'Failed to fetch search results');
+    }
+  };
+
+  /**
+   * Select a specific search result for download
+   * POST /api/v1/downloads/:id/select
+   */
+  selectResult = async(req: Request, res: Response): Promise<Response> => {
+    try {
+      const id = req.params.id as string;
+
+      const parseResult = selectResultRequestSchema.safeParse(req.body);
+
+      if (!parseResult.success) {
+        return sendValidationError(res, 'Invalid request body', { errors: parseResult.error.issues });
+      }
+
+      const { username, directory } = parseResult.data;
+
+      const result = await this.downloadService.selectSearchResult(id, username, directory);
+
+      if (!result.success) {
+        let statusCode = 400;
+
+        if (result.error?.includes('not found')) {
+          statusCode = 404;
+        } else if (result.error?.includes('expired')) {
+          statusCode = 410;
+        }
+
+        return res.status(statusCode).json({
+          success: false,
+          error:   result.error,
+        });
+      }
+
+      return res.json({ success: true });
+    } catch(error) {
+      return this.handleError(res, error as Error, 'Failed to select search result');
+    }
+  };
+
+  /**
+   * Skip a search result (hide from list)
+   * POST /api/v1/downloads/:id/skip
+   */
+  skipResult = async(req: Request, res: Response): Promise<Response> => {
+    try {
+      const id = req.params.id as string;
+
+      const parseResult = skipResultRequestSchema.safeParse(req.body);
+
+      if (!parseResult.success) {
+        return sendValidationError(res, 'Invalid request body', { errors: parseResult.error.issues });
+      }
+
+      const { username } = parseResult.data;
+
+      const result = await this.downloadService.skipSearchResult(id, username);
+
+      if (!result.success) {
+        let statusCode = 400;
+
+        if (result.error?.includes('not found')) {
+          statusCode = 404;
+        } else if (result.error?.includes('expired')) {
+          statusCode = 410;
+        }
+
+        return res.status(statusCode).json({
+          success: false,
+          error:   result.error,
+        });
+      }
+
+      return res.json({ success: true });
+    } catch(error) {
+      return this.handleError(res, error as Error, 'Failed to skip search result');
+    }
+  };
+
+  /**
+   * Retry search with optional modified query
+   * POST /api/v1/downloads/:id/retry-search
+   */
+  retrySearchRequest = async(req: Request, res: Response): Promise<Response> => {
+    try {
+      const id = req.params.id as string;
+
+      const parseResult = retrySearchRequestSchema.safeParse(req.body);
+
+      if (!parseResult.success) {
+        return sendValidationError(res, 'Invalid request body', { errors: parseResult.error.issues });
+      }
+
+      const { query } = parseResult.data;
+
+      const result = await this.downloadService.retrySearch(id, query);
+
+      if (!result.success) {
+        let statusCode = 400;
+
+        if (result.error?.includes('not found')) {
+          statusCode = 404;
+        } else if (result.error?.includes('expired')) {
+          statusCode = 410;
+        }
+
+        return res.status(statusCode).json({
+          success: false,
+          error:   result.error,
+        });
+      }
+
+      return res.json({ success: true });
+    } catch(error) {
+      return this.handleError(res, error as Error, 'Failed to retry search');
+    }
+  };
+
+  /**
+   * Auto-select the best search result
+   * POST /api/v1/downloads/:id/auto-select
+   */
+  autoSelect = async(req: Request, res: Response): Promise<Response> => {
+    try {
+      const id = req.params.id as string;
+
+      const result = await this.downloadService.autoSelectBest(id);
+
+      if (!result.success) {
+        let statusCode = 400;
+
+        if (result.error?.includes('not found')) {
+          statusCode = 404;
+        } else if (result.error?.includes('expired')) {
+          statusCode = 410;
+        }
+
+        return res.status(statusCode).json({
+          success: false,
+          error:   result.error,
+        });
+      }
+
+      return res.json({ success: true });
+    } catch(error) {
+      return this.handleError(res, error as Error, 'Failed to auto-select');
     }
   };
 }

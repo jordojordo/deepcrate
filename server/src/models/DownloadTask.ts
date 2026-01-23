@@ -7,7 +7,9 @@ import { sequelize } from '@server/config/db/sequelize';
 /**
  * Status of a download task in the download workflow
  */
-export type DownloadTaskStatus = 'pending' | 'searching' | 'deferred' | 'queued' | 'downloading' | 'completed' | 'failed';
+export type DownloadTaskStatus =
+  'pending' | 'searching' | 'pending_selection' | 'deferred' |
+  'queued' | 'downloading' | 'completed' | 'failed';
 
 /**
  * Type of music item (album or track)
@@ -19,33 +21,37 @@ export type DownloadTaskType = 'album' | 'track';
  * Tracks items from wishlist through slskd download to completion.
  */
 export interface DownloadTaskAttributes {
-  id:                 string;           // UUID
-  wishlistKey:        string;           // Format: "artist - album" (unique) - @deprecated use wishlistItemId
-  wishlistItemId?:    string;           // UUID FK to WishlistItem
-  artist:             string;
-  album:              string;
-  type:               DownloadTaskType;
-  status:             DownloadTaskStatus;
-  year?:              number;           // Release year for search queries
-  organizedAt?:       Date;             // When moved to library
-  downloadPath?:      string;           // Relative path under downloads root
-  slskdSearchId?:     string;           // Search ID from slskd
-  slskdUsername?:     string;           // Source user for downloads
-  slskdDirectory?:    string;           // Directory path on source
-  slskdFileIds?:      string[];         // Transfer file IDs from slskd enqueue response
-  fileCount?:         number;           // Total files in download
-  qualityFormat?:     string;           // Detected audio format (flac, mp3, etc.)
-  qualityBitRate?:    number;           // Average bitrate in kbps
-  qualityBitDepth?:   number;           // Bit depth (16, 24, etc.)
-  qualitySampleRate?: number;           // Sample rate in Hz
-  qualityTier?:       QualityTier;      // Quality tier (lossless, high, standard, low)
-  errorMessage?:      string;           // Error details for failed status
-  retryCount:         number;           // Number of retry attempts
-  queuedAt:           Date;             // When added to download queue
-  startedAt?:         Date;             // When download actually started
-  completedAt?:       Date;             // When finished (success or fail)
-  createdAt?:         Date;
-  updatedAt?:         Date;
+  id:                  string;           // UUID
+  wishlistKey:         string;           // Format: "artist - album" (unique) - @deprecated use wishlistItemId
+  wishlistItemId?:     string;           // UUID FK to WishlistItem
+  artist:              string;
+  album:               string;
+  type:                DownloadTaskType;
+  status:              DownloadTaskStatus;
+  year?:               number;           // Release year for search queries
+  organizedAt?:        Date;             // When moved to library
+  downloadPath?:       string;           // Relative path under downloads root
+  slskdSearchId?:      string;           // Search ID from slskd
+  slskdUsername?:      string;           // Source user for downloads
+  slskdDirectory?:     string;           // Directory path on source
+  slskdFileIds?:       string[];         // Transfer file IDs from slskd enqueue response
+  fileCount?:          number;           // Total files in download
+  qualityFormat?:      string;           // Detected audio format (flac, mp3, etc.)
+  qualityBitRate?:     number;           // Average bitrate in kbps
+  qualityBitDepth?:    number;           // Bit depth (16, 24, etc.)
+  qualitySampleRate?:  number;           // Sample rate in Hz
+  qualityTier?:        QualityTier;      // Quality tier (lossless, high, standard, low)
+  searchResults?:      string;           // Cached SlskdSearchResponse[] as JSON
+  searchQuery?:        string;           // Query used for search (for editing/retry)
+  selectionExpiresAt?: Date;             // When selection times out
+  skippedUsernames?:   string[];         // Usernames skipped for this download
+  errorMessage?:       string;           // Error details for failed status
+  retryCount:          number;           // Number of retry attempts
+  queuedAt:            Date;             // When added to download queue
+  startedAt?:          Date;             // When download actually started
+  completedAt?:        Date;             // When finished (success or fail)
+  createdAt?:          Date;
+  updatedAt?:          Date;
 }
 
 export type DownloadTaskCreationAttributes = PartialBy<
@@ -58,33 +64,37 @@ export type DownloadTaskCreationAttributes = PartialBy<
  * Represents items being downloaded via slskd with full lifecycle tracking.
  */
 class DownloadTask extends Model<DownloadTaskAttributes, DownloadTaskCreationAttributes> implements DownloadTaskAttributes {
-  declare id:                 string;
-  declare wishlistKey:        string;
-  declare wishlistItemId?:    string;
-  declare artist:             string;
-  declare album:              string;
-  declare type:               DownloadTaskType;
-  declare status:             DownloadTaskStatus;
-  declare year?:              number;
-  declare organizedAt?:       Date;
-  declare downloadPath?:      string;
-  declare slskdSearchId?:     string;
-  declare slskdUsername?:     string;
-  declare slskdDirectory?:    string;
-  declare slskdFileIds?:      string[];
-  declare fileCount?:         number;
-  declare qualityFormat?:     string;
-  declare qualityBitRate?:    number;
-  declare qualityBitDepth?:   number;
-  declare qualitySampleRate?: number;
-  declare qualityTier?:       QualityTier;
-  declare errorMessage?:      string;
-  declare retryCount:         number;
-  declare queuedAt:           Date;
-  declare startedAt?:         Date;
-  declare completedAt?:       Date;
-  declare createdAt?:         Date;
-  declare updatedAt?:         Date;
+  declare id:                  string;
+  declare wishlistKey:         string;
+  declare wishlistItemId?:     string;
+  declare artist:              string;
+  declare album:               string;
+  declare type:                DownloadTaskType;
+  declare status:              DownloadTaskStatus;
+  declare year?:               number;
+  declare organizedAt?:        Date;
+  declare downloadPath?:       string;
+  declare slskdSearchId?:      string;
+  declare slskdUsername?:      string;
+  declare slskdDirectory?:     string;
+  declare slskdFileIds?:       string[];
+  declare fileCount?:          number;
+  declare qualityFormat?:      string;
+  declare qualityBitRate?:     number;
+  declare qualityBitDepth?:    number;
+  declare qualitySampleRate?:  number;
+  declare qualityTier?:        QualityTier;
+  declare searchResults?:      string;
+  declare searchQuery?:        string;
+  declare selectionExpiresAt?: Date;
+  declare skippedUsernames?:   string[];
+  declare errorMessage?:       string;
+  declare retryCount:          number;
+  declare queuedAt:            Date;
+  declare startedAt?:          Date;
+  declare completedAt?:        Date;
+  declare createdAt?:          Date;
+  declare updatedAt?:          Date;
 }
 
 DownloadTask.init(
@@ -202,6 +212,30 @@ DownloadTask.init(
       columnName: 'quality_tier',
       comment:    'Quality tier (lossless, high, standard, low, unknown)',
     },
+    searchResults: {
+      type:       DataTypes.TEXT,
+      allowNull:  true,
+      columnName: 'search_results',
+      comment:    'Cached SlskdSearchResponse[] as JSON for manual selection',
+    },
+    searchQuery: {
+      type:       DataTypes.STRING(500),
+      allowNull:  true,
+      columnName: 'search_query',
+      comment:    'Query used for search (for editing/retry)',
+    },
+    selectionExpiresAt: {
+      type:       DataTypes.DATE,
+      allowNull:  true,
+      columnName: 'selection_expires_at',
+      comment:    'When selection times out (null = no timeout)',
+    },
+    skippedUsernames: {
+      type:       DataTypes.JSON,
+      allowNull:  true,
+      columnName: 'skipped_usernames',
+      comment:    'Usernames skipped for this download',
+    },
     errorMessage: {
       type:       DataTypes.TEXT,
       allowNull:  true,
@@ -244,6 +278,7 @@ DownloadTask.init(
       { fields: ['organized_at'] },
       { fields: ['queued_at'] },
       { fields: ['wishlist_item_id'] },
+      { fields: ['status', 'selection_expires_at'] }, // Composite for expiration queries
       // Note: wishlist_key already has unique constraint at column level
     ],
   },

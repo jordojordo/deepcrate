@@ -101,6 +101,39 @@ const COLUMN_MIGRATIONS: ColumnMigration[] = [
       allowNull: true,
     },
   },
+  // Interactive search result selection columns
+  {
+    table:      'download_tasks',
+    column:     'search_results',
+    definition: {
+      type:      DataTypes.TEXT,
+      allowNull: true,
+    },
+  },
+  {
+    table:      'download_tasks',
+    column:     'search_query',
+    definition: {
+      type:      DataTypes.STRING(500),
+      allowNull: true,
+    },
+  },
+  {
+    table:      'download_tasks',
+    column:     'selection_expires_at',
+    definition: {
+      type:      DataTypes.DATE,
+      allowNull: true,
+    },
+  },
+  {
+    table:      'download_tasks',
+    column:     'skipped_usernames',
+    definition: {
+      type:      DataTypes.JSON,
+      allowNull: true,
+    },
+  },
 ];
 
 /**

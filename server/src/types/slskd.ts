@@ -49,6 +49,14 @@ export interface WishlistEntry {
 }
 
 /**
+ * Selection configuration for manual vs auto mode
+ */
+export interface SelectionConfig {
+  mode:         'auto' | 'manual';
+  timeoutHours: number;  // 0 = no timeout
+}
+
+/**
  * Configuration for slskd search operations
  */
 export interface SearchConfig {
@@ -66,6 +74,7 @@ export interface SearchConfig {
   simplifyOnRetry:      boolean;
   retryDelayMs:         number;
   qualityPreferences?:  QualityPreferences;
+  selection:            SelectionConfig;
 }
 
 /**
@@ -104,6 +113,38 @@ export interface SearchDeferredResult {
 }
 
 /**
+ * Pending selection result (manual mode, waits for user to select)
+ */
+export interface SearchPendingSelectionResult {
+  status:      'pending_selection';
+  responses:   SlskdSearchResponse[];
+  searchId:    string;
+  searchQuery: string;
+}
+
+/**
  * Union of all possible search attempt results
  */
-export type SearchAttemptResult = SearchSuccessResult | SearchFailedResult | SearchDeferredResult;
+export type SearchAttemptResult = SearchSuccessResult | SearchFailedResult | SearchDeferredResult | SearchPendingSelectionResult;
+
+/**
+ * Grouped files by directory for UI display
+ */
+export interface DirectoryGroup {
+  path:        string;
+  files:       SlskdFile[];
+  totalSize:   number;
+  qualityInfo: QualityInfo | null;
+}
+
+/**
+ * Search response with scoring info for UI display
+ */
+export interface ScoredSearchResponse {
+  response:       SlskdSearchResponse;
+  score:          number;
+  musicFileCount: number;
+  totalSize:      number;
+  qualityInfo:    QualityInfo | null;
+  directories:    DirectoryGroup[];
+}
