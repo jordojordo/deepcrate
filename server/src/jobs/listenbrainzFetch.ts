@@ -217,14 +217,12 @@ async function processRecordings(
       // Rate limit: MusicBrainz requests (1 request/second)
       await sleep(1000);
 
-      const result = mode === 'track'
-        ? await processTrackMode(mbid, scorePercent, ctx)
-        : await processAlbumMode(mbid, scorePercent, seenAlbums, ctx);
+      const result = mode === 'track' ? await processTrackMode(mbid, scorePercent, ctx) : await processAlbumMode(mbid, scorePercent, seenAlbums, ctx);
 
       if (result.added) {
         addedCount++;
       }
-    } catch (error) {
+    } catch(error) {
       logger.error(`Error processing recommendation ${ mbid }:`, { error });
     }
   }
@@ -246,9 +244,7 @@ async function processTrackMode(
     return { added: false };
   }
 
-  const coverUrl = trackInfo.releaseGroupMbid
-    ? ctx.coverClient.getCoverUrl(trackInfo.releaseGroupMbid)
-    : null;
+  const coverUrl = trackInfo.releaseGroupMbid ? ctx.coverClient.getCoverUrl(trackInfo.releaseGroupMbid) : null;
 
   if (ctx.approvalMode === 'manual') {
     const isPending = await ctx.queueService.isPending(mbid);
@@ -307,9 +303,7 @@ async function processAlbumMode(
   seenAlbums.add(albumMbid);
 
   // Check if we've already processed this album
-  const alreadyProcessed = await ProcessedRecording.findOne({
-    where: { mbid: albumMbid, source: 'listenbrainz' }
-  });
+  const alreadyProcessed = await ProcessedRecording.findOne({ where: { mbid: albumMbid, source: 'listenbrainz' } });
 
   if (alreadyProcessed) {
     return { added: false };
