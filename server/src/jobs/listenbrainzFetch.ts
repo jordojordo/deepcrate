@@ -1,3 +1,6 @@
+import type { ListenBrainzRecommendation } from '@server/types/listenbrainz';
+import type { ListenBrainzSettings } from '@server/config/settings';
+
 import logger from '@server/config/logger';
 import { JOB_NAMES } from '@server/constants/jobs';
 import { getConfig } from '@server/config/settings';
@@ -15,15 +18,27 @@ import { isJobCancelled } from '@server/plugins/jobs';
  * - Track mode: Adds tracks directly
  * - Album mode: Resolves tracks to parent albums for de-duplication
  *
+ * Source types:
+ * - collaborative: Uses CF recommendation API (requires token)
+ * - weekly_playlist: Uses weekly exploration playlists (no auth needed)
  */
 export async function listenbrainzFetchJob(): Promise<void> {
   const config = getConfig();
   const lb = config.listenbrainz;
 
-  if (!lb || !lb.username || !lb.token) {
-    logger.warn('ListenBrainz not configured, skipping fetch');
+  if (!lb || !lb.username) {
+    logger.warn('ListenBrainz username not configured, skipping fetch');
 
     return;
+  }
+
+  let sourceType = lb.source_type; // defaults to 'weekly_playlist'
+
+  // Validate token for collaborative mode
+  if (sourceType === 'collaborative' && !lb.token) {
+    logger.warn('ListenBrainz token required for collaborative mode, falling back to weekly playlist');
+
+    sourceType = 'weekly_playlist';
   }
 
   const mode = config.mode || 'album';
@@ -32,13 +47,10 @@ export async function listenbrainzFetchJob(): Promise<void> {
   const minScorePercent = normalizeToPercent(config.min_score) ?? 0;
 
   logger.info(
-    `Fetching ListenBrainz recommendations for ${ lb.username } (mode: ${ mode }, approval: ${ approvalMode }, min_score: ${ minScorePercent })`
+    `Fetching ListenBrainz recommendations for ${ lb.username } (source: ${ sourceType }, mode: ${ mode }, approval: ${ approvalMode })`
   );
 
   const lbClient = new ListenBrainzClient();
-  const mbClient = new MusicBrainzClient();
-  const coverClient = new CoverArtArchiveClient();
-  const queueService = new QueueService();
 
   // Check for cancellation before starting
   if (isJobCancelled(JOB_NAMES.LB_FETCH)) {
@@ -46,8 +58,14 @@ export async function listenbrainzFetchJob(): Promise<void> {
     throw new Error('Job cancelled');
   }
 
-  // Fetch recommendations
-  const recs = await lbClient.fetchRecommendations(lb.username, lb.token, fetchCount);
+  // Fetch recordings based on source type
+  let recs: ListenBrainzRecommendation[];
+
+  if (sourceType === 'weekly_playlist') {
+    recs = await fetchWeeklyPlaylistRecordings(lbClient, lb.username);
+  } else {
+    recs = await fetchCollaborativeRecordings(lbClient, lb, fetchCount);
+  }
 
   if (recs.length === 0) {
     logger.info('No recommendations received');
@@ -56,6 +74,101 @@ export async function listenbrainzFetchJob(): Promise<void> {
   }
 
   logger.info(`Got ${ recs.length } track recommendations`);
+
+  // Process recordings through shared logic
+  const addedCount = await processRecordings(recs, mode, approvalMode, minScorePercent);
+
+  logger.info(`Added ${ addedCount } new items from ListenBrainz`);
+}
+
+/**
+ * Fetch recordings from collaborative filtering recommendations
+ */
+async function fetchCollaborativeRecordings(
+  client: ListenBrainzClient,
+  lb: ListenBrainzSettings,
+  fetchCount: number
+): Promise<ListenBrainzRecommendation[]> {
+  return client.fetchRecommendations(lb.username, lb.token!, fetchCount);
+}
+
+/**
+ * Fetch recordings from weekly exploration playlist
+ */
+async function fetchWeeklyPlaylistRecordings(
+  client: ListenBrainzClient,
+  username: string
+): Promise<ListenBrainzRecommendation[]> {
+  const weeklyPlaylist = await client.findWeeklyExplorationPlaylist(username);
+
+  if (!weeklyPlaylist) {
+    logger.warn(`No weekly exploration playlist found for ${ username }`);
+
+    return [];
+  }
+
+  logger.info(`Found weekly exploration playlist: ${ weeklyPlaylist.title }`);
+
+  // Extract playlist MBID from identifier URL
+  const playlistMbid = extractPlaylistMbid(weeklyPlaylist.identifier);
+
+  if (!playlistMbid) {
+    logger.error(`Could not extract playlist MBID from: ${ weeklyPlaylist.identifier }`);
+
+    return [];
+  }
+
+  const playlistResponse = await client.fetchPlaylist(playlistMbid);
+
+  if (!playlistResponse) {
+    return [];
+  }
+
+  const tracks = playlistResponse.playlist.track || [];
+  const recordings: ListenBrainzRecommendation[] = [];
+
+  for (const track of tracks) {
+    // Handle both single identifier and array of identifiers
+    const identifiers = Array.isArray(track.identifier) ? track.identifier : [track.identifier];
+
+    for (const identifier of identifiers) {
+      const recordingMbid = ListenBrainzClient.extractRecordingMbid(identifier);
+
+      if (recordingMbid) {
+        recordings.push({
+          recording_mbid: recordingMbid,
+          score:          undefined, // Weekly playlists don't have scores
+        });
+        break; // Only need one recording MBID per track
+      }
+    }
+  }
+
+  return recordings;
+}
+
+/**
+ * Extract playlist MBID from ListenBrainz playlist URL
+ * @example "https://listenbrainz.org/playlist/abc-123" -> "abc-123"
+ */
+function extractPlaylistMbid(identifier: string): string | null {
+  const match = identifier.match(/\/playlist\/([a-f0-9-]+)$/i);
+
+  return match ? match[1] : null;
+}
+
+/**
+ * Process recordings and add to queue
+ */
+async function processRecordings(
+  recs: ListenBrainzRecommendation[],
+  mode: string,
+  approvalMode: string,
+  minScorePercent: number
+): Promise<number> {
+  const mbClient = new MusicBrainzClient();
+  const coverClient = new CoverArtArchiveClient();
+  const queueService = new QueueService();
 
   let addedCount = 0;
   const seenAlbums = new Set<string>(); // For album mode de-duplication within this run
@@ -95,7 +208,7 @@ export async function listenbrainzFetchJob(): Promise<void> {
         }
 
         // Get cover art URL if we have a release-group MBID
-        const coverUrl = trackInfo.releaseGroupMbid? coverClient.getCoverUrl(trackInfo.releaseGroupMbid): null;
+        const coverUrl = trackInfo.releaseGroupMbid ? coverClient.getCoverUrl(trackInfo.releaseGroupMbid) : null;
 
         // Add to queue
         if (approvalMode === 'manual') {
@@ -206,7 +319,7 @@ export async function listenbrainzFetchJob(): Promise<void> {
     }
   }
 
-  logger.info(`Added ${ addedCount } new items from ListenBrainz`);
+  return addedCount;
 }
 
 /**

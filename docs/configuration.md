@@ -17,12 +17,18 @@ listenbrainz:
   username: "your_username"
 
   # API token from https://listenbrainz.org/settings/
-  token: "your_token"
+  # Only required if source_type is "collaborative"
+  # token: "your_token"
 
   # Approval mode: "auto" or "manual"
   # auto:   Adds directly to wishlist for immediate download
   # manual: Adds to pending queue for review in Web UI
   approval_mode: "manual"
+
+  # Source type: where to get recommendations from
+  # weekly_playlist: Uses weekly exploration playlists (default, no token needed)
+  # collaborative: Uses CF recommendations based on listening history (requires token)
+  source_type: "weekly_playlist"
 
 # Recommendation mode: "album" or "track"
 # album: Resolve recommended tracks to their parent albums (recommended)
@@ -288,8 +294,15 @@ Note: Use double underscore `__` for nested keys.
 | Key | Type | Required | Default | Description |
 |-----|------|----------|---------|-------------|
 | `username` | string | Yes | - | Your ListenBrainz username |
-| `token` | string | Yes | - | API token from LB settings |
+| `token` | string | No* | - | API token from LB settings |
 | `approval_mode` | string | No | `manual` | `auto` or `manual` |
+| `source_type` | string | No | `weekly_playlist` | `weekly_playlist` or `collaborative` |
+
+\*Required if `source_type: collaborative`
+
+**Source Types:**
+- **weekly_playlist** (default) - Uses ListenBrainz's weekly exploration playlists. These are curated playlists generated for your profile based on collaborative filtering. No API token required.
+- **collaborative** - Uses the collaborative filtering recommendation API directly based on your listening history. Requires an API token from your [ListenBrainz settings](https://listenbrainz.org/settings/).
 
 ### Mode Settings
 
@@ -465,7 +478,7 @@ The bare minimum to run Resonance with ListenBrainz only:
 ```yaml
 listenbrainz:
   username: "your_username"
-  token: "your_token"
+  # token not required for weekly_playlist mode (default)
 
 slskd:
   host: "http://slskd:5030"

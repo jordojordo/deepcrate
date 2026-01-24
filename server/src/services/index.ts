@@ -15,7 +15,7 @@ export type {
   SlskdSearchResult,
   SlskdSearchState,
 } from '@server/types/slskd-client';
-export type { ListenBrainzRecommendation } from './clients/ListenBrainzClient';
+export type { ListenBrainzRecommendation } from '@server/types/listenbrainz';
 export type { SimilarArtist } from './clients/LastFmClient';
 export type { NavidromeArtist } from './clients/NavidromeClient';
 

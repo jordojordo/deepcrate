@@ -15,12 +15,18 @@ listenbrainz:
   username: "your_username"
 
   # API token from https://listenbrainz.org/settings/
-  token: "your_listenbrainz_token"
+  # Only required if source_type is "collaborative"
+  # token: "your_listenbrainz_token"
 
   # Approval mode: "auto" or "manual"
   # auto:   Adds directly to wishlist for immediate download
   # manual: Adds to pending queue for review in Web UI (recommended)
   approval_mode: "manual"
+
+  # Source type: where to get recommendations from
+  # weekly_playlist: Uses weekly exploration playlists (default, no token needed)
+  # collaborative: Uses CF recommendations based on listening history (requires token)
+  source_type: "weekly_playlist"
 
 # Recommendation mode: "album" or "track"
 # album: Resolve recommended tracks to their parent albums (recommended)

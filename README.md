@@ -86,8 +86,10 @@ Create `config.yaml`:
 # ListenBrainz recommendations (based on listening history)
 listenbrainz:
   username: "your_username"
-  token: "your_token"           # From https://listenbrainz.org/settings/
+  # token: "your_token"         # Only needed for source_type: collaborative
   approval_mode: "manual"       # "auto" or "manual"
+  # source_type: "weekly_playlist"  # Default: weekly playlists (no token needed)
+  #                                 # Or "collaborative" for CF recommendations (requires token)
 
 mode: album                     # "album" or "track"
 fetch_count: 100
@@ -169,18 +171,22 @@ Open `http://localhost:8080` and log in with your configured credentials.
 
 ### ListenBrainz (lb-fetch)
 
-Fetches track recommendations from ListenBrainz based on your listening history (scrobbles). Recommendations are resolved to albums via MusicBrainz.
+Fetches track recommendations from ListenBrainz based on your listening history. Recommendations are resolved to albums via MusicBrainz.
+
+**Source Types:**
+- **weekly_playlist** (default) - Uses weekly exploration playlists generated for your profile. No API token required.
+- **collaborative** - Uses the CF recommendation API based on your scrobbles. Requires an API token.
 
 **How it works:**
 1. You listen to music → Navidrome scrobbles to ListenBrainz
 2. ListenBrainz builds a taste profile and generates recommendations
-3. lb-fetch pulls recommendations every 6 hours
+3. lb-fetch pulls recommendations every 6 hours (from playlists or CF API)
 4. Tracks are resolved to parent albums
 5. Albums go to pending queue (manual mode) or wishlist (auto mode)
 
 **Requirements:**
 - ListenBrainz account with active scrobbling
-- Several weeks of listening history for good recommendations
+- API token only if using `source_type: collaborative`
 
 ### Catalog Discovery
 
