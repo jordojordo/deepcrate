@@ -111,7 +111,7 @@ export class ListenBrainzClient {
   async findWeeklyExplorationPlaylist(username: string): Promise<ListenBrainzPlaylistMetadata | null> {
     const playlists = await this.fetchPlaylistsCreatedFor(username);
 
-    const weeklyPlaylist = playlists.find((p) => p.identifier.includes('weekly-exploration'));
+    const weeklyPlaylist = playlists.find((p) => p.title.toLowerCase().includes('weekly exploration'));
 
     return weeklyPlaylist || null;
   }
