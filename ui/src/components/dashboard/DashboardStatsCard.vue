@@ -80,6 +80,8 @@ const trendBadgeClass = computed(() => {
   return  'bg-red-500/20 text-red-400 border-red-500/30';
 });
 
+const isCardClickable = computed(() => props.actionRoute && !props.actionLabel);
+
 // function trendBarClass(index: number) {
 //   if (props.trendBars && index === props.trendBars.length - 1) {
 //     return `${ colorClasses.value.bar } shadow-[0_0_10px_rgba(43,43,238,0.5)]`;
@@ -98,9 +100,13 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
 </script>
 
 <template>
-  <div class="dashboard-stats-card glass-panel glass-panel--hover p-6 relative overflow-hidden group">
+  <component
+    :is="isCardClickable ? RouterLink : 'div'"
+    :to="isCardClickable ? actionRoute : undefined"
+    class="dashboard-stats-card glass-panel glass-panel--hover p-6 relative overflow-hidden group block no-underline"
+    :class="{ 'dashboard-stats-card--clickable': isCardClickable }"
+  >
     <div class="relative z-10">
-      <!-- Header row -->
       <div class="flex align-items-center justify-content-between mb-4">
         <p class="text-white/60 text-sm font-medium">{{ title }}</p>
         <div class="flex align-items-center gap-2">
@@ -113,16 +119,13 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
         </div>
       </div>
 
-      <!-- Value display -->
       <div class="flex align-items-end gap-2 mb-1">
         <p class="text-4xl font-bold text-white leading-none">{{ value }}</p>
         <span v-if="unit" class="text-2xl text-white/50 mb-0.5">{{ unit }}</span>
       </div>
 
-      <!-- Subtitle -->
       <p v-if="subtitle" class="text-white/40 text-sm mb-4">{{ subtitle }}</p>
 
-      <!-- Trend badge -->
       <div v-if="trend" class="mb-4">
         <span
           class="px-2 py-1 rounded text-xs font-bold border"
@@ -145,7 +148,6 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
         ></div>
       </div> -->
 
-      <!-- Download progress items -->
       <div v-if="downloads && downloads.length > 0" class="space-y-3 mb-4">
         <div v-for="download in downloads" :key="download.id">
           <div class="flex justify-content-between text-xs text-white/70 mb-1">
@@ -162,7 +164,6 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
         </div>
       </div>
 
-      <!-- Progress bar -->
       <div v-if="progress" class="relative pt-2">
         <div class="flex align-items-center justify-content-between text-xs mb-2">
           <span class="text-white/70">{{ progress.label || `${progress.value}%` }}</span>
@@ -170,13 +171,12 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
         </div>
         <div class="h-2 w-full bg-white/10 rounded-full overflow-hidden">
           <div
-            class="h-full rounded-full bg-gradient-to-r from-primary to-purple-500"
+            class="h-full rounded-full bg-linear-to-r from-primary to-purple-500"
             :style="{ width: `${progress.value}%` }"
-          ></div>
+          />
         </div>
       </div>
 
-      <!-- Action button -->
       <RouterLink v-if="actionRoute && actionLabel" :to="actionRoute" class="no-underline">
         <Button
           :label="actionLabel"
@@ -186,12 +186,26 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
         />
       </RouterLink>
     </div>
-  </div>
+  </component>
 </template>
 
 <style scoped>
 .dashboard-stats-card {
   transition: all 0.3s ease;
+}
+
+.dashboard-stats-card--clickable {
+  cursor: pointer;
+  color: var(--r-text-secondary);
+}
+
+.dashboard-stats-card--clickable:hover {
+  border-color: var(--r-border-accent);
+}
+
+.dashboard-stats-card--clickable:focus-visible {
+  outline: none;
+  border-color: var(--primary-500);
 }
 
 .dashboard-stats-card__watermark {

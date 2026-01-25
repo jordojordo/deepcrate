@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+// import type { ActivityItem } from '@/components/dashboard/RecentActivityFeed.vue';
+
+import { onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 
 import { useStats } from '@/composables/useStats';
@@ -14,8 +16,8 @@ import Button from 'primevue/button';
 
 import DashboardStatsCard from '@/components/dashboard/DashboardStatsCard.vue';
 import ErrorMessage from '@/components/common/ErrorMessage.vue';
-import DiscoverySourcesChart from '@/components/dashboard/DiscoverySourcesChart.vue';
-import RecentActivityFeed, { type ActivityItem } from '@/components/dashboard/RecentActivityFeed.vue';
+// import DiscoverySourcesChart from '@/components/dashboard/DiscoverySourcesChart.vue';
+// import RecentActivityFeed '@/components/dashboard/RecentActivityFeed.vue';
 import ActionsPanel from '@/components/actions/ActionsPanel.vue';
 
 const {
@@ -34,15 +36,15 @@ onMounted(() => {
 });
 
 // TODO: Discovery sources data - API not yet implemented
-const discoverySources = computed(() => []);
+// const discoverySources = computed(() => []);
 
-// TODO: Recent activity - API not yet implemented
-const recentActivity = computed<ActivityItem[]>(() => []);
+// // TODO: Recent activity - API not yet implemented
+// const recentActivity = computed<ActivityItem[]>(() => []);
 
-const handleViewAllActivity = () => {
-  // TODO: Navigate to activity log page when implemented
-  console.log('View all activity clicked');
-};
+// const handleViewAllActivity = () => {
+//   // TODO: Navigate to activity log page when implemented
+//   console.log('View all activity clicked');
+// };
 </script>
 
 <template>
@@ -89,7 +91,6 @@ const handleViewAllActivity = () => {
         color="orange"
         icon="pi-list-check"
         :show-pulse="(stats.pending ?? 0) > 0"
-        action-label="Review Queue"
         :action-route="ROUTE_PATHS.QUEUE"
       />
 
@@ -101,6 +102,7 @@ const handleViewAllActivity = () => {
         color="primary"
         icon="pi-cloud-download"
         :downloads="activeDownloads"
+        :action-route="ROUTE_PATHS.DOWNLOADS"
       />
 
       <!-- In Library (Duplicates) -->
@@ -110,20 +112,22 @@ const handleViewAllActivity = () => {
         subtitle="Pending items you already own"
         color="green"
         icon="pi-check-circle"
+        :action-route="ROUTE_PATHS.LIBRARY"
       />
 
       <!-- Library Storage (Capacity) -->
       <!-- TODO: Implement library storage capacity API -->
-      <DashboardStatsCard
+      <!-- <DashboardStatsCard
         title="Library Storage"
         value="—"
         subtitle="Coming soon"
         color="purple"
         icon="pi-database"
-      />
+      /> -->
     </div>
 
-    <div class="dashboard__content-row">
+    <!-- TODO: Hide until implemented -->
+    <!-- <div class="dashboard__content-row">
       <div class="dashboard__chart-section">
         <DiscoverySourcesChart :sources="discoverySources" />
       </div>
@@ -134,7 +138,7 @@ const handleViewAllActivity = () => {
           @view-all="handleViewAllActivity"
         />
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 

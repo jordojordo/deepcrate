@@ -77,6 +77,41 @@ const getDefaultCover = () => {
     </svg>
   `);
 };
+
+const playButtonPt = {
+  root: {
+    style: {
+      color:           'var(--r-overlay-text-secondary)',
+      backgroundColor: 'transparent',
+      border:          'none',
+    },
+  },
+  icon: { style: { color: 'inherit' } },
+};
+
+// Passthrough styles for overlay components
+const overlayButtonPt = {
+  root: {
+    style: {
+      color:           'var(--r-overlay-text-secondary)',
+      backgroundColor: 'transparent',
+      border:          'none',
+    },
+  },
+  icon: { style: { color: 'inherit' } },
+};
+
+const volumeSliderPt = {
+  root:   { style: { width: '80px' } },
+  track:  { style: { background: 'var(--r-overlay-track)' } },
+  range:  { style: { background: 'var(--r-overlay-track-fill)' } },
+  handle: {
+    style: {
+      background:  'var(--r-overlay-text-primary)',
+      borderColor: 'var(--r-overlay-text-primary)',
+    },
+  },
+};
 </script>
 
 <template>
@@ -108,6 +143,7 @@ const getDefaultCover = () => {
             :disabled="isLoading || !!error"
             @click="togglePlay"
             aria-label="Toggle play"
+            :pt="playButtonPt"
           />
         </div>
 
@@ -135,13 +171,14 @@ const getDefaultCover = () => {
             class="preview-player__volume-btn"
             text
             rounded
-            severity="contrast"
             @click="toggleMute"
             aria-label="Toggle mute"
+            :pt="overlayButtonPt"
           />
           <Slider
             v-model="volumePercent"
             class="preview-player__volume-slider"
+            :pt="volumeSliderPt"
           />
         </div>
 
@@ -158,9 +195,9 @@ const getDefaultCover = () => {
           class="preview-player__close-btn"
           text
           rounded
-          severity="contrast"
           @click="close"
           aria-label="Close player"
+          :pt="overlayButtonPt"
         />
       </div>
 
@@ -238,7 +275,7 @@ const getDefaultCover = () => {
 .preview-player__title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #f0f0f0;
+  color: var(--r-overlay-text-primary);
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -247,7 +284,7 @@ const getDefaultCover = () => {
 
 .preview-player__artist {
   font-size: 0.75rem;
-  color: #d0d0d0;
+  color: var(--r-overlay-text-secondary);
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -261,19 +298,12 @@ const getDefaultCover = () => {
   gap: 0.5rem;
 }
 
-:deep(.preview-player__play-btn) {
-  width: 2.5rem;
-  height: 2.5rem;
-  background: var(--primary-500);
-  color: white;
-  border: none;
+.preview-player__play-btn:hover {
+  color: var(--r-overlay-text-primary) !important;
+  border-color: var(--border-glow) !important;
 }
 
-:deep(.preview-player__play-btn:hover) {
-  background: var(--primary-600);
-}
-
-:deep(.preview-player__play-btn:disabled) {
+.preview-player__play-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -291,7 +321,7 @@ const getDefaultCover = () => {
 .preview-player__progress {
   flex: 1;
   height: 4px;
-  background: #f0f0f0;
+  background: var(--r-overlay-track);
   border-radius: 2px;
   cursor: pointer;
   position: relative;
@@ -307,14 +337,14 @@ const getDefaultCover = () => {
   left: 0;
   top: 0;
   height: 100%;
-  background: #6060ff;
+  background: var(--r-overlay-track-fill);
   border-radius: 2px;
   transition: width 0.1s linear;
 }
 
 .preview-player__time {
   font-size: 0.75rem;
-  color: var(--r-text-secondary);
+  color: var(--r-overlay-text-secondary);
   font-variant-numeric: tabular-nums;
   min-width: 70px;
 }
@@ -326,28 +356,13 @@ const getDefaultCover = () => {
   gap: 0.5rem;
 }
 
-:deep(.preview-player__volume-btn) {
+.preview-player__volume-btn {
   width: 2rem;
   height: 2rem;
-  color: var(--r-text-secondary);
 }
 
-:deep(.preview-player__volume-btn:hover) {
-  color: var(--r-text-primary);
-}
-
-:deep(.preview-player__volume-slider) {
-  width: 80px;
-}
-
-:deep(.preview-player__volume-slider .p-slider-handle) {
-  width: 12px;
-  height: 12px;
-  margin-top: -5px;
-}
-
-:deep(.p-slider-range) {
-  background: #6060ff;
+.preview-player__volume-btn:hover {
+  color: var(--r-overlay-text-primary) !important;
 }
 
 /* Source Badge */
@@ -362,14 +377,13 @@ const getDefaultCover = () => {
 }
 
 /* Close Button */
-:deep(.preview-player__close-btn) {
+.preview-player__close-btn {
   width: 2rem;
   height: 2rem;
-  color: var(--r-text-secondary);
 }
 
-:deep(.preview-player__close-btn:hover) {
-  color: var(--r-text-primary);
+.preview-player__close-btn:hover {
+  color: var(--r-overlay-text-primary) !important;
 }
 
 /* Error State */

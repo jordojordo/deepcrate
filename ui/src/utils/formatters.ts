@@ -68,3 +68,13 @@ export function formatDuration(seconds: number | null): string {
 
   return `${ Math.round(seconds / 3600) }h`;
 }
+
+export function getDefaultCoverUrl(): string {
+  return 'data:image/svg+xml,' + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+      <rect width="200" height="200" />
+      <circle cx="100" cy="100" r="50" stroke="#3b3b54" stroke-width="4" fill="none"/>
+      <circle cx="100" cy="100" r="20" fill="#3b3b54"/>
+    </svg>
+  `);
+}

@@ -6,6 +6,7 @@ import Button from 'primevue/button';
 import Tag from 'primevue/tag';
 import ProgressSpinner from 'primevue/progressspinner';
 import type { QueueItem } from '@/types';
+import { getDefaultCoverUrl } from '@/utils/formatters';
 
 defineProps<{
   items:   QueueItem[] | undefined;
@@ -45,9 +46,30 @@ function getSourceSeverity(source: string) {
   return source === 'listenbrainz' ? 'info' : 'secondary';
 }
 
-function getDefaultCover() {
-  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"%3E%3Cpath stroke="%236b7280" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/%3E%3C/svg%3E';
+function getSimilarTag(similarTo: string[] | undefined): string | null {
+  if (similarTo && similarTo.length > 0) {
+    const first = similarTo[0];
+    const remaining = similarTo.length - 1;
+
+    if (remaining > 0) {
+      return `Similar to ${ first } (+${ remaining })`;
+    }
+
+    return `Similar to ${ first }`;
+  }
+
+  return null;
 }
+
+function getSimilarTooltip(similarTo: string[] | undefined): string | null {
+  if (similarTo && similarTo.length > 1) {
+    return `Similar to ${ similarTo.join(', ') }`;
+  }
+
+  return null;
+}
+
+
 </script>
 
 <template>
@@ -104,10 +126,10 @@ function getDefaultCover() {
       <Column field="cover_url" header="Cover" style="width: 100px">
         <template #body="{ data }">
           <img
-            :src="data.cover_url || getDefaultCover()"
+            :src="data.cover_url || getDefaultCoverUrl()"
             :alt="`${data.album || data.title} cover`"
             class="w-16 h-16 border-round object-cover"
-            @error="($event.target as HTMLImageElement).src = getDefaultCover()"
+            @error="($event.target as HTMLImageElement).src = getDefaultCoverUrl()"
           />
         </template>
       </Column>
@@ -139,14 +161,26 @@ function getDefaultCover() {
         </template>
       </Column>
 
-      <Column field="score" header="Score" style="width: 100px">
+      <Column field="similar_to" header="Similar To" style="width: 180px">
         <template #body="{ data }">
-          <span v-if="data.score">{{ data.score }}%</span>
-          <span v-else>N/A</span>
+          <Tag
+            v-if="getSimilarTag(data.similar_to)"
+            :value="getSimilarTag(data.similar_to)"
+            v-tooltip.bottom="getSimilarTooltip(data.similar_to)"
+            icon="pi pi-link"
+          />
+          <span v-else class="text-muted">—</span>
         </template>
       </Column>
 
-      <Column header="Actions" style="width: 200px">
+      <Column field="score" header="Score" style="width: 100px">
+        <template #body="{ data }">
+          <span v-if="data.score" class="text-sm">{{ data.score }}%</span>
+          <span v-else class="text-sm">N/A</span>
+        </template>
+      </Column>
+
+      <Column header="Actions" style="width: auto">
         <template #body="{ data }">
           <div class="flex gap-2">
             <Button

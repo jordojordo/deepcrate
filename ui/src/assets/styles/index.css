@@ -30,6 +30,7 @@
   --r-border-subtle: rgba(0, 0, 0, 0.08);
   --r-border-default: rgba(0, 0, 0, 0.12);
   --r-border-emphasis: rgba(0, 0, 0, 0.2);
+  --r-border-accent: rgba(43, 43, 238, 0.5);
 
   /* Interactive state colors */
   --r-hover-bg: rgba(0, 0, 0, 0.05);
@@ -41,12 +42,20 @@
   --r-overlay-heavy: rgba(0, 0, 0, 0.6);
   --r-overlay-dark: rgba(0, 0, 0, 0.8);
 
+  /* Overlay content colors (for elements on dark overlays - same in both themes) */
+  --r-overlay-text-primary: #f0f0f0;
+  --r-overlay-text-secondary: rgba(255, 255, 255, 0.7);
+  --r-overlay-text-muted: rgba(255, 255, 255, 0.5);
+  --r-overlay-accent: var(--primary-400, #6060ff);
+  --r-overlay-track: rgba(255, 255, 255, 0.2);
+  --r-overlay-track-fill: var(--primary-400, #6060ff);
+
   /* Glass effects */
   --r-glass-bg: rgba(255, 255, 255, 0.7);
   --r-glass-bg-solid: rgba(255, 255, 255, 0.9);
 
   /* Shadows */
-  --r-shadow-glow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
+  --r-shadow-glow: 0 10px 30px -10px rgba(43, 43, 238, 0.2);
 
   /* Semantic aliases for backwards compatibility */
   --surface-glass: var(--r-glass-bg);
@@ -66,6 +75,7 @@
   --r-border-subtle: rgba(255, 255, 255, 0.08);
   --r-border-default: rgba(255, 255, 255, 0.12);
   --r-border-emphasis: rgba(255, 255, 255, 0.2);
+  --r-border-accent: rgba(255, 173, 255, .7);
 
   /* Interactive state colors */
   --r-hover-bg: rgba(255, 255, 255, 0.1);
@@ -75,13 +85,22 @@
   --r-overlay-light: rgba(255, 255, 255, 0.05);
   --r-overlay-medium: rgba(0, 0, 0, 0.4);
   --r-overlay-heavy: rgba(0, 0, 0, 0.6);
+  --r-overlay-dark: rgba(0, 0, 0, 0.8);
+
+  /* Overlay content colors (for elements on dark overlays - same in both themes) */
+  --r-overlay-text-primary: #f0f0f0;
+  --r-overlay-text-secondary: rgba(255, 255, 255, 0.7);
+  --r-overlay-text-muted: rgba(255, 255, 255, 0.5);
+  --r-overlay-accent: var(--primary-400, #6060ff);
+  --r-overlay-track: rgba(255, 255, 255, 0.2);
+  --r-overlay-track-fill: var(--primary-400, #6060ff);
 
   /* Glass effects */
   --r-glass-bg: rgba(21, 21, 37, 0.7);
   --r-glass-bg-solid: rgba(21, 21, 37, 0.9);
 
   /* Shadows */
-  --r-shadow-glow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  --r-shadow-glow: 0 10px 30px -10px rgba(255, 173, 255, .1);
 
   /* Semantic aliases for backwards compatibility */
   --surface-glass: var(--r-glass-bg);

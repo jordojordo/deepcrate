@@ -51,7 +51,7 @@ const tooltip = computed(() => {
 <style scoped>
 .theme-toggle {
   justify-content: flex-start;
-  width: 100%;
+  width: auto;
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
   color: var(--surface-300);

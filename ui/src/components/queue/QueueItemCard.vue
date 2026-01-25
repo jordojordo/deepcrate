@@ -5,6 +5,7 @@ import { computed } from 'vue';
 
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
+import { getDefaultCoverUrl } from '@/utils/formatters';
 
 interface Props {
   item:        QueueItem;
@@ -74,16 +75,6 @@ const similarTooltip = computed(() => {
 
 const isInLibrary = computed(() => props.item.in_library);
 
-const getDefaultCover = () => {
-  return 'data:image/svg+xml,' + encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
-      <rect width="200" height="200" fill="#1c1c27"/>
-      <circle cx="100" cy="100" r="50" stroke="#3b3b54" stroke-width="4" fill="none"/>
-      <circle cx="100" cy="100" r="20" fill="#3b3b54"/>
-    </svg>
-  `);
-};
-
 const handleApprove = () => {
   emit('approve', props.item.mbid);
 };
@@ -101,10 +92,10 @@ const handlePreview = () => {
   <div class="queue-card group">
     <div class="queue-card__cover">
       <img
-        :src="item.cover_url || getDefaultCover()"
+        :src="item.cover_url || getDefaultCoverUrl()"
         :alt="`${displayTitle} cover`"
         class="queue-card__image"
-        @error="($event.target as HTMLImageElement).src = getDefaultCover()"
+        @error="($event.target as HTMLImageElement).src = getDefaultCoverUrl()"
       />
 
       <div class="queue-card__overlay">
