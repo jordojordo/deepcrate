@@ -526,3 +526,79 @@ export function ensureDataDir(): string {
 
   return dataPath;
 }
+
+/**
+ * Secret fields that should be sanitized in API responses.
+ * Format: 'section.field' or 'section.nested.field'
+ */
+const SECRET_PATHS: string[] = [
+  'listenbrainz.token',
+  'slskd.api_key',
+  'catalog_discovery.navidrome.password',
+  'catalog_discovery.lastfm.api_key',
+  'preview.spotify.client_id',
+  'preview.spotify.client_secret',
+  'ui.auth.password',
+  'ui.auth.api_key',
+];
+
+/**
+ * Sanitize config for API response by replacing secret values with { configured: boolean }
+ */
+export function sanitizeConfigForApi(config: Config): Record<string, unknown> {
+  const sanitized = JSON.parse(JSON.stringify(config)) as Record<string, unknown>;
+
+  for (const secretPath of SECRET_PATHS) {
+    const parts = secretPath.split('.');
+    const value = getNestedValue(sanitized, parts);
+
+    if (value !== undefined) {
+      setNestedValue(sanitized, parts, { configured: Boolean(value) });
+    }
+  }
+
+  return sanitized;
+}
+
+/**
+ * Sanitize a single section for API response
+ */
+export function sanitizeSectionForApi(
+  section: string,
+  data: Record<string, unknown>
+): Record<string, unknown> {
+  const sanitized = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
+  const sectionPrefix = `${ section }.`;
+
+  for (const secretPath of SECRET_PATHS) {
+    if (!secretPath.startsWith(sectionPrefix)) {
+      continue;
+    }
+
+    const relativePath = secretPath.slice(sectionPrefix.length);
+    const parts = relativePath.split('.');
+    const value = getNestedValue(sanitized, parts);
+
+    if (value !== undefined) {
+      setNestedValue(sanitized, parts, { configured: Boolean(value) });
+    }
+  }
+
+  return sanitized;
+}
+
+/**
+ * Get a nested value from an object by path
+ */
+function getNestedValue(obj: Record<string, unknown>, path: string[]): unknown {
+  let current: unknown = obj;
+
+  for (const key of path) {
+    if (current === null || typeof current !== 'object') {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[key];
+  }
+
+  return current;
+}
