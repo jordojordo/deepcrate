@@ -1,10 +1,80 @@
 <script setup lang="ts">
-// TODO: Implement settings page with the following sections:
-// - Discovery sources configuration (ListenBrainz, Catalog)
-// - slskd connection settings
-// - UI preferences (theme, default view modes)
-// - Notification settings
-// - Account/authentication settings
+import type {
+  ListenBrainzFormData,
+  CatalogDiscoveryFormData,
+  SlskdFormData,
+  PreviewFormData,
+  AuthFormData,
+  UIPreferences,
+} from '@/types/settings';
+import type { SettingsTab } from '@/types/tabs';
+
+import { onMounted } from 'vue';
+
+import { useTabSync } from '@/composables/useTabSync';
+import { SETTINGS_TABS } from '@/types/tabs';
+
+import Tabs from 'primevue/tabs';
+import TabList from 'primevue/tablist';
+import Tab from 'primevue/tab';
+import TabPanels from 'primevue/tabpanels';
+import TabPanel from 'primevue/tabpanel';
+
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue';
+import ListenBrainzForm from '@/components/settings/ListenBrainzForm.vue';
+import CatalogDiscoveryForm from '@/components/settings/CatalogDiscoveryForm.vue';
+import SlskdForm from '@/components/settings/SlskdForm.vue';
+import PreviewForm from '@/components/settings/PreviewForm.vue';
+import AuthForm from '@/components/settings/AuthForm.vue';
+import UIPreferencesForm from '@/components/settings/UIPreferencesForm.vue';
+import { useSettings } from '@/composables/useSettings';
+
+const { activeTab } = useTabSync<SettingsTab>({
+  validTabs:  SETTINGS_TABS,
+  defaultTab: 'listenbrainz',
+});
+
+const {
+  loading,
+  saving,
+  listenbrainz,
+  slskd,
+  catalogDiscovery,
+  preview,
+  ui,
+  uiPreferences,
+  fetchSettings,
+  updateSection,
+  saveUIPreferences,
+} = useSettings();
+
+onMounted(() => {
+  fetchSettings();
+});
+
+async function handleListenBrainzSave(data: ListenBrainzFormData) {
+  await updateSection('listenbrainz', data as unknown as Record<string, unknown>);
+}
+
+async function handleCatalogDiscoverySave(data: CatalogDiscoveryFormData) {
+  await updateSection('catalog_discovery', data as unknown as Record<string, unknown>);
+}
+
+async function handleSlskdSave(data: SlskdFormData) {
+  await updateSection('slskd', data as unknown as Record<string, unknown>);
+}
+
+async function handlePreviewSave(data: PreviewFormData) {
+  await updateSection('preview', data as unknown as Record<string, unknown>);
+}
+
+async function handleAuthSave(data: { auth: AuthFormData }) {
+  await updateSection('ui', data as Record<string, unknown>);
+}
+
+function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
+  saveUIPreferences(prefs);
+}
 </script>
 
 <template>
@@ -18,29 +88,108 @@
       </div>
     </header>
 
-    <div class="settings-page__placeholder">
-      <div class="settings-page__icon">
-        <i class="pi pi-cog"></i>
-      </div>
-      <h2 class="settings-page__placeholder-title">Coming Soon</h2>
-      <p class="settings-page__placeholder-text">
-        The settings page is under development. This page will allow you to
-        configure discovery sources, slskd integration, and UI preferences.
-      </p>
-      <div class="settings-page__features">
-        <div class="settings-page__feature">
-          <i class="pi pi-link"></i>
-          <span>API Connections</span>
-        </div>
-        <div class="settings-page__feature">
-          <i class="pi pi-sliders-h"></i>
-          <span>Discovery Rules</span>
-        </div>
-        <div class="settings-page__feature">
-          <i class="pi pi-palette"></i>
-          <span>UI Preferences</span>
-        </div>
-      </div>
+    <LoadingSpinner v-if="loading && !listenbrainz && !catalogDiscovery" />
+
+    <div v-else class="settings-page__content">
+      <Tabs v-model:value="activeTab">
+        <TabList>
+          <Tab value="listenbrainz">ListenBrainz</Tab>
+          <Tab value="catalog">Catalog Discovery</Tab>
+          <Tab value="slskd">slskd</Tab>
+          <Tab value="preview">Preview</Tab>
+          <Tab value="auth">Authentication</Tab>
+          <Tab value="ui">UI Preferences</Tab>
+        </TabList>
+        <TabPanels>
+          <TabPanel value="listenbrainz">
+            <div class="settings-page__panel">
+              <h2 class="settings-page__section-title">ListenBrainz</h2>
+              <p class="settings-page__section-desc">
+                Configure ListenBrainz integration for music recommendations.
+              </p>
+              <ListenBrainzForm
+                :settings="listenbrainz"
+                :loading="loading"
+                :saving="saving"
+                @save="handleListenBrainzSave"
+              />
+            </div>
+          </TabPanel>
+
+          <TabPanel value="catalog">
+            <div class="settings-page__panel">
+              <h2 class="settings-page__section-title">Catalog Discovery</h2>
+              <p class="settings-page__section-desc">
+                Find similar artists based on your Navidrome library using Last.fm.
+              </p>
+              <CatalogDiscoveryForm
+                :settings="catalogDiscovery"
+                :loading="loading"
+                :saving="saving"
+                @save="handleCatalogDiscoverySave"
+              />
+            </div>
+          </TabPanel>
+
+          <TabPanel value="slskd">
+            <div class="settings-page__panel">
+              <h2 class="settings-page__section-title">slskd Connection</h2>
+              <p class="settings-page__section-desc">
+                Configure your slskd Soulseek client connection and search preferences.
+              </p>
+              <SlskdForm
+                :settings="slskd"
+                :loading="loading"
+                :saving="saving"
+                @save="handleSlskdSave"
+              />
+            </div>
+          </TabPanel>
+
+          <TabPanel value="preview">
+            <div class="settings-page__panel">
+              <h2 class="settings-page__section-title">Audio Preview</h2>
+              <p class="settings-page__section-desc">
+                Configure Spotify integration for audio previews in the queue.
+              </p>
+              <PreviewForm
+                :settings="preview"
+                :loading="loading"
+                :saving="saving"
+                @save="handlePreviewSave"
+              />
+            </div>
+          </TabPanel>
+
+          <TabPanel value="auth">
+            <div class="settings-page__panel">
+              <h2 class="settings-page__section-title">Authentication</h2>
+              <p class="settings-page__section-desc">
+                Configure how users authenticate to access Resonance.
+              </p>
+              <AuthForm
+                :settings="ui"
+                :loading="loading"
+                :saving="saving"
+                @save="handleAuthSave"
+              />
+            </div>
+          </TabPanel>
+
+          <TabPanel value="ui">
+            <div class="settings-page__panel">
+              <h2 class="settings-page__section-title">UI Preferences</h2>
+              <p class="settings-page__section-desc">
+                Customize the look and feel of the Resonance interface.
+              </p>
+              <UIPreferencesForm
+                :preferences="uiPreferences"
+                @save="handleUIPreferencesSave"
+              />
+            </div>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </div>
   </div>
 </template>
@@ -68,70 +217,54 @@
   margin: 0.5rem 0 0 0;
 }
 
-.settings-page__placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 4rem 2rem;
+.settings-page__content {
   background: var(--surface-glass, rgba(21, 21, 37, 0.7));
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   border-radius: 1rem;
-  min-height: 400px;
+  overflow: hidden;
 }
 
-.settings-page__icon {
-  width: 80px;
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--r-hover-bg) 0%, var(--r-active-bg) 100%);
-  border-radius: 1.5rem;
-  margin-bottom: 1.5rem;
+.settings-page__panel {
+  padding: 1.5rem;
 }
 
-.settings-page__icon i {
-  font-size: 2.5rem;
-  color: var(--r-text-primary);
-}
-
-.settings-page__placeholder-title {
-  font-size: 1.5rem;
+.settings-page__section-title {
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--r-text-primary);
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.5rem 0;
 }
 
-.settings-page__placeholder-text {
-  font-size: 1rem;
-  color: var(--r-text-secondary);
-  margin: 0 0 2rem 0;
-  max-width: 480px;
-  line-height: 1.6;
-}
-
-.settings-page__features {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.settings-page__feature {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background: var(--surface-card);
-  border-radius: 0.75rem;
-  color: var(--r-text-secondary);
+.settings-page__section-desc {
   font-size: 0.875rem;
-  font-weight: 500;
+  color: var(--surface-300);
+  margin: 0 0 1.5rem 0;
 }
 
-.settings-page__feature i {
-  color: var(--r-text-muted);
+:deep(.p-tablist) {
+  background: var(--surface-800);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+:deep(.p-tab) {
+  background: transparent;
+  border: none;
+  color: var(--surface-300);
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+}
+
+:deep(.p-tab[data-p-active="true"]) {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+:deep(.p-tab:not([data-p-active="true"]):hover) {
+  color: var(--r-text-primary);
+  background: var(--r-hover-bg);
+}
+
+:deep(.p-tabpanels) {
+  background: transparent;
 }
 </style>
