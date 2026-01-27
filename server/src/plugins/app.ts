@@ -6,6 +6,7 @@ import fs from 'fs';
 import logger from '@server/config/logger';
 import { authMiddleware } from '@server/middleware/auth';
 import healthRoutes from '@server/routes/api/v1/health';
+import authRoutes from '@server/routes/api/v1/auth';
 import queueRoutes from '@server/routes/api/v1/queue';
 import jobsRoutes from '@server/routes/api/v1/jobs';
 import searchRoutes from '@server/routes/api/v1/search';
@@ -13,6 +14,7 @@ import wishlistRoutes from '@server/routes/api/v1/wishlist';
 import downloadsRoutes from '@server/routes/api/v1/downloads';
 import libraryRoutes from '@server/routes/api/v1/library';
 import previewRoutes from '@server/routes/api/v1/preview';
+import AuthController from '@server/controllers/AuthController';
 
 const app = express();
 
@@ -29,13 +31,15 @@ app.use(
 // JSON body parser
 app.use(express.json());
 
-// Health check route (no auth required)
+// Public routes (no auth required)
 app.use('/health', healthRoutes);
+app.get('/api/v1/auth/info', AuthController.getInfo);
 
 // Apply auth middleware to all /api/* routes
 app.use('/api', authMiddleware);
 
 // API routes
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/queue', queueRoutes);
 app.use('/api/v1/jobs', jobsRoutes);
 app.use('/api/v1/search', searchRoutes);

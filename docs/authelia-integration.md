@@ -55,6 +55,11 @@ ui:
       - "Remote-Groups"
 ```
 
+**Note:** When `type: "proxy"` is set, the Resonance UI will:
+1. Detect the auth mode via `/api/v1/auth/info`
+2. Skip the login form and auto-redirect to the dashboard
+3. Display the username from the `Remote-User` header (set by Authelia)
+
 ## Caddy Configuration
 
 ### Basic Forward Auth Setup

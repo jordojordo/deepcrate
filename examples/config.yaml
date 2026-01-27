@@ -228,12 +228,21 @@ ui:
     enabled: true
 
     # Auth type: "basic", "api_key", or "proxy"
-    # Use "proxy" if using external auth (Authelia, etc.)
     type: "basic"
 
-    # For type: "basic" - HTTP Basic Authentication
+    # --- Option 1: Basic Auth (username/password login form) ---
+    # type: "basic"
     username: "admin"
     password: "changeme"  # CHANGE THIS!
 
-    # For type: "api_key" - Bearer token authentication
+    # --- Option 2: API Key Auth (API key login form) ---
+    # type: "api_key"
     # api_key: "your_secret_api_key"
+
+    # --- Option 3: Proxy Auth (external auth via Authelia, etc.) ---
+    # type: "proxy"
+    # No additional config needed - relies on Remote-User header from proxy
+
+    # --- Option 4: Disabled Auth ---
+    # enabled: false
+    # All users treated as "Guest", no login required

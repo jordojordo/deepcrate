@@ -55,6 +55,44 @@ Health check endpoint (no auth required).
 
 ---
 
+### Auth
+
+#### GET /api/v1/auth/info
+
+Get authentication configuration (no auth required).
+
+**Response:**
+```json
+{
+  "enabled": true,
+  "type": "basic"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `enabled` | boolean | Whether authentication is enabled |
+| `type` | string | Auth type: `basic`, `api_key`, `proxy`, or `disabled` |
+
+#### GET /api/v1/auth/me
+
+Get current authenticated user info (requires auth).
+
+**Response:**
+```json
+{
+  "username": "admin"
+}
+```
+
+Username returned varies by auth mode:
+- `basic`: Configured username from config
+- `api_key`: "API User"
+- `proxy`: Value of `Remote-User` header
+- `disabled`: "Guest"
+
+---
+
 ### Queue Management
 
 #### GET /api/v1/queue/pending

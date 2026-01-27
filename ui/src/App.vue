@@ -19,6 +19,7 @@ const router = useRouter();
 const { sidebarTopItems, sidebarBottomItems } = useSidebarItems();
 
 const isAuthed = computed(() => authStore.isAuthenticated);
+const requiresLogin = computed(() => authStore.requiresLogin);
 
 function handleLogout(): void {
   authStore.logout();
@@ -54,7 +55,7 @@ function handleLogout(): void {
 
     <template #header-right>
       <Button
-        v-if="isAuthed"
+        v-if="requiresLogin && isAuthed"
         appearance="secondary"
         size="small"
         @click="handleLogout"

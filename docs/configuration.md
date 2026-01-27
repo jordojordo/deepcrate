@@ -471,6 +471,17 @@ The preview player uses Deezer by default (no API key required). Spotify can be 
 *Required if `type: basic`
 **Required if `type: api_key`
 
+**Auth Mode Behaviors:**
+
+| Mode | Login UI | API Header | Username Source |
+|------|----------|------------|-----------------|
+| `basic` | Username + Password form | `Authorization: Basic <credentials>` | Config `username` |
+| `api_key` | API Key input field | `Authorization: Bearer <token>` | "API User" |
+| `proxy` | Auto-redirect (no login) | None (proxy handles auth) | `Remote-User` header |
+| `disabled` | Auto-redirect (no login) | None | "Guest" |
+
+When `enabled: false`, the UI behaves the same as `proxy` mode - users are automatically authenticated and redirected to the dashboard.
+
 ## Minimal Configuration
 
 The bare minimum to run Resonance with ListenBrainz only:

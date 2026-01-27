@@ -52,3 +52,20 @@ export const healthResponseSchema = z.object({
 });
 
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
+
+/**
+ * Auth info response schema (public - no secrets)
+ */
+export const authInfoResponseSchema = z.object({
+  enabled: z.boolean(),
+  type:    z.enum(['basic', 'api_key', 'proxy', 'disabled']),
+});
+
+export type AuthInfoResponse = z.infer<typeof authInfoResponseSchema>;
+
+/**
+ * Auth current user response schema
+ */
+export const authMeResponseSchema = z.object({ username: z.string() });
+
+export type AuthMeResponse = z.infer<typeof authMeResponseSchema>;

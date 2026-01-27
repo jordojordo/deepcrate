@@ -282,10 +282,11 @@ Simple JSON arrays of identifiers (MBIDs or entry strings).
 
 ### Built-in Authentication
 
-Two options:
+Three options:
 
-1. **HTTP Basic Auth** - Username/password in config
-2. **API Key Auth** - Bearer token in header
+1. **HTTP Basic Auth** - Username/password login form
+2. **API Key Auth** - Bearer token login form
+3. **Proxy Auth** - Delegates to external auth (Authelia, etc.), auto-redirects users
 
 ### Authelia Integration
 

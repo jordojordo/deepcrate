@@ -8,8 +8,35 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor to add Basic auth from localStorage
+/**
+ * Get the current auth mode from localStorage cache
+ * This avoids circular dependency with the store
+ */
+function getAuthMode(): string | null {
+  return localStorage.getItem('auth_mode');
+}
+
+// Request interceptor to add auth headers based on mode
 client.interceptors.request.use((config) => {
+  const authMode = getAuthMode();
+
+  // For proxy/disabled modes, don't add any auth headers
+  if (authMode === 'proxy' || authMode === 'disabled') {
+    return config;
+  }
+
+  // For API key mode, use Bearer token
+  if (authMode === 'api_key') {
+    const apiKey = localStorage.getItem('auth_api_key');
+
+    if (apiKey) {
+      config.headers.Authorization = `Bearer ${ apiKey }`;
+    }
+
+    return config;
+  }
+
+  // Default: Basic auth mode
   const credentials = localStorage.getItem('auth_credentials');
 
   if (credentials) {
@@ -24,12 +51,18 @@ client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth_credentials');
-      localStorage.removeItem('auth_username');
+      const authMode = getAuthMode();
 
-      if (!redirectingToLogin && window.location.pathname !== ROUTE_PATHS.LOGIN) {
-        redirectingToLogin = true;
-        window.location.replace(ROUTE_PATHS.LOGIN);
+      // Only redirect to login for modes that require it
+      if (authMode !== 'proxy' && authMode !== 'disabled') {
+        localStorage.removeItem('auth_credentials');
+        localStorage.removeItem('auth_username');
+        localStorage.removeItem('auth_api_key');
+
+        if (!redirectingToLogin && window.location.pathname !== ROUTE_PATHS.LOGIN) {
+          redirectingToLogin = true;
+          window.location.replace(ROUTE_PATHS.LOGIN);
+        }
       }
     }
 

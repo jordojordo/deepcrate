@@ -9,9 +9,12 @@ export function useAuth() {
 
   const isAuthenticated = computed(() => store.isAuthenticated);
   const username = computed(() => store.username);
+  const authMode = computed(() => store.authMode);
+  const authConfig = computed(() => store.authConfig);
+  const requiresLogin = computed(() => store.requiresLogin);
 
-  async function login(user: string, password: string) {
-    const success = await store.login(user, password);
+  async function login(userOrKey: string, password?: string) {
+    const success = await store.login(userOrKey, password);
 
     if (success) {
       await router.push(ROUTE_PATHS.DASHBOARD);
@@ -28,6 +31,9 @@ export function useAuth() {
   return {
     isAuthenticated,
     username,
+    authMode,
+    authConfig,
+    requiresLogin,
     login,
     logout,
   };

@@ -218,20 +218,27 @@ The web UI provides:
 
 ## Authentication
 
-### Built-in Auth
+Resonance supports multiple authentication modes:
 
-Resonance includes built-in authentication options:
+| Mode | Config | Login UI | Use Case |
+|------|--------|----------|----------|
+| Basic | `type: "basic"` | Username + Password | Simple setup |
+| API Key | `type: "api_key"` | API Key field | Programmatic access |
+| Proxy | `type: "proxy"` | Auto-redirect | External auth (Authelia) |
+| Disabled | `enabled: false` | Auto-redirect | Development/trusted networks |
+
+### Basic Auth
 
 ```yaml
 ui:
   auth:
     enabled: true
-    type: "basic"        # HTTP Basic Auth
+    type: "basic"
     username: "admin"
     password: "secure_password"
 ```
 
-Or use API key authentication:
+### API Key Auth
 
 ```yaml
 ui:
@@ -241,15 +248,26 @@ ui:
     api_key: "your_secret_api_key"
 ```
 
-### Authelia Integration
+### Proxy Auth (Authelia, etc.)
 
-For advanced authentication (SSO, 2FA, LDAP), integrate with [Authelia](https://www.authelia.com/) via your reverse proxy. See [docs/authelia-integration.md](docs/authelia-integration.md).
+For SSO, 2FA, or LDAP integration, use proxy mode with a reverse proxy:
+
+```yaml
+ui:
+  auth:
+    enabled: true
+    type: "proxy"
+```
+
+See [docs/authelia-integration.md](docs/authelia-integration.md) for setup instructions.
 
 ## API
 
 Resonance exposes a REST API for automation and integration:
 
 ```
+GET  /api/v1/auth/info          # Get auth configuration (public)
+GET  /api/v1/auth/me            # Get current user info
 GET  /api/v1/queue/pending      # List pending items
 POST /api/v1/queue/approve      # Approve items
 POST /api/v1/queue/reject       # Reject items
