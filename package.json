@@ -5,5 +5,13 @@
     "deps:check": "pnpm list -r",
     "deps:update": "pnpm -r up --latest --interactive",
     "dev": "pnpm --filter server --filter ui dev"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "better-sqlite3",
+      "esbuild",
+      "sqlite3"
+    ]
   }
 }
