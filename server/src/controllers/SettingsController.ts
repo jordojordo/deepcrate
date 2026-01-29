@@ -136,6 +136,9 @@ class SettingsController extends BaseController {
         return sendValidationError(res, 'Request body must include a data object');
       }
 
+      // TODO: Use request specific schemas as the frontend will pass partial updates
+      //       with undefined fields for secret keys that are unchanged.
+
       const schema = SECTION_SCHEMAS[section];
 
       if (!schema) {
