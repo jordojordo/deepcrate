@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { LibraryOrganizeConfig } from '@/types';
+import type { LibraryTab } from '@/types/tabs';
 
 import { computed, onMounted } from 'vue';
+
+import { useTabSync } from '@/composables/useTabSync';
+import { LIBRARY_TABS } from '@/types/tabs';
 import { useLibrary } from '@/composables/useLibrary';
 import { useJobsSocket } from '@/composables/useJobsSocket';
 import { useJobsStore } from '@/stores/jobs';
@@ -21,6 +25,11 @@ import UnorganizedTasksList from '@/components/library/UnorganizedTasksList.vue'
 import LibraryConfigForm from '@/components/library/LibraryConfigForm.vue';
 
 const jobsStore = useJobsStore();
+
+const { activeTab } = useTabSync<LibraryTab>({
+  validTabs:  LIBRARY_TABS,
+  defaultTab: 'unorganized',
+});
 
 const {
   status,
@@ -116,7 +125,7 @@ onMounted(() => {
       :on-cancel="handleCancel"
     />
 
-    <Tabs class="library-page__tabs" value="unorganized">
+    <Tabs class="library-page__tabs" v-model:value="activeTab">
       <TabList>
         <Tab value="unorganized">Unorganized</Tab>
         <Tab value="configuration">Configuration</Tab>

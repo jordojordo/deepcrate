@@ -1,13 +1,22 @@
-import { defineStore } from 'pinia';
+import { defineStore, storeToRefs } from 'pinia';
 import { ref, computed, watch } from 'vue';
+
+import { useSettingsStore } from '@/stores/settings';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-const STORAGE_KEY = 'resonance_theme';
-
 export const useThemeStore = defineStore('theme', () => {
-  const mode = ref<ThemeMode>('system');
+  const settingsStore = useSettingsStore();
+  const { uiPreferences } = storeToRefs(settingsStore);
+
   const systemPrefersDark = ref(true);
+
+  const mode = computed({
+    get: () => uiPreferences.value.theme,
+    set: (newMode: ThemeMode) => {
+      settingsStore.saveUIPreferences({ theme: newMode });
+    },
+  });
 
   const isDark = computed(() => {
     if (mode.value === 'system') {
@@ -27,7 +36,6 @@ export const useThemeStore = defineStore('theme', () => {
 
   function setMode(newMode: ThemeMode) {
     mode.value = newMode;
-    localStorage.setItem(STORAGE_KEY, newMode);
     applyTheme();
   }
 
@@ -42,13 +50,6 @@ export const useThemeStore = defineStore('theme', () => {
   }
 
   function initialize() {
-    // Get stored preference
-    const stored = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
-
-    if (stored && ['light', 'dark', 'system'].includes(stored)) {
-      mode.value = stored;
-    }
-
     // Set up system preference detection
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
@@ -59,11 +60,11 @@ export const useThemeStore = defineStore('theme', () => {
       applyTheme();
     });
 
-    // Apply initial theme
+    // Apply initial theme from settings
     applyTheme();
   }
 
-  // Watch for mode changes
+  // Watch for mode changes (from settings or elsewhere)
   watch(mode, () => {
     applyTheme();
   });

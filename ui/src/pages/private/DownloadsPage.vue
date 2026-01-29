@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { ActiveDownload } from '@/types';
+import type { DownloadsTab } from '@/types/tabs';
 
 import { onMounted } from 'vue';
+
+import { useTabSync } from '@/composables/useTabSync';
+import { DOWNLOADS_TABS } from '@/types/tabs';
 import { useDownloads } from '@/composables/useDownloads';
 import { useDownloadsSocket } from '@/composables/useDownloadsSocket';
 import { useJobs } from '@/composables/useJobs';
@@ -24,6 +28,11 @@ import SearchResultsModal from '@/components/downloads/SearchResultsModal.vue';
 /*
   TODO: Add "Queued" downloads tab, will require a new API endpoint.
 */
+
+const { activeTab } = useTabSync<DownloadsTab>({
+  validTabs:  DOWNLOADS_TABS,
+  defaultTab: 'active',
+});
 
 const {
   activeDownloads,
@@ -146,7 +155,7 @@ onMounted(() => {
 
     <DownloadStats :stats="stats" />
 
-    <Tabs class="downloads-page__tabs" value="active">
+    <Tabs class="downloads-page__tabs" v-model:value="activeTab">
       <TabList>
         <Tab value="active">Active</Tab>
         <Tab value="completed">Completed</Tab>

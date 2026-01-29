@@ -8,6 +8,7 @@ import {
 import { useRoute } from 'vue-router';
 
 import SidebarNavList from '@/components/layout/SidebarNavList.vue';
+import { useSettings } from '@/composables/useSettings';
 
 export interface SidebarItem {
   key:       string;
@@ -28,9 +29,10 @@ const props = defineProps<{
 
 const slots = useSlots();
 const route = useRoute();
+const { uiPreferences } = useSettings();
 
 const mobileSidebarOpen = ref(false);
-const sidebarCollapsed = ref(false);
+const sidebarCollapsed = ref(uiPreferences.value.sidebarCollapsed);
 const expandedItems = ref<Set<string>>(new Set());
 
 const hasSidebarBottomSlot = computed(() => !!slots['sidebar-bottom']);

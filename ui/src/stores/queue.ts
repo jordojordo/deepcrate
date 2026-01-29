@@ -1,13 +1,16 @@
 import type { QueueItem, QueueFilters } from '@/types';
 
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { defineStore, storeToRefs } from 'pinia';
+import { ref, computed, watch } from 'vue';
 
 import * as queueApi from '@/services/queue';
 import { useToast } from '@/composables/useToast';
+import { useSettingsStore } from '@/stores/settings';
 
 export const useQueueStore = defineStore('queue', () => {
   const { showSuccess, showError } = useToast();
+  const settingsStore = useSettingsStore();
+  const { uiPreferences } = storeToRefs(settingsStore);
 
   const items = ref<QueueItem[]>([]);
   const total = ref(0);
@@ -18,9 +21,17 @@ export const useQueueStore = defineStore('queue', () => {
     source: 'all',
     sort:   'added_at',
     order:  'desc',
-    limit:  20,
+    limit:  uiPreferences.value.itemsPerPage,
     offset: 0,
   });
+
+  // Update limit when itemsPerPage preference changes
+  watch(
+    () => uiPreferences.value.itemsPerPage,
+    (newLimit) => {
+      filters.value.limit = newLimit;
+    }
+  );
 
   const hasMore = computed(() => items.value?.length < total.value);
 

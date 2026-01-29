@@ -13,11 +13,11 @@ import {
   updateConfig,
   sanitizeConfigForApi,
   sanitizeSectionForApi,
-  SECTION_SCHEMAS,
 } from '@server/config/settings';
 import {
   SETTINGS_SECTIONS,
   SettingsSectionSchema,
+  UPDATE_SCHEMAS,
 } from '@server/types/settings';
 import { sendNotFoundError, sendValidationError } from '@server/utils/errorHandler';
 
@@ -136,14 +136,7 @@ class SettingsController extends BaseController {
         return sendValidationError(res, 'Request body must include a data object');
       }
 
-      // TODO: Use request specific schemas as the frontend will pass partial updates
-      //       with undefined fields for secret keys that are unchanged.
-
-      const schema = SECTION_SCHEMAS[section];
-
-      if (!schema) {
-        return sendValidationError(res, `No validation schema for section: ${ section }`);
-      }
+      const schema = UPDATE_SCHEMAS[section as SettingsSection];
 
       const result = schema.safeParse(data);
 

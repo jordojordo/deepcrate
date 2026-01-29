@@ -8,6 +8,7 @@ import { useQueueSocket } from '@/composables/useQueueSocket';
 import { useToast } from '@/composables/useToast';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { usePlayer } from '@/composables/usePlayer';
+import { useSettings } from '@/composables/useSettings';
 
 import Button from 'primevue/button';
 import QueueFilters from '@/components/queue/QueueFilters.vue';
@@ -36,9 +37,15 @@ useQueueSocket();
 
 const { showWarning } = useToast();
 const { playQueueItem } = usePlayer();
+const { uiPreferences, saveUIPreferences } = useSettings();
 
-const viewMode = ref<ViewMode>('grid');
+const viewMode = ref<ViewMode>(uiPreferences.value.queueViewMode);
 const selectedIndex = ref(0);
+
+// Persist view mode preference
+watch(viewMode, (mode) => {
+  saveUIPreferences({ queueViewMode: mode });
+});
 
 const selectedItem = computed(() => items.value[selectedIndex.value] ?? null);
 

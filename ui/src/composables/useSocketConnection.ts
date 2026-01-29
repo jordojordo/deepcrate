@@ -20,7 +20,7 @@ function getAuthToken(): string | null {
     return `Basic ${ basicAuth }`;
   }
 
-  const apiKey = localStorage.getItem('apiKey');
+  const apiKey = localStorage.getItem('auth_api_key');
 
   if (apiKey) {
     return `Bearer ${ apiKey }`;

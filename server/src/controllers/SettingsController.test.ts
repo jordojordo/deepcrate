@@ -27,8 +27,8 @@ describe('SettingsController', () => {
         .send({
           section: 'listenbrainz',
           data:    {
-            // missing required 'username' field
-            approval_mode: 'manual',
+            // invalid enum value should fail validation
+            approval_mode: 'invalid_mode',
           },
         });
 

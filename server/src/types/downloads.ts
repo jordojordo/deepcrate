@@ -54,7 +54,7 @@ export type DownloadProgress = z.infer<typeof downloadProgressSchema>;
  * Active download schema (database record + real-time progress)
  */
 export const activeDownloadSchema = z.object({
-  id:                  z.string().uuid(),
+  id:                  z.uuid(),
   wishlistKey:         z.string(),
   artist:              z.string(),
   album:               z.string(),
@@ -77,7 +77,7 @@ export type ActiveDownload = z.infer<typeof activeDownloadSchema>;
  * Completed download schema (database record)
  */
 export const completedDownloadSchema = z.object({
-  id:              z.string().uuid(),
+  id:              z.uuid(),
   wishlistKey:     z.string(),
   artist:          z.string(),
   album:           z.string(),
@@ -94,7 +94,7 @@ export type CompletedDownload = z.infer<typeof completedDownloadSchema>;
  * Failed download schema (database record)
  */
 export const failedDownloadSchema = z.object({
-  id:              z.string().uuid(),
+  id:              z.uuid(),
   wishlistKey:     z.string(),
   artist:          z.string(),
   album:           z.string(),
@@ -120,14 +120,14 @@ export type GetDownloadsQuery = z.infer<typeof getDownloadsQuerySchema>;
 /**
  * Retry request schema
  */
-export const retryRequestSchema = z.object({ ids: z.array(z.string().uuid()).min(1) });
+export const retryRequestSchema = z.object({ ids: z.array(z.uuid()).min(1) });
 
 export type RetryRequest = z.infer<typeof retryRequestSchema>;
 
 /**
  * Delete request schema
  */
-export const deleteRequestSchema = z.object({ ids: z.array(z.string().uuid()).min(1) });
+export const deleteRequestSchema = z.object({ ids: z.array(z.uuid()).min(1) });
 
 export type DeleteRequest = z.infer<typeof deleteRequestSchema>;
 
@@ -194,7 +194,7 @@ export type ScoredSearchResponse = z.infer<typeof scoredSearchResponseSchema>;
  */
 export const searchResultsResponseSchema = z.object({
   task: z.object({
-    id:                 z.string().uuid(),
+    id:                 z.uuid(),
     artist:             z.string(),
     album:              z.string(),
     searchQuery:        z.string(),
