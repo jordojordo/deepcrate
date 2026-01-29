@@ -201,3 +201,16 @@ export const ValidateConfigRequestSchema = z.object({
 });
 
 export type ValidateConfigRequest = z.infer<typeof ValidateConfigRequestSchema>;
+
+/**
+ * Map of update request schemas for partial validation
+ */
+export const UPDATE_SCHEMAS: Record<SettingsSection, z.ZodType<unknown>> = {
+  listenbrainz:      UpdateListenBrainzRequestSchema,
+  slskd:             UpdateSlskdRequestSchema,
+  catalog_discovery: UpdateCatalogDiscoveryRequestSchema,
+  library_duplicate: z.object({}).passthrough(),
+  library_organize:  z.object({}).passthrough(),
+  preview:           UpdatePreviewRequestSchema,
+  ui:                UpdateUIRequestSchema,
+};
