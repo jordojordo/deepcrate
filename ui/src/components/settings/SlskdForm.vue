@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import type { SlskdSettings, SlskdFormData } from '@/types/settings';
+import type {
+  SlskdSettings,
+  SlskdFormData,
+  SlskdForm,
+} from '@/types/settings';
 
 import { reactive, ref, watch, computed } from 'vue';
+import { useSettings } from '@/composables/useSettings';
 
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
@@ -10,6 +15,7 @@ import Select from 'primevue/select';
 import ToggleSwitch from 'primevue/toggleswitch';
 import Tag from 'primevue/tag';
 import AutoComplete from 'primevue/autocomplete';
+import Message from 'primevue/message';
 
 const props = defineProps<{
   settings: SlskdSettings | undefined;
@@ -20,6 +26,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   save: [data: SlskdFormData];
 }>();
+
+const { validateSection } = useSettings();
 
 const selectionModeOptions = [
   { label: 'Manual', value: 'manual' },
@@ -35,7 +43,10 @@ const filteredFormats = ref<string[]>([]);
 const filteredExcludeTerms = ref<string[]>([]);
 const filteredFallbackQueries = ref<string[]>([]);
 
-const form = reactive<SlskdFormData>({
+const errors = ref<Array<{ path: string; message: string }>>([]);
+const urlError = ref<string | null>(null);
+
+const form = reactive<SlskdForm>({
   host:             '',
   api_key:          undefined,
   url_base:         '/',
@@ -81,12 +92,12 @@ watch(
     form.min_album_tracks = next.min_album_tracks;
     form.api_key = undefined;
 
-    if (next.search) {
-      Object.assign(form.search!, next.search);
+    if (next.search && form.search) {
+      Object.assign(form.search, next.search);
     }
 
-    if (next.selection) {
-      Object.assign(form.selection!, next.selection);
+    if (next.selection && form.selection) {
+      Object.assign(form.selection, next.selection);
     }
   },
   { immediate: true }
@@ -94,7 +105,30 @@ watch(
 
 const apiKeyConfigured = computed(() => props.settings?.api_key?.configured ?? false);
 
-function handleSave() {
+function isValidUrl(url: string): boolean {
+  if (!url.trim()) {
+    return true; // Empty is allowed
+  }
+
+  try {
+    new URL(url);
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function handleSave() {
+  errors.value = [];
+  urlError.value = null;
+
+  if (form.host && !isValidUrl(form.host)) {
+    urlError.value = 'Invalid URL format. Please enter a valid URL (e.g., https://slskd.example.com)';
+
+    return;
+  }
+
   const data: SlskdFormData = {
     host:             form.host.trim(),
     url_base:         form.url_base.trim() || '/',
@@ -106,6 +140,14 @@ function handleSave() {
 
   if (form.api_key?.trim()) {
     data.api_key = form.api_key.trim();
+  }
+
+  const validation = await validateSection('slskd', data);
+
+  if (!validation.valid && validation.errors) {
+    errors.value = validation.errors;
+
+    return;
   }
 
   emit('save', data);
@@ -149,18 +191,31 @@ function searchFallbackQueries(event: { query: string }) {
 
 <template>
   <div class="settings-form">
+    <Message
+      v-if="errors.length > 0 || urlError"
+      severity="error"
+      :closable="false"
+      class="settings-form__error"
+    >
+      <div class="flex">
+        <span v-if="urlError">{{ urlError }}</span>
+        <span v-for="error in errors" :key="error.path">{{ error.message }}</span>
+      </div>
+    </Message>
+
     <div class="settings-form__grid">
-      <label class="settings-form__field">
-        <span class="settings-form__label">Host</span>
+      <div class="settings-form__field">
+        <label for="setting-slskd-host" class="settings-form__label">Host</label>
         <InputText
+          id="setting-slskd-host"
           v-model="form.host"
           :disabled="loading"
           placeholder="https://slskd.example.com"
         />
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">
+      <div class="settings-form__field">
+        <label for="setting-slskd-api-key" class="settings-form__label">
           API Key
           <Tag
             v-if="apiKeyConfigured"
@@ -168,235 +223,309 @@ function searchFallbackQueries(event: { query: string }) {
             value="Configured"
             class="ml-2"
           />
-        </span>
+        </label>
         <InputText
+          id="setting-slskd-api-key"
           v-model="form.api_key"
           type="password"
           :disabled="loading"
           :placeholder="apiKeyConfigured ? 'Enter to change' : 'API key'"
         />
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">URL Base</span>
+      <div class="settings-form__field">
+        <label for="setting-slskd-url-base" class="settings-form__label">URL Base</label>
         <InputText
+          id="setting-slskd-url-base"
           v-model="form.url_base"
           :disabled="loading"
           placeholder="/"
         />
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">Search Timeout (ms)</span>
+      <div class="settings-form__field">
+        <label for="setting-slskd-search-timeout" class="settings-form__label">
+          Search Timeout (ms)
+        </label>
         <InputNumber
+          id="setting-slskd-search-timeout"
           v-model="form.search_timeout"
           :disabled="loading"
           :min="1000"
           :max="60000"
           :step="1000"
         />
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">Min Album Tracks</span>
+      <div class="settings-form__field">
+        <label for="setting-slskd-min-tracks" class="settings-form__label">
+          Min Album Tracks
+        </label>
         <InputNumber
+          id="setting-slskd-min-tracks"
           v-model="form.min_album_tracks"
           :disabled="loading"
           :min="1"
           :max="30"
         />
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">Selection Mode</span>
+      <div class="settings-form__field">
+        <label for="setting-slskd-selection-mode" class="settings-form__label">
+          Selection Mode
+        </label>
         <Select
-          v-model="form.selection!.mode"
+          id="setting-slskd-selection-mode"
+          v-model="form.selection.mode"
           :options="selectionModeOptions"
           option-label="label"
           option-value="value"
           :disabled="loading"
         />
-      </label>
+      </div>
     </div>
 
     <details class="settings-form__section">
       <summary class="settings-form__section-title">Search Settings</summary>
-      <div class="settings-form__grid">
-        <label class="settings-form__field">
-          <span class="settings-form__label">Album Query Template</span>
+      <div class="settings-form__grid settings-form__grid--with-margin">
+        <div class="settings-form__field">
+          <label for="setting-slskd-album-query" class="settings-form__label">
+            Album Query Template
+          </label>
           <InputText
-            v-model="form.search!.album_query_template"
+            id="setting-slskd-album-query"
+            v-model="form.search.album_query_template"
             :disabled="loading"
             placeholder="{artist} {album}"
           />
           <span class="settings-form__help">
             Variables: {artist}, {album}, {year}
           </span>
-        </label>
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Track Query Template</span>
+        <div class="settings-form__field">
+          <label for="setting-slskd-track-query" class="settings-form__label">
+            Track Query Template
+          </label>
           <InputText
-            v-model="form.search!.track_query_template"
+            id="setting-slskd-track-query"
+            v-model="form.search.track_query_template"
             :disabled="loading"
             placeholder="{artist} {title}"
           />
           <span class="settings-form__help">
             Variables: {artist}, {title}
           </span>
-        </label>
+        </div>
 
-        <label class="settings-form__field settings-form__field--full">
-          <label for="fallback-queries" class="settings-form__label">Fallback Queries</label>
+        <div class="settings-form__field settings-form__field--full">
+          <label for="setting-slskd-fallback-queries" class="settings-form__label">
+            Fallback Queries
+          </label>
           <AutoComplete
-            v-model="form.search!.fallback_queries"
+            v-model="form.search.fallback_queries"
             :suggestions="filteredFallbackQueries"
             :disabled="loading"
-            inputId="fallback-queries"
+            input-id="setting-slskd-fallback-queries"
             multiple
             fluid
             @complete="searchFallbackQueries"
           />
-        </label>
+        </div>
 
-        <label class="settings-form__field settings-form__field--full">
-          <label for="exclude-terms" class="settings-form__label">Exclude Terms</label>
+        <div class="settings-form__field settings-form__field--full">
+          <label for="setting-slskd-exclude-terms" class="settings-form__label">
+            Exclude Terms
+          </label>
           <AutoComplete
-            v-model="form.search!.exclude_terms"
+            v-model="form.search.exclude_terms"
             :suggestions="filteredExcludeTerms"
             :disabled="loading"
-            inputId="exclude-terms"
+            input-id="setting-slskd-exclude-terms"
             multiple
             fluid
             @complete="searchExcludeTerms"
           />
-        </label>
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Min File Size (MB)</span>
+        <div class="settings-form__field">
+          <label for="setting-slskd-min-file-size" class="settings-form__label">
+            Min File Size (MB)
+          </label>
           <InputNumber
-            v-model="form.search!.min_file_size_mb"
+            id="setting-slskd-min-file-size"
+            v-model="form.search.min_file_size_mb"
             :disabled="loading"
             :min="0"
             :max="1000"
           />
-        </label>
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Max File Size (MB)</span>
+        <div class="settings-form__field">
+          <label for="setting-slskd-max-file-size" class="settings-form__label">
+            Max File Size (MB)
+          </label>
           <InputNumber
-            v-model="form.search!.max_file_size_mb"
+            id="setting-slskd-max-file-size"
+            v-model="form.search.max_file_size_mb"
             :disabled="loading"
             :min="1"
             :max="10000"
           />
-        </label>
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Prefer Complete Albums</span>
-          <ToggleSwitch v-model="form.search!.prefer_complete_albums" :disabled="loading" />
-        </label>
+        <div class="settings-form__field">
+          <label for="setting-slskd-prefer-complete" class="settings-form__label">
+            Prefer Complete Albums
+          </label>
+          <ToggleSwitch
+            id="setting-slskd-prefer-complete"
+            v-model="form.search.prefer_complete_albums"
+            :disabled="loading"
+          />
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Prefer Album Folder</span>
-          <ToggleSwitch v-model="form.search!.prefer_album_folder" :disabled="loading" />
-        </label>
+        <div class="settings-form__field">
+          <label for="setting-slskd-prefer-folder" class="settings-form__label">
+            Prefer Album Folder
+          </label>
+          <ToggleSwitch
+            id="setting-slskd-prefer-folder"
+            v-model="form.search.prefer_album_folder"
+            :disabled="loading"
+          />
+        </div>
       </div>
     </details>
 
     <details class="settings-form__section">
       <summary class="settings-form__section-title">Retry Settings</summary>
-      <div class="settings-form__grid">
-        <label class="settings-form__field">
-          <span class="settings-form__label">Enabled</span>
-          <ToggleSwitch v-model="form.search!.retry.enabled" :disabled="loading" />
-        </label>
+      <div class="settings-form__grid settings-form__grid--with-margin">
+        <div class="settings-form__field">
+          <label for="setting-slskd-retry-enabled" class="settings-form__label">
+            Enabled
+          </label>
+          <ToggleSwitch
+            id="setting-slskd-retry-enabled"
+            v-model="form.search.retry.enabled"
+            :disabled="loading"
+          />
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Max Attempts</span>
+        <div class="settings-form__field">
+          <label for="setting-slskd-retry-max" class="settings-form__label">
+            Max Attempts
+          </label>
           <InputNumber
-            v-model="form.search!.retry.max_attempts"
-            :disabled="loading || !form.search!.retry.enabled"
+            id="setting-slskd-retry-max"
+            v-model="form.search.retry.max_attempts"
+            :disabled="loading || !form.search.retry.enabled"
             :min="1"
             :max="10"
           />
-        </label>
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Simplify On Retry</span>
+        <div class="settings-form__field">
+          <label for="setting-slskd-retry-simplify" class="settings-form__label">
+            Simplify On Retry
+          </label>
           <ToggleSwitch
-            v-model="form.search!.retry.simplify_on_retry"
-            :disabled="loading || !form.search!.retry.enabled"
+            id="setting-slskd-retry-simplify"
+            v-model="form.search.retry.simplify_on_retry"
+            :disabled="loading || !form.search.retry.enabled"
           />
-        </label>
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Delay Between Retries (ms)</span>
+        <div class="settings-form__field">
+          <label for="setting-slskd-retry-delay" class="settings-form__label">
+            Delay Between Retries (ms)
+          </label>
           <InputNumber
-            v-model="form.search!.retry.delay_between_retries_ms"
-            :disabled="loading || !form.search!.retry.enabled"
+            id="setting-slskd-retry-delay"
+            v-model="form.search.retry.delay_between_retries_ms"
+            :disabled="loading || !form.search.retry.enabled"
             :min="0"
             :max="60000"
             :step="1000"
           />
-        </label>
+        </div>
       </div>
     </details>
 
     <details class="settings-form__section">
       <summary class="settings-form__section-title">Quality Preferences</summary>
-      <div class="settings-form__grid">
-        <label class="settings-form__field">
-          <span class="settings-form__label">Enabled</span>
-          <ToggleSwitch v-model="form.search!.quality_preferences!.enabled" :disabled="loading" />
-        </label>
+      <div class="settings-form__grid settings-form__grid--with-margin">
+        <div class="settings-form__field">
+          <label for="setting-slskd-quality-enabled" class="settings-form__label">
+            Enabled
+          </label>
+          <ToggleSwitch
+            id="setting-slskd-quality-enabled"
+            v-model="form.search.quality_preferences.enabled"
+            :disabled="loading"
+          />
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Min Bitrate</span>
+        <div class="settings-form__field">
+          <label for="setting-slskd-min-bitrate" class="settings-form__label">
+            Min Bitrate
+          </label>
           <InputNumber
-            v-model="form.search!.quality_preferences!.min_bitrate"
-            :disabled="loading || !form.search!.quality_preferences!.enabled"
+            id="setting-slskd-min-bitrate"
+            v-model="form.search.quality_preferences.min_bitrate"
+            :disabled="loading || !form.search.quality_preferences.enabled"
             :min="0"
             :max="9999"
           />
-        </label>
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Prefer Lossless</span>
+        <div class="settings-form__field">
+          <label for="setting-slskd-prefer-lossless" class="settings-form__label">
+            Prefer Lossless
+          </label>
           <ToggleSwitch
-            v-model="form.search!.quality_preferences!.prefer_lossless"
-            :disabled="loading || !form.search!.quality_preferences!.enabled"
+            id="setting-slskd-prefer-lossless"
+            v-model="form.search.quality_preferences.prefer_lossless"
+            :disabled="loading || !form.search.quality_preferences.enabled"
           />
-        </label>
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Reject Low Quality</span>
+        <div class="settings-form__field">
+          <label for="setting-slskd-reject-low" class="settings-form__label">
+            Reject Low Quality
+          </label>
           <ToggleSwitch
-            v-model="form.search!.quality_preferences!.reject_low_quality"
-            :disabled="loading || !form.search!.quality_preferences!.enabled"
+            id="setting-slskd-reject-low"
+            v-model="form.search.quality_preferences.reject_low_quality"
+            :disabled="loading || !form.search.quality_preferences.enabled"
           />
-        </label>
+        </div>
 
-        <label class="settings-form__field">
-          <span class="settings-form__label">Reject Lossless</span>
+        <div class="settings-form__field">
+          <label for="setting-slskd-reject-lossless" class="settings-form__label">
+            Reject Lossless
+          </label>
           <ToggleSwitch
-            v-model="form.search!.quality_preferences!.reject_lossless"
-            :disabled="loading || !form.search!.quality_preferences!.enabled"
+            id="setting-slskd-reject-lossless"
+            v-model="form.search.quality_preferences.reject_lossless"
+            :disabled="loading || !form.search.quality_preferences.enabled"
           />
-        </label>
+        </div>
 
-        <label class="settings-form__field settings-form__field--full">
-          <label for="preferred-formats" class="settings-form__label">Preferred Formats</label>
+        <div class="settings-form__field settings-form__field--full">
+          <label for="setting-slskd-preferred-formats" class="settings-form__label">
+            Preferred Formats
+          </label>
           <AutoComplete
-            v-model="form.search!.quality_preferences!.preferred_formats"
+            v-model="form.search.quality_preferences.preferred_formats"
             :suggestions="filteredFormats"
-            :disabled="loading || !form.search!.quality_preferences!.enabled"
-            inputId="preferred-formats"
+            :disabled="loading || !form.search.quality_preferences.enabled"
+            input-id="setting-slskd-preferred-formats"
             multiple
             fluid
             @complete="searchFormats"
           />
-        </label>
+        </div>
       </div>
     </details>
 
@@ -411,61 +540,3 @@ function searchFallbackQueries(event: { query: string }) {
     </div>
   </div>
 </template>
-
-<style scoped>
-.settings-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-@media (max-width: 768px) {
-  .settings-form__grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.settings-form__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.settings-form__field--full {
-  grid-column: 1 / -1;
-}
-
-.settings-form__label {
-  color: var(--surface-200);
-  font-size: 0.875rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-}
-
-.settings-form__help {
-  color: var(--surface-400);
-  font-size: 0.75rem;
-}
-
-.settings-form__section {
-  margin-top: 1rem;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-  background: var(--surface-glass, rgba(21, 21, 37, 0.7));
-}
-
-.settings-form__section-title {
-  cursor: pointer;
-  color: var(--r-text-primary);
-  font-weight: 700;
-}
-
-.settings-form__actions {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-}
-</style>

@@ -1,0 +1,85 @@
+.settings-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.settings-form__grid--with-margin {
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .settings-form__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-form__field--full {
+  grid-column: 1 / -1;
+}
+
+.settings-form__label {
+  color: var(--surface-200);
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.settings-form__help {
+  color: var(--surface-400);
+  font-size: 0.75rem;
+}
+
+.settings-form__help a {
+  color: var(--primary-color);
+}
+
+.settings-form__help code {
+  background: var(--surface-700);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.settings-form__section {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--surface-glass, rgba(21, 21, 37, 0.7));
+}
+
+.settings-form__section-title {
+  cursor: pointer;
+  color: var(--r-text-primary);
+  font-weight: 700;
+}
+
+.settings-form__info {
+  margin-top: 1rem;
+}
+
+.settings-form__actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.settings-form__error {
+  margin-bottom: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}

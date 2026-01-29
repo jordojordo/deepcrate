@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type { ListenBrainzSettings, ListenBrainzFormData } from '@/types/settings';
 
-import { reactive, watch, computed } from 'vue';
+import { reactive, ref, watch, computed } from 'vue';
 
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Tag from 'primevue/tag';
+import Message from 'primevue/message';
+
+import { useSettings } from '@/composables/useSettings';
 
 const props = defineProps<{
   settings: ListenBrainzSettings | undefined;
@@ -17,6 +20,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   save: [data: ListenBrainzFormData];
 }>();
+
+const { validateSection } = useSettings();
 
 const approvalModeOptions = [
   { label: 'Manual', value: 'manual' },
@@ -34,6 +39,8 @@ const form = reactive<ListenBrainzFormData>({
   approval_mode: 'manual',
   source_type:   'weekly_playlist',
 });
+
+const errors = ref<Array<{ path: string; message: string }>>([]);
 
 watch(
   () => props.settings,
@@ -53,7 +60,9 @@ watch(
 
 const tokenConfigured = computed(() => props.settings?.token?.configured ?? false);
 
-function handleSave() {
+async function handleSave() {
+  errors.value = [];
+
   const data: ListenBrainzFormData = {
     username:      form.username.trim(),
     approval_mode: form.approval_mode,
@@ -65,24 +74,46 @@ function handleSave() {
     data.token = form.token.trim();
   }
 
+  const validation = await validateSection('listenbrainz', data);
+
+  if (!validation.valid && validation.errors) {
+    errors.value = validation.errors;
+
+    return;
+  }
+
   emit('save', data);
 }
 </script>
 
 <template>
   <div class="settings-form">
+    <Message
+      v-if="errors.length > 0"
+      severity="error"
+      :closable="false"
+      class="settings-form__error"
+    >
+      <div class="flex">
+        <span v-for="error in errors" :key="error.path">{{ error.message }}</span>
+      </div>
+    </Message>
+
     <div class="settings-form__grid">
-      <label class="settings-form__field">
-        <span class="settings-form__label">Username</span>
+      <div class="settings-form__field">
+        <label for="setting-listenbrainz-username" class="settings-form__label">
+          Username
+        </label>
         <InputText
+          id="setting-listenbrainz-username"
           v-model="form.username"
           :disabled="loading"
           placeholder="Your ListenBrainz username"
         />
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">
+      <div class="settings-form__field">
+        <label for="setting-listenbrainz-token" class="settings-form__label">
           API Token
           <Tag
             v-if="tokenConfigured"
@@ -96,8 +127,9 @@ function handleSave() {
             value="Not configured"
             class="ml-2"
           />
-        </span>
+        </label>
         <InputText
+          id="setting-listenbrainz-token"
           v-model="form.token"
           :disabled="loading"
           type="password"
@@ -109,11 +141,14 @@ function handleSave() {
             listenbrainz.org/profile
           </a>
         </span>
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">Approval Mode</span>
+      <div class="settings-form__field">
+        <label for="setting-listenbrainz-approval-mode" class="settings-form__label">
+          Approval Mode
+        </label>
         <Select
+          id="setting-listenbrainz-approval-mode"
           v-model="form.approval_mode"
           :options="approvalModeOptions"
           option-label="label"
@@ -123,11 +158,14 @@ function handleSave() {
         <span class="settings-form__help">
           Auto mode will automatically approve new discoveries.
         </span>
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">Source Type</span>
+      <div class="settings-form__field">
+        <label for="setting-listenbrainz-source-type" class="settings-form__label">
+          Source Type
+        </label>
         <Select
+          id="setting-listenbrainz-source-type"
           v-model="form.source_type"
           :options="sourceTypeOptions"
           option-label="label"
@@ -137,7 +175,7 @@ function handleSave() {
         <span class="settings-form__help">
           Weekly playlists don't require a token. CF recommendations need one.
         </span>
-      </label>
+      </div>
     </div>
 
     <div class="settings-form__actions">
@@ -151,46 +189,3 @@ function handleSave() {
     </div>
   </div>
 </template>
-
-<style scoped>
-.settings-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-@media (max-width: 768px) {
-  .settings-form__grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.settings-form__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.settings-form__label {
-  color: var(--surface-200);
-  font-size: 0.875rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-}
-
-.settings-form__help {
-  color: var(--surface-400);
-  font-size: 0.75rem;
-}
-
-.settings-form__help a {
-  color: var(--primary-color);
-}
-
-.settings-form__actions {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-}
-</style>

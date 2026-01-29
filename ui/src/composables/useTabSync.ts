@@ -1,4 +1,4 @@
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 interface UseTabSyncOptions<T extends string> {
@@ -41,14 +41,6 @@ export function useTabSync<T extends string>(options: UseTabSyncOptions<T>) {
       router.replace({ query });
     },
   });
-
-  // Sync when route changes externally (browser back/forward)
-  watch(
-    () => route.query[queryParam],
-    () => {
-      // The computed getter will re-evaluate automatically
-    }
-  );
 
   return { activeTab };
 }

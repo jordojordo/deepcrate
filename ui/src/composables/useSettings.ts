@@ -24,16 +24,16 @@ export function useSettings() {
     return store.fetchSettings();
   }
 
-  async function updateSection(
+  async function updateSection<T extends object>(
     section: SettingsSection,
-    data: Record<string, unknown>
+    data: T
   ): Promise<boolean> {
     return store.updateSection(section, data);
   }
 
-  async function validateSection(
+  async function validateSection<T extends object>(
     section: SettingsSection,
-    data: Record<string, unknown>
+    data: T
   ) {
     return store.validateSection(section, data);
   }

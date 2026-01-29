@@ -58,9 +58,10 @@ function handleSave() {
     </Message>
 
     <div class="settings-form__grid">
-      <label class="settings-form__field">
-        <span class="settings-form__label">Theme</span>
+      <div class="settings-form__field">
+        <label for="setting-ui-theme" class="settings-form__label">Theme</label>
         <Select
+          id="setting-ui-theme"
           v-model="form.theme"
           :options="themeOptions"
           option-label="label"
@@ -69,32 +70,43 @@ function handleSave() {
         <span class="settings-form__help">
           System will follow your OS preference.
         </span>
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">Default Queue View</span>
+      <div class="settings-form__field">
+        <label for="setting-ui-queue-view" class="settings-form__label">
+          Default Queue View
+        </label>
         <Select
+          id="setting-ui-queue-view"
           v-model="form.queueViewMode"
           :options="viewModeOptions"
           option-label="label"
           option-value="value"
         />
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">Items Per Page</span>
+      <div class="settings-form__field">
+        <label for="setting-ui-items-per-page" class="settings-form__label">
+          Items Per Page
+        </label>
         <InputNumber
+          id="setting-ui-items-per-page"
           v-model="form.itemsPerPage"
           :min="10"
           :max="100"
           :step="5"
         />
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">Sidebar Collapsed by Default</span>
-        <ToggleSwitch v-model="form.sidebarCollapsed" />
-      </label>
+      <div class="settings-form__field">
+        <label for="setting-ui-sidebar-collapsed" class="settings-form__label">
+          Sidebar Collapsed by Default
+        </label>
+        <ToggleSwitch
+          id="setting-ui-sidebar-collapsed"
+          v-model="form.sidebarCollapsed"
+        />
+      </div>
     </div>
 
     <div class="settings-form__actions">
@@ -106,44 +118,3 @@ function handleSave() {
     </div>
   </div>
 </template>
-
-<style scoped>
-.settings-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-@media (max-width: 768px) {
-  .settings-form__grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.settings-form__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.settings-form__label {
-  color: var(--surface-200);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.settings-form__help {
-  color: var(--surface-400);
-  font-size: 0.75rem;
-}
-
-.settings-form__actions {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-</style>

@@ -12,6 +12,7 @@ import type { SettingsTab } from '@/types/tabs';
 import { onMounted } from 'vue';
 
 import { useTabSync } from '@/composables/useTabSync';
+import { useSettings } from '@/composables/useSettings';
 import { SETTINGS_TABS } from '@/types/tabs';
 
 import Tabs from 'primevue/tabs';
@@ -27,7 +28,8 @@ import SlskdForm from '@/components/settings/SlskdForm.vue';
 import PreviewForm from '@/components/settings/PreviewForm.vue';
 import AuthForm from '@/components/settings/AuthForm.vue';
 import UIPreferencesForm from '@/components/settings/UIPreferencesForm.vue';
-import { useSettings } from '@/composables/useSettings';
+
+import '@/assets/styles/settings-forms.css';
 
 const { activeTab } = useTabSync<SettingsTab>({
   validTabs:  SETTINGS_TABS,
@@ -53,23 +55,23 @@ onMounted(() => {
 });
 
 async function handleListenBrainzSave(data: ListenBrainzFormData) {
-  await updateSection('listenbrainz', data as unknown as Record<string, unknown>);
+  await updateSection('listenbrainz', data);
 }
 
 async function handleCatalogDiscoverySave(data: CatalogDiscoveryFormData) {
-  await updateSection('catalog_discovery', data as unknown as Record<string, unknown>);
+  await updateSection('catalog_discovery', data);
 }
 
 async function handleSlskdSave(data: SlskdFormData) {
-  await updateSection('slskd', data as unknown as Record<string, unknown>);
+  await updateSection('slskd', data);
 }
 
 async function handlePreviewSave(data: PreviewFormData) {
-  await updateSection('preview', data as unknown as Record<string, unknown>);
+  await updateSection('preview', data);
 }
 
 async function handleAuthSave(data: { auth: AuthFormData }) {
-  await updateSection('ui', data as Record<string, unknown>);
+  await updateSection('ui', data);
 }
 
 function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {

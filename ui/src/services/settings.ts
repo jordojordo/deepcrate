@@ -30,9 +30,9 @@ export async function getSection<T = Record<string, unknown>>(
 /**
  * Update a settings section
  */
-export async function updateSection(
+export async function updateSection<T extends object>(
   section: SettingsSection,
-  data: Record<string, unknown>
+  data: T
 ): Promise<UpdateResponse> {
   const response = await client.put<UpdateResponse>(`/settings/${ section }`, data);
 
@@ -42,9 +42,9 @@ export async function updateSection(
 /**
  * Validate settings without saving
  */
-export async function validate(
+export async function validate<T extends object>(
   section: SettingsSection,
-  data: Record<string, unknown>
+  data: T
 ): Promise<{ valid: boolean; errors?: Array<{ path: string; message: string }> }> {
   const response = await client.post<{
     valid:   boolean;

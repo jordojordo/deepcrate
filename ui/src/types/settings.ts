@@ -91,6 +91,11 @@ export interface SlskdFormData {
   selection?:       SlskdSelectionSettings;
 }
 
+export interface SlskdForm extends Omit<SlskdFormData, 'search' | 'selection'> {
+  search:    Required<SlskdSearchSettings>;
+  selection: SlskdSelectionSettings;
+}
+
 /**
  * Catalog discovery settings
  */
@@ -132,6 +137,11 @@ export interface CatalogDiscoveryFormData {
   mode:                  'auto' | 'manual';
 }
 
+export interface CatalogDiscoveryForm extends Omit<CatalogDiscoveryFormData, 'navidrome' | 'lastfm'> {
+  navidrome: { host: string; username: string; password?: string };
+  lastfm:    { api_key?: string };
+}
+
 /**
  * Preview settings (Spotify)
  */
@@ -153,6 +163,10 @@ export interface PreviewFormData {
     client_id?:     string;
     client_secret?: string;
   };
+}
+
+export interface PreviewForm extends Omit<PreviewFormData, 'spotify'> {
+  spotify: { enabled: boolean; client_id?: string; client_secret?: string };
 }
 
 /**
@@ -221,7 +235,7 @@ export interface SettingsResponse {
 /**
  * Section response
  */
-export interface SectionResponse<T = Record<string, unknown>> {
+export interface SectionResponse<T = unknown> {
   section: string;
   data:    T;
 }

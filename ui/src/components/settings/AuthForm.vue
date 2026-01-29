@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { UISettings, AuthFormData } from '@/types/settings';
 
-import { reactive, watch, computed } from 'vue';
+import { reactive, ref, watch, computed } from 'vue';
 
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
@@ -9,6 +9,8 @@ import Select from 'primevue/select';
 import ToggleSwitch from 'primevue/toggleswitch';
 import Tag from 'primevue/tag';
 import Message from 'primevue/message';
+
+import { useSettings } from '@/composables/useSettings';
 
 const props = defineProps<{
   settings: UISettings | undefined;
@@ -19,6 +21,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   save: [data: { auth: AuthFormData }];
 }>();
+
+const { validateSection } = useSettings();
 
 const authTypeOptions = [
   { label: 'Basic (Username/Password)', value: 'basic' },
@@ -33,6 +37,8 @@ const form = reactive<AuthFormData>({
   password: undefined,
   api_key:  undefined,
 });
+
+const errors = ref<Array<{ path: string; message: string }>>([]);
 
 watch(
   () => props.settings?.auth,
@@ -63,7 +69,9 @@ const showBasicFields = computed(() => form.type === 'basic');
 const showApiKeyField = computed(() => form.type === 'api_key');
 const showProxyInfo = computed(() => form.type === 'proxy');
 
-function handleSave() {
+async function handleSave() {
+  errors.value = [];
+
   const data: AuthFormData = {
     enabled: form.enabled,
     type:    form.type,
@@ -83,6 +91,14 @@ function handleSave() {
     data.api_key = form.api_key.trim();
   }
 
+  const validation = await validateSection('ui', { auth: data });
+
+  if (!validation.valid && validation.errors) {
+    errors.value = validation.errors;
+
+    return;
+  }
+
   emit('save', { auth: data });
 }
 </script>
@@ -98,36 +114,57 @@ function handleSave() {
       setting <code>ui.auth.enabled: false</code>.
     </Message>
 
-    <div class="settings-form__grid">
-      <label class="settings-form__field">
-        <span class="settings-form__label">Authentication Enabled</span>
-        <ToggleSwitch v-model="form.enabled" :disabled="loading" />
-      </label>
+    <Message
+      v-if="errors.length > 0"
+      severity="error"
+      :closable="false"
+      class="settings-form__error"
+    >
+      <div class="flex">
+        <span v-for="error in errors" :key="error.path">{{ error.message }}</span>
+      </div>
+    </Message>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">Authentication Type</span>
+    <div class="settings-form__grid">
+      <div class="settings-form__field">
+        <label for="setting-auth-enabled" class="settings-form__label">
+          Authentication Enabled
+        </label>
+        <ToggleSwitch
+          id="setting-auth-enabled"
+          v-model="form.enabled"
+          :disabled="loading"
+        />
+      </div>
+
+      <div class="settings-form__field">
+        <label for="setting-auth-type" class="settings-form__label">
+          Authentication Type
+        </label>
         <Select
+          id="setting-auth-type"
           v-model="form.type"
           :options="authTypeOptions"
           option-label="label"
           option-value="value"
           :disabled="loading || !form.enabled"
         />
-      </label>
+      </div>
     </div>
 
     <div v-if="showBasicFields && form.enabled" class="settings-form__grid mt-4">
-      <label class="settings-form__field">
-        <span class="settings-form__label">Username</span>
+      <div class="settings-form__field">
+        <label for="setting-auth-username" class="settings-form__label">Username</label>
         <InputText
+          id="setting-auth-username"
           v-model="form.username"
           :disabled="loading"
           placeholder="admin"
         />
-      </label>
+      </div>
 
-      <label class="settings-form__field">
-        <span class="settings-form__label">
+      <div class="settings-form__field">
+        <label for="setting-auth-password" class="settings-form__label">
           Password
           <Tag
             v-if="passwordConfigured"
@@ -135,19 +172,20 @@ function handleSave() {
             value="Configured"
             class="ml-2"
           />
-        </span>
+        </label>
         <InputText
+          id="setting-auth-password"
           v-model="form.password"
           type="password"
           :disabled="loading"
           :placeholder="passwordConfigured ? 'Enter to change' : 'Password'"
         />
-      </label>
+      </div>
     </div>
 
     <div v-if="showApiKeyField && form.enabled" class="settings-form__grid mt-4">
-      <label class="settings-form__field">
-        <span class="settings-form__label">
+      <div class="settings-form__field">
+        <label for="setting-auth-api-key" class="settings-form__label">
           API Key
           <Tag
             v-if="apiKeyConfigured"
@@ -155,8 +193,9 @@ function handleSave() {
             value="Configured"
             class="ml-2"
           />
-        </span>
+        </label>
         <InputText
+          id="setting-auth-api-key"
           v-model="form.api_key"
           type="password"
           :disabled="loading"
@@ -165,7 +204,7 @@ function handleSave() {
         <span class="settings-form__help">
           Sent via <code>X-API-Key</code> header or <code>api_key</code> query parameter.
         </span>
-      </label>
+      </div>
     </div>
 
     <div v-if="showProxyInfo && form.enabled" class="settings-form__info mt-4">
@@ -187,61 +226,3 @@ function handleSave() {
     </div>
   </div>
 </template>
-
-<style scoped>
-.settings-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-@media (max-width: 768px) {
-  .settings-form__grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.settings-form__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.settings-form__label {
-  color: var(--surface-200);
-  font-size: 0.875rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-}
-
-.settings-form__help {
-  color: var(--surface-400);
-  font-size: 0.75rem;
-}
-
-.settings-form__help code {
-  background: var(--surface-700);
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-}
-
-.settings-form__info {
-  margin-top: 1rem;
-}
-
-.settings-form__actions {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-</style>

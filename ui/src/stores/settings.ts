@@ -42,8 +42,8 @@ export const useSettingsStore = defineStore('settings', () => {
       if (stored) {
         return { ...DEFAULT_UI_PREFERENCES, ...JSON.parse(stored) };
       }
-    } catch {
-      // Ignore parse errors
+    } catch(error) {
+      console.warn('[settings] Failed to parse UI preferences from localStorage:', error);
     }
 
     return { ...DEFAULT_UI_PREFERENCES };
@@ -79,9 +79,9 @@ export const useSettingsStore = defineStore('settings', () => {
   /**
    * Update a settings section
    */
-  async function updateSection(
+  async function updateSection<T extends object>(
     section: SettingsSection,
-    data: Record<string, unknown>
+    data: T
   ): Promise<boolean> {
     saving.value = true;
     error.value = null;
@@ -109,9 +109,9 @@ export const useSettingsStore = defineStore('settings', () => {
   /**
    * Validate settings without saving
    */
-  async function validateSection(
+  async function validateSection<T extends object>(
     section: SettingsSection,
-    data: Record<string, unknown>
+    data: T
   ): Promise<{ valid: boolean; errors?: Array<{ path: string; message: string }> }> {
     try {
       return await settingsApi.validate(section, data);
