@@ -19,7 +19,7 @@ services:
       # - LIBRARY_ORGANIZE_INTERVAL=0  # 0 = manual only
     volumes:
       # Configuration (required)
-      - ./config.yaml:/config/config.yaml:ro
+      - ./config.yaml:/config/config.yaml:rw
 
       # Data directory for state files (required)
       - ./data:/data

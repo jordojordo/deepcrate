@@ -3,62 +3,26 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fjordojordo%2Fresonance-blue)](https://ghcr.io/jordojordo/resonance)
 
-**Resonance** is a self-hosted music discovery pipeline that automatically finds and downloads music based on your listening habits and existing library. It combines multiple discovery sources into a unified approval workflow with a modern web UI.
+**Discover music from your listening habits, preview before downloading, auto-fetch via Soulseek.**
 
-<p align="center">
-  <a href="examples/assets/resonance.webm">
-    <img src="examples/assets/resonance-preview.png" alt="Resonance Demo" width="800">
-  </a>
-  <br>
-  <em>Click to watch the demo video</em>
-</p>
-
+https://github.com/user-attachments/assets/02b63e79-9aeb-4492-9472-4ee064b99bed
 
 ## Features
 
-- **Multi-source discovery** - Combines ListenBrainz recommendations (based on what you listen to) with Last.fm similar artists (based on what you own)
-- **Unified approval queue** - Review all recommendations in one place before downloading
-- **Preview player** - Listen to 30-second audio previews before approving (via Deezer/Spotify)
-- **Interactive source selection** - Compare multiple download sources, view file quality, and choose the best one (optional manual mode)
-- **Web UI** - Dashboard with cover art, metadata, and one-click approve/reject
-- **Automatic downloads** - Integrates with slskd (Soulseek) for P2P music downloads
-- **Library awareness** - Checks your existing library to avoid duplicates
-- **Flexible auth** - Built-in API auth or integrate with Authelia/OAuth
-- **Single container** - Everything runs in one Docker image
+- **Multi-source discovery** — ListenBrainz recommendations + Last.fm similar artists
+- **30-second audio previews** — Listen before you approve (via Deezer/Spotify)
+- **Unified approval queue** — Review all recommendations with cover art and metadata
+- **Automatic Soulseek downloads** — Integrates with slskd for P2P music fetching
+- **Library-aware duplicate detection** — Checks your existing library to avoid re-downloading
+- **Single Docker container** — Everything runs in one image
 
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              RESONANCE                                      │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│    Your Music Library          Your Listening History                       │
-│    (Navidrome/etc)             (ListenBrainz scrobbles)                     │
-│          │                              │                                   │
-│          ▼                              ▼                                   │
-│    ┌───────────┐                 ┌────────────┐                             │
-│    │ Catalog   │                 │ lb-fetch   │                             │
-│    │ Discovery │                 │            │                             │
-│    │ (Last.fm) │                 │(ListenBrainz)                            │
-│    └─────┬─────┘                 └──────┬─────┘                             │
-│          │                              │                                   │
-│          └──────────────┬───────────────┘                                   │
-│                         ▼                                                   │
-│              ┌─────────────────────┐                                        │
-│              │   Pending Queue     │◄──── Web UI (approve/reject)           │
-│              │  (unified approval) │                                        │
-│              └──────────┬──────────┘                                        │
-│                         ▼                                                   │
-│              ┌─────────────────────┐                                        │
-│              │  slskd-downloader   │                                        │
-│              │   (Soulseek P2P)    │                                        │
-│              └──────────┬──────────┘                                        │
-│                         ▼                                                   │
-│              ┌─────────────────────┐                                        │
-│              │  Downloaded Music   │──────► Your Music Library              │
-│              └─────────────────────┘                                        │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    A[Your Library] --> B[Discovery]
+    C[Scrobbles] --> B
+    B --> D[Preview & Approve]
+    D --> E[Soulseek]
+    E --> A
 ```
 
 ## Quick Start
@@ -68,53 +32,24 @@
 - Docker and Docker Compose
 - [slskd](https://github.com/slskd/slskd) running with API enabled
 - [Navidrome](https://www.navidrome.org/) or compatible music server (for catalog discovery)
-- [ListenBrainz](https://listenbrainz.org/) account with scrobbling set up
-- [Last.fm API key](https://www.last.fm/api/account/create) (free)
+- [ListenBrainz](https://listenbrainz.org/) account + [Last.fm API key](https://www.last.fm/api/account/create)
 
 ### 1. Create configuration
 
 ```bash
-mkdir -p resonance/data
-cd resonance
+mkdir -p resonance/data && cd resonance
 ```
 
 Create `config.yaml`:
 
 ```yaml
-# See examples/config.yaml for full configuration options
-
-# ListenBrainz recommendations (based on listening history)
 listenbrainz:
   username: "your_username"
-  # token: "your_token"         # Only needed for source_type: collaborative
-  approval_mode: "manual"       # "auto" or "manual"
-  # source_type: "weekly_playlist"  # Default: weekly playlists (no token needed)
-  #                                 # Or "collaborative" for CF recommendations (requires token)
 
-mode: album                     # "album" or "track"
-fetch_count: 100
-
-# slskd connection
 slskd:
   host: "http://slskd:5030"
-  api_key: "your_slskd_api_key"
-  # Optional: Advanced search configuration (see docs/configuration.md)
-  # search:
-  #   album_query_template: "{artist} {album}"
-  #   exclude_terms: ["live", "remix", "cover"]
-  #   retry:
-  #     enabled: true
-  #     max_attempts: 3
-  #   quality_preferences:
-  #     enabled: true
-  #     prefer_lossless: true
-  #     min_bitrate: 256
-  # Optional: Interactive selection mode (manually choose download sources)
-  # selection:
-  #   mode: "manual"           # "auto" (default) or "manual"
-  #   timeout_hours: 24        # Hours before selection expires
+  api_key: "your_api_key"
 
-# Catalog discovery (based on library artists → Last.fm similar)
 catalog_discovery:
   enabled: true
   navidrome:
@@ -123,24 +58,15 @@ catalog_discovery:
     password: "your_password"
   lastfm:
     api_key: "your_lastfm_api_key"
-  max_artists_per_run: 10
-  min_similarity: 0.3
-  mode: "manual"
 
-# Avoid downloading albums you already own (Optional)
-library_duplicate:
-  enabled: true
-  # Auto-reject items that already exist in your library
-  auto_reject: false
-
-# Web UI settings
 ui:
   auth:
     enabled: true
-    type: "basic"               # "basic", "api_key", or "proxy"
     username: "admin"
-    password: "changeme"        # Change this!
+    password: "changeme"
 ```
+
+See [examples/config.yaml](examples/config.yaml) for all options.
 
 ### 2. Run with Docker Compose
 
@@ -152,7 +78,7 @@ services:
     image: ghcr.io/jordojordo/resonance:latest
     container_name: resonance
     volumes:
-      - ./config.yaml:/config/config.yaml:ro
+      - ./config.yaml:/config/config.yaml:rw
       - ./data:/data
     ports:
       - "8080:8080"
@@ -167,217 +93,30 @@ docker compose up -d
 
 Open `http://localhost:8080` and log in with your configured credentials.
 
-## Discovery Sources
+## Documentation
 
-### ListenBrainz (lb-fetch)
-
-Fetches track recommendations from ListenBrainz based on your listening history. Recommendations are resolved to albums via MusicBrainz.
-
-**Source Types:**
-- **weekly_playlist** (default) - Uses weekly exploration playlists generated for your profile. No API token required.
-- **collaborative** - Uses the CF recommendation API based on your scrobbles. Requires an API token.
-
-**How it works:**
-1. You listen to music → Navidrome scrobbles to ListenBrainz
-2. ListenBrainz builds a taste profile and generates recommendations
-3. lb-fetch pulls recommendations every 6 hours (from playlists or CF API)
-4. Tracks are resolved to parent albums
-5. Albums go to pending queue (manual mode) or wishlist (auto mode)
-
-**Requirements:**
-- ListenBrainz account with active scrobbling
-- API token only if using `source_type: collaborative`
-
-### Catalog Discovery
-
-Finds new artists similar to ones you already own using Last.fm's similarity data.
-
-**How it works:**
-1. Scans your Navidrome library for artists
-2. Queries Last.fm for similar artists
-3. Ranks by aggregate similarity (artists similar to multiple library artists score higher)
-4. Fetches discographies from MusicBrainz
-5. Albums go to pending queue (manual mode) or wishlist (auto mode)
-
-**Requirements:**
-- Navidrome with Subsonic API enabled
-- Last.fm API key
-
-## Configuration Reference
-
-See [docs/configuration.md](docs/configuration.md) for full configuration options.
-
-## Web UI
-
-The web UI provides:
-
-- **Dashboard** - Quick stats and recent activity
-- **Pending Queue** - Review and approve/reject recommendations
-- **Downloads** - Monitor slskd download status
-- **Settings** - Configure discovery parameters
-
-## Authentication
-
-Resonance supports multiple authentication modes:
-
-| Mode | Config | Login UI | Use Case |
-|------|--------|----------|----------|
-| Basic | `type: "basic"` | Username + Password | Simple setup |
-| API Key | `type: "api_key"` | API Key field | Programmatic access |
-| Proxy | `type: "proxy"` | Auto-redirect | External auth (Authelia) |
-| Disabled | `enabled: false` | Auto-redirect | Development/trusted networks |
-
-### Basic Auth
-
-```yaml
-ui:
-  auth:
-    enabled: true
-    type: "basic"
-    username: "admin"
-    password: "secure_password"
-```
-
-### API Key Auth
-
-```yaml
-ui:
-  auth:
-    enabled: true
-    type: "api_key"
-    api_key: "your_secret_api_key"
-```
-
-### Proxy Auth (Authelia, etc.)
-
-For SSO, 2FA, or LDAP integration, use proxy mode with a reverse proxy:
-
-```yaml
-ui:
-  auth:
-    enabled: true
-    type: "proxy"
-```
-
-See [docs/authelia-integration.md](docs/authelia-integration.md) for setup instructions.
-
-## API
-
-Resonance exposes a REST API for automation and integration:
-
-```
-GET  /api/v1/auth/info          # Get auth configuration (public)
-GET  /api/v1/auth/me            # Get current user info
-GET  /api/v1/queue/pending      # List pending items
-POST /api/v1/queue/approve      # Approve items
-POST /api/v1/queue/reject       # Reject items
-POST /api/v1/actions/lb-fetch   # Trigger lb-fetch
-POST /api/v1/actions/catalog    # Trigger catalog discovery
-GET  /api/v1/library/stats      # Library sync statistics
-POST /api/v1/library/sync       # Trigger library sync
-POST /api/v1/library/organize   # Trigger library organize
-GET  /api/v1/library/organize/status # Library organize status
-GET  /api/v1/health             # Health check
-```
-
-See [docs/api.md](docs/api.md) for full API documentation.
-
-## Architecture
-
-Resonance runs as a single Node.js process with background jobs scheduled via node-cron:
-
-| Job | Schedule | Purpose |
-|-----|----------|---------|
-| lb-fetch | Every 6 hours | ListenBrainz recommendations |
-| catalog-discovery | Weekly | Last.fm similar artists |
-| slskd-downloader | Every hour | Process wishlist via slskd |
-| library-sync | Daily | Sync Navidrome library albums |
-| library-organize | Manual (default) | Move completed downloads into library |
-
-The web interface is served by Express with a Vue 3 ui.
-
-See [docs/architecture.md](docs/architecture.md) for technical details.
-
-## Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `8080` | HTTP server port |
-| `LOG_LEVEL` | `info` | Logging verbosity |
-| `LOG_TO_CONSOLE` | `true` | Log to stdout/stderr |
-| `LOG_TO_FILE` | `false` | Log to files in `LOG_DIR` |
-| `LOG_DIR` | `DATA_PATH` | Directory for log files (when enabled) |
-| `LB_FETCH_INTERVAL` | `21600` | Seconds between lb-fetch runs (6h) |
-| `CATALOG_INTERVAL` | `604800` | Seconds between catalog discovery (7d) |
-| `SLSKD_INTERVAL` | `3600` | Seconds between download runs (1h) |
-| `RUN_JOBS_ON_STARTUP` | `true` | Run discovery jobs immediately on startup |
-| `LIBRARY_SYNC_INTERVAL` | `86400` | Seconds between library sync runs (24h) |
-| `LIBRARY_ORGANIZE_INTERVAL` | `0` | Seconds between library organize runs (0 = manual only) |
-
-## Data Directory
-
-All state is stored in `/data`:
-
-```
-/data/
-├── resonance.sqlite          # SQLite database (queue, processed items, etc.)
-└── wishlist.txt              # Albums to download (read by slskd-downloader)
-```
-
-## Network Requirements
-
-Resonance needs network access to:
-
-| Service | Purpose |
-|---------|---------|
-| slskd | Queue downloads |
-| Navidrome | Scan library artists |
-| api.listenbrainz.org | Fetch recommendations |
-| ws.audioscrobbler.com | Last.fm similar artists |
-| musicbrainz.org | Album metadata |
-| coverartarchive.org | Album artwork |
-| api.deezer.com | Audio previews (default) |
-| api.spotify.com | Audio previews (optional fallback) |
+[Configuration](docs/configuration.md) | [API](docs/api.md) | [Architecture](docs/architecture.md) | [Authelia Integration](docs/authelia-integration.md)
 
 ## Development
 
-### Building from source
-
 ```bash
-git clone https://github.com/jordojordo/resonance.git
-cd resonance
-docker build -t resonance .
+git clone https://github.com/jordojordo/resonance.git && cd resonance
+pnpm install && pnpm dev  # Starts on http://localhost:5173
 ```
 
-### Running locally
-
-```bash
-pnpm --filter server install
-pnpm --filter ui install
-
-pnpm dev # Starts on http://localhost:5173, runs UI and server in parallel
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Related Projects
 
-- [slskd](https://github.com/slskd/slskd) - Modern Soulseek client
-- [Navidrome](https://www.navidrome.org/) - Music streaming server
-- [ListenBrainz](https://listenbrainz.org/) - Open music listening data
-- [Lidarr](https://lidarr.audio/) - Music collection manager (alternative approach)
+- [slskd](https://github.com/slskd/slskd) — Modern Soulseek client
+- [Navidrome](https://www.navidrome.org/) — Music streaming server
+- [ListenBrainz](https://listenbrainz.org/) — Open music listening data
+- [Lidarr](https://lidarr.audio/) — Music collection manager (alternative approach)
 
 ## License
 
-Apache License 2.0 - See [LICENSE](LICENSE) for details.
+Apache License 2.0 — See [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-- [ListenBrainz](https://listenbrainz.org/) for the recommendations API
-- [MusicBrainz](https://musicbrainz.org/) for comprehensive music metadata
-- [Last.fm](https://www.last.fm/) for similar artist data
-- [slskd](https://github.com/slskd/slskd) for the excellent Soulseek client
-
----
-
-**Resonance** - *Let your music library guide you to new discoveries.*
+Built with [ListenBrainz](https://listenbrainz.org/), [MusicBrainz](https://musicbrainz.org/), [Last.fm](https://www.last.fm/), and [slskd](https://github.com/slskd/slskd).

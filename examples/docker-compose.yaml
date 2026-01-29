@@ -20,7 +20,7 @@ services:
       - LOG_LEVEL=info
     volumes:
       # Configuration (required)
-      - ./config.yaml:/config/config.yaml:ro
+      - ./config.yaml:/config/config.yaml:rw
 
       # Data directory for state files (required)
       - ./data:/data

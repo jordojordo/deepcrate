@@ -13,7 +13,7 @@ services:
     environment:
       - LOG_LEVEL=info
     volumes:
-      - ./resonance/config.yaml:/config/config.yaml:ro
+      - ./resonance/config.yaml:/config/config.yaml:rw
       - ./resonance/data:/data
     networks:
       - resonance-net

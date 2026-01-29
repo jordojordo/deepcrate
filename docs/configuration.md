@@ -566,3 +566,18 @@ secrets:
 ### Option 3: External Secret Manager
 
 For Kubernetes or advanced setups, mount secrets as files and reference via `*_FILE` environment variables.
+
+## Network Requirements
+
+Resonance needs network access to the following services:
+
+| Service | Purpose |
+|---------|---------|
+| slskd | Queue downloads |
+| Navidrome | Scan library artists |
+| api.listenbrainz.org | Fetch recommendations |
+| ws.audioscrobbler.com | Last.fm similar artists |
+| musicbrainz.org | Album metadata |
+| coverartarchive.org | Album artwork |
+| api.deezer.com | Audio previews (default) |
+| api.spotify.com | Audio previews (optional fallback) |
