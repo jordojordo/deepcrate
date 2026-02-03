@@ -16,6 +16,7 @@ import { triggerJob } from '@server/plugins/jobs';
 import SlskdClient from '@server/services/clients/SlskdClient';
 import WishlistService from '@server/services/WishlistService';
 import DownloadTask, { DownloadTaskType, DownloadTaskStatus } from '@server/models/DownloadTask';
+import WishlistItem from '@server/models/WishlistItem';
 import {
   emitDownloadTaskCreated,
   emitDownloadTaskUpdated,
@@ -549,31 +550,40 @@ export class DownloadService {
 
     for (const task of tasks) {
       try {
-        // Re-create wishlist item BEFORE updating task status to prevent race conditions:
-        // If we updated task status first, the downloader job could see the pending
-        // task but find no unprocessed wishlist item, causing the retry to be skipped.
-        const wishlistItem = await this.wishlistService.append({
-          artist: task.artist,
-          album:  task.album,
-          type:   task.type,
-          year:   task.year,
-        });
+        // Wrap both wishlist item creation and task update in a single mutex block
+        // to prevent race conditions where the downloader job could see the pending
+        // task before the wishlist item exists
+        await withDbWrite(async() => {
+          // Find or create wishlist item
+          const existing = await this.wishlistService.findByArtistAlbum(
+            task.artist, task.album, task.type
+          );
 
-        // Then reset task status to pending and link to the new/existing wishlist item
-        await withDbWrite(() => task.update({
-          status:          'pending',
-          wishlistItemId:  wishlistItem.id,
-          errorMessage:    undefined,
-          retryCount:      task.retryCount + 1,
-          downloadPath:    undefined,
-          slskdSearchId:   undefined,
-          slskdUsername:   undefined,
-          slskdDirectory:  undefined,
-          slskdFileIds:    undefined,
-          fileCount:       undefined,
-          startedAt:       undefined,
-          completedAt:     undefined,
-        }));
+          const wishlistItem = existing ?? await WishlistItem.create({
+            artist:  task.artist,
+            album:   task.album,
+            type:    task.type,
+            year:    task.year,
+            source:  'retry',
+            addedAt: new Date(),
+          });
+
+          // Reset task status to pending and link to the wishlist item
+          await task.update({
+            status:         'pending',
+            wishlistItemId: wishlistItem.id,
+            errorMessage:   undefined,
+            retryCount:     task.retryCount + 1,
+            downloadPath:   undefined,
+            slskdSearchId:  undefined,
+            slskdUsername:  undefined,
+            slskdDirectory: undefined,
+            slskdFileIds:   undefined,
+            fileCount:      undefined,
+            startedAt:      undefined,
+            completedAt:    undefined,
+          });
+        });
 
         successCount++;
         logger.info(`Retry queued: ${ task.wishlistKey } (attempt ${ task.retryCount + 1 })`);

@@ -151,14 +151,18 @@ export async function exportWishlist(format: ExportFormat, ids?: string[]): Prom
 
 export function downloadExportFile(blob: Blob, format: ExportFormat): void {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
 
-  a.href = url;
-  a.download = `wishlist.${ format }`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try {
+    const a = document.createElement('a');
+
+    a.href = url;
+    a.download = `wishlist.${ format }`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 export async function importWishlist(items: ImportItem[]): Promise<ImportResponse> {
