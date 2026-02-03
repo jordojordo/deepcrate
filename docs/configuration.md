@@ -567,6 +567,76 @@ secrets:
 
 For Kubernetes or advanced setups, mount secrets as files and reference via `*_FILE` environment variables.
 
+## Wishlist Import/Export
+
+The UI supports importing and exporting wishlist items as JSON files. This is useful for:
+- Bulk importing wishlists from other sources
+- Backing up your wishlist
+- Migrating between Resonance instances
+
+### JSON Schema
+
+Import files must be a JSON array of objects with the following structure:
+
+```json
+[
+  {
+    "artist": "Artist Name",
+    "title": "Album or Track Title",
+    "type": "album",
+    "year": 2023,
+    "mbid": "abc123-def456-...",
+    "source": "manual",
+    "coverUrl": "https://example.com/cover.jpg"
+  }
+]
+```
+
+### Field Reference
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `artist` | string | Yes | Artist name |
+| `title` | string | Yes* | Album or track title |
+| `type` | string | Yes | `album`, `track`, or `artist` |
+| `year` | number | No | Release year |
+| `mbid` | string | No | MusicBrainz ID (release-group or recording) |
+| `source` | string | No | `listenbrainz`, `catalog`, or `manual` (defaults to `manual`) |
+| `coverUrl` | string | No | URL to album artwork |
+
+\*Required for `album` and `track` types; optional for `artist` type.
+
+### Example Import File
+
+```json
+[
+  {
+    "artist": "Dream Theater",
+    "title": "Awake",
+    "type": "album",
+    "year": 1994
+  },
+  {
+    "artist": "Aphex Twin",
+    "title": "Selected Ambient Works 85-92",
+    "type": "album",
+    "year": 1992,
+    "source": "manual"
+  },
+  {
+    "artist": "Boards of Canada",
+    "title": "Music Has the Right to Children",
+    "type": "album"
+  }
+]
+```
+
+### Import Behavior
+
+- **Duplicates are skipped** - Items matching an existing artist/title/type combination are not re-added
+- **Validation errors** - Invalid items are reported but don't prevent other items from importing
+- **Source defaults to `manual`** - If not specified, imported items are marked as manually added
+
 ## Network Requirements
 
 Resonance needs network access to the following services:

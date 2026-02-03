@@ -45,6 +45,12 @@ export const routes: RouteRecordRaw[] = [
     meta:      { requiresAuth: true },
   },
   {
+    path:      ROUTE_PATHS.WISHLIST,
+    name:      ROUTE_NAMES.WISHLIST,
+    component: () => import('@/pages/private/WishlistPage.vue'),
+    meta:      { requiresAuth: true },
+  },
+  {
     path:      ROUTE_PATHS.DOWNLOADS,
     name:      ROUTE_NAMES.DOWNLOADS,
     component: () => import('@/pages/private/DownloadsPage.vue'),

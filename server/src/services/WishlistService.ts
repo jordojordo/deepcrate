@@ -1,8 +1,19 @@
-import type { CreateWishlistItemOptions, ProcessApprovedItem } from '@server/types/wishlist';
+import type {
+  CreateWishlistItemOptions,
+  ProcessApprovedItem,
+  WishlistFilters,
+  WishlistEntryWithStatus,
+  UpdateWishlistItemRequest,
+  ExportFormat,
+  ImportItem,
+  ImportResultItem,
+} from '@server/types/wishlist';
 
+import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
 import { withDbWrite } from '@server/config/db';
 import WishlistItem, { WishlistItemSource, WishlistItemType } from '@server/models/WishlistItem';
+import DownloadTask from '@server/models/DownloadTask';
 
 /**
  * WishlistService manages wishlist items in the database.
@@ -241,6 +252,294 @@ export class WishlistService {
    */
   buildWishlistKey(artist: string, album: string): string {
     return `${ artist } - ${ album }`;
+  }
+
+  /**
+   * Get paginated wishlist items with download status from DownloadTask
+   */
+  async getPaginatedWithStatus(filters: WishlistFilters): Promise<{
+    items:  WishlistEntryWithStatus[];
+    total:  number;
+    limit:  number;
+    offset: number;
+  }> {
+    const {
+      source,
+      type,
+      processed,
+      dateFrom,
+      dateTo,
+      search,
+      sort = 'addedAt_desc',
+      limit = 50,
+      offset = 0,
+    } = filters;
+
+    const where: Record<string, unknown> = {
+      ...(source && { source }),
+      ...(type && { type }),
+      ...(processed === 'pending' && { processedAt: null }),
+      ...(processed === 'processed' && { processedAt: { [Op.ne]: null } }),
+      ...((dateFrom || dateTo) && {
+        addedAt: {
+          ...(dateFrom && { [Op.gte]: new Date(dateFrom) }),
+          ...(dateTo && { [Op.lte]: new Date(dateTo) }),
+        },
+      }),
+      ...(search && {
+        [Op.or]: [
+          { artist: { [Op.like]: `%${ search }%` } },
+          { album: { [Op.like]: `%${ search }%` } },
+        ],
+      }),
+    };
+
+    // Parse sort
+    const [sortField, sortDir] = sort.split('_') as [string, 'asc' | 'desc'];
+    const fieldMap: Record<string, string> = {
+      addedAt:     'addedAt',
+      artist:      'artist',
+      title:       'album',
+      processedAt: 'processedAt',
+    };
+    const orderField = fieldMap[sortField] || 'addedAt';
+    const order: [string, string][] = [[orderField, sortDir.toUpperCase()]];
+
+    // Fetch wishlist items
+    const { rows, count } = await WishlistItem.findAndCountAll({
+      where,
+      order,
+      limit,
+      offset,
+    });
+
+    // Fetch download tasks for these items to get status
+    const itemIds = rows.map((r) => r.id);
+    let downloadTasks: DownloadTask[] = [];
+
+    if (itemIds.length > 0) {
+      downloadTasks = await DownloadTask.findAll({ where: { wishlistItemId: { [Op.in]: itemIds } } });
+    }
+
+    // Create a map of wishlistItemId -> DownloadTask
+    const taskMap = new Map<string, DownloadTask>();
+
+    for (const task of downloadTasks) {
+      if (task.wishlistItemId) {
+        taskMap.set(task.wishlistItemId, task);
+      }
+    }
+
+    // Map to response format with status
+    const items: WishlistEntryWithStatus[] = rows.map((item) => {
+      const task = taskMap.get(item.id);
+      let downloadStatus: WishlistEntryWithStatus['downloadStatus'] = 'none';
+
+      if (task) {
+        downloadStatus = task.status;
+      } else if (item.processedAt) {
+        // Has processedAt but no task found - could be old data
+        downloadStatus = 'pending';
+      }
+
+      return {
+        id:             item.id,
+        artist:         item.artist,
+        title:          item.album,
+        type:           item.type,
+        year:           item.year ?? null,
+        mbid:           item.mbid ?? null,
+        source:         item.source ?? null,
+        coverUrl:       item.coverUrl ?? null,
+        addedAt:        item.addedAt,
+        processedAt:    item.processedAt ?? null,
+        downloadStatus,
+        downloadTaskId: task?.id ?? null,
+        downloadError:  task?.errorMessage ?? null,
+      };
+    });
+
+    return {
+      items,
+      total: count,
+      limit,
+      offset,
+    };
+  }
+
+  /**
+   * Update a wishlist item by ID
+   * If resetDownloadState is true, clears processedAt to re-queue for download
+   */
+  async updateById(
+    id: string,
+    updates: UpdateWishlistItemRequest
+  ): Promise<WishlistItem | null> {
+    return withDbWrite(async() => {
+      const item = await WishlistItem.findByPk(id);
+
+      if (!item) {
+        return null;
+      }
+
+      // Build update object
+      const updateData: Partial<WishlistItem> = {
+        ...(updates.artist !== undefined && { artist: updates.artist }),
+        ...(updates.title !== undefined && { album: updates.title }),
+        ...(updates.type !== undefined && { type: updates.type as WishlistItemType }),
+        ...(updates.year !== undefined && { year: updates.year }),
+        ...(updates.mbid !== undefined && { mbid: updates.mbid }),
+        ...(updates.source !== undefined && { source: updates.source as WishlistItemSource | null }),
+        ...(updates.coverUrl !== undefined && { coverUrl: updates.coverUrl }),
+        ...(updates.resetDownloadState && { processedAt: null }),
+      };
+
+      if (updates.resetDownloadState) {
+        logger.info(`Resetting download state for wishlist item ${ id }`);
+      }
+
+      await item.update(updateData);
+      logger.info(`Updated wishlist item ${ id }: ${ item.artist } - ${ item.album }`);
+
+      return item;
+    });
+  }
+
+  /**
+   * Bulk delete wishlist items by IDs
+   */
+  async bulkDelete(ids: string[]): Promise<number> {
+    if (!ids.length) {
+      return 0;
+    }
+
+    const deleted = await withDbWrite(() => WishlistItem.destroy({ where: { id: { [Op.in]: ids } } }));
+
+    logger.info(`Bulk deleted ${ deleted } wishlist items`);
+
+    return deleted;
+  }
+
+  /**
+   * Bulk requeue wishlist items for download by resetting processedAt
+   */
+  async bulkRequeue(ids: string[]): Promise<number> {
+    if (!ids.length) {
+      return 0;
+    }
+
+    const [affected] = await withDbWrite(() => WishlistItem.update(
+      { processedAt: null },
+      { where: { id: { [Op.in]: ids } } }
+    ));
+
+    logger.info(`Bulk requeued ${ affected } wishlist items for download`);
+
+    return affected;
+  }
+
+  /**
+   * Export wishlist items to JSON string
+   */
+  async exportItems(params: {
+    format: ExportFormat;
+    ids?:   string[];
+  }): Promise<string> {
+    const { ids } = params;
+
+    const where = ids?.length ? { id: { [Op.in]: ids } } : {};
+    const items = await WishlistItem.findAll({
+      where,
+      order: [['addedAt', 'DESC']],
+    });
+
+    const exportData = items.map((item) => ({
+      artist:   item.artist,
+      title:    item.album,
+      type:     item.type,
+      year:     item.year ?? null,
+      mbid:     item.mbid ?? null,
+      source:   item.source ?? null,
+      coverUrl: item.coverUrl ?? null,
+      addedAt:  item.addedAt.toISOString(),
+    }));
+
+    return JSON.stringify(exportData, null, 2);
+  }
+
+  /**
+   * Import items from array with duplicate checking
+   */
+  async importItems(items: ImportItem[]): Promise<{
+    added:   number;
+    skipped: number;
+    errors:  number;
+    results: ImportResultItem[];
+  }> {
+    const results: ImportResultItem[] = [];
+    let added = 0;
+    let skipped = 0;
+    let errors = 0;
+
+    for (const item of items) {
+      try {
+        const artist = item.artist;
+        const album = item.title || '';
+        const type = item.type as WishlistItemType;
+
+        // Check inside mutex for each item
+        const result = await withDbWrite(async() => {
+          const existing = await this.findByArtistAlbum(artist, album, type);
+
+          if (existing) {
+            return { status: 'skipped' as const, message: 'Already exists' };
+          }
+
+          await WishlistItem.create({
+            artist,
+            album,
+            type,
+            year:     item.year ?? undefined,
+            mbid:     item.mbid ?? undefined,
+            source:   (item.source as WishlistItemSource) ?? 'manual',
+            coverUrl: item.coverUrl ?? undefined,
+            addedAt:  new Date(),
+          });
+
+          return { status: 'added' as const };
+        });
+
+        results.push({
+          artist: item.artist,
+          title:  item.title || '',
+          status: result.status,
+          ...(result.message && { message: result.message }),
+        });
+
+        if (result.status === 'added') {
+          added++;
+        } else {
+          skipped++;
+        }
+      } catch(error) {
+        errors++;
+        results.push({
+          artist:  item.artist,
+          title:   item.title || '',
+          status:  'error',
+          message: (error as Error).message,
+        });
+      }
+    }
+
+    logger.info(`Import complete: ${ added } added, ${ skipped } skipped, ${ errors } errors`);
+
+    return {
+      added,
+      skipped,
+      errors,
+      results,
+    };
   }
 }
 

@@ -38,6 +38,12 @@ export const useSidebarItems = () => {
         badge: stats.value?.pending ?? undefined,
       },
       {
+        key:   ROUTE_NAMES.WISHLIST,
+        label: 'Wishlist',
+        to:    ROUTE_PATHS.WISHLIST,
+        icon:  'pi-heart',
+      },
+      {
         key:   ROUTE_NAMES.DOWNLOADS,
         label: 'Downloads',
         to:    ROUTE_PATHS.DOWNLOADS,

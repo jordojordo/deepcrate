@@ -1,6 +1,7 @@
 export const ROUTE_PATHS = {
   DASHBOARD: '/dashboard',
   QUEUE:     '/queue',
+  WISHLIST:  '/wishlist',
   DOWNLOADS: '/downloads',
   LIBRARY:   '/library',
   SETTINGS:  '/settings',
@@ -10,6 +11,7 @@ export const ROUTE_PATHS = {
 export const ROUTE_NAMES = {
   DASHBOARD: 'dashboard',
   QUEUE:     'queue',
+  WISHLIST:  'wishlist',
   DOWNLOADS: 'downloads',
   LIBRARY:   'library',
   SETTINGS:  'settings',

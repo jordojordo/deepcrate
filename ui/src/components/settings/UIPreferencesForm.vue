@@ -31,6 +31,7 @@ const viewModeOptions = [
 const form = reactive<UIPreferences>({
   theme:            'dark',
   queueViewMode:    'grid',
+  wishlistViewMode: 'grid',
   sidebarCollapsed: false,
   itemsPerPage:     25,
 });
@@ -79,6 +80,19 @@ function handleSave() {
         <Select
           id="setting-ui-queue-view"
           v-model="form.queueViewMode"
+          :options="viewModeOptions"
+          option-label="label"
+          option-value="value"
+        />
+      </div>
+
+      <div class="settings-form__field">
+        <label for="setting-ui-wishlist-view" class="settings-form__label">
+          Default Wishlist View
+        </label>
+        <Select
+          id="setting-ui-wishlist-view"
+          v-model="form.wishlistViewMode"
           :options="viewModeOptions"
           option-label="label"
           option-value="value"

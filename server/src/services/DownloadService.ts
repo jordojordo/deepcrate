@@ -6,12 +6,15 @@ import { cachedSearchResultsSchema } from '@server/types/downloads';
 import type { QualityPreferences } from '@server/types/slskd';
 
 import fs from 'fs';
+import path from 'path';
+
 import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
-import { JOB_INTERVALS } from '@server/config/jobs';
 import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
-import { JOB_NAMES } from '@server/constants/jobs';
+import { triggerJob } from '@server/plugins/jobs';
+import SlskdClient from '@server/services/clients/SlskdClient';
+import WishlistService from '@server/services/WishlistService';
 import DownloadTask, { DownloadTaskType, DownloadTaskStatus } from '@server/models/DownloadTask';
 import {
   emitDownloadTaskCreated,
@@ -20,12 +23,12 @@ import {
   emitDownloadStatsUpdated,
   emitDownloadSelectionExpired,
 } from '@server/plugins/io/namespaces/downloadsNamespace';
-import { triggerJob } from '@server/plugins/jobs';
-
-import SlskdClient from './clients/SlskdClient';
-import WishlistService from './WishlistService';
 import {
-  joinDownloadsPath, normalizeSlskdPath, slskdDirectoryToRelativeDownloadPath, slskdPathBasename, toSafeRelativePath
+  joinDownloadsPath,
+  normalizeSlskdPath,
+  slskdDirectoryToRelativeDownloadPath,
+  slskdPathBasename,
+  toSafeRelativePath
 } from '@server/utils/slskdPaths';
 import {
   extractQualityInfo,
@@ -33,8 +36,14 @@ import {
   calculateAverageQualityScore,
   shouldRejectFile,
 } from '@server/utils/audioQuality';
-import path from 'path';
-import { MUSIC_EXTENSIONS, QUALITY_SCORES, DEFAULT_PREFERRED_FORMATS, MB_TO_BYTES } from '@server/constants/slskd';
+import {
+  MUSIC_EXTENSIONS,
+  QUALITY_SCORES,
+  DEFAULT_PREFERRED_FORMATS,
+  MB_TO_BYTES
+} from '@server/constants/slskd';
+import { JOB_INTERVALS } from '@server/config/jobs';
+import { JOB_NAMES } from '@server/constants/jobs';
 
 async function pathExists(candidatePath: string): Promise<boolean> {
   try {
@@ -840,10 +849,6 @@ export class DownloadService {
       const task = await DownloadTask.findByPk(id);
 
       if (task) {
-        // Remove from wishlist since download is complete
-        // Note: WishlistItem.processedAt is already set when the task was created
-        await this.wishlistService.remove(task.artist, task.album);
-
         // Auto-trigger library organize if enabled and not manual-only
         const config = getConfig();
 
