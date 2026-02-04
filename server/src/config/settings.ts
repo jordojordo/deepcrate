@@ -138,6 +138,8 @@ const NavidromeSettingsSchema = z.object({
 
 const LastFmSettingsSchema = z.object({ api_key: z.string() });
 
+const CatalogListenBrainzSettingsSchema = z.object({ enabled: z.boolean().default(true) });
+
 const BeetsSettingsSchema = z.object({
   enabled: z.boolean(),
   command: z.string().min(1).default('beet import --quiet'),
@@ -192,6 +194,7 @@ const CatalogDiscoverySettingsSchema = z.object({
   enabled:              z.boolean(),
   navidrome:            NavidromeSettingsSchema.optional(),
   lastfm:               LastFmSettingsSchema.optional(),
+  listenbrainz:         CatalogListenBrainzSettingsSchema.optional(),
   max_artists_per_run:  z.number().int().positive(),
   min_similarity:       z.number().min(0).max(1),
   similar_artist_limit: z.number().int().positive().optional(),
@@ -204,13 +207,7 @@ const CatalogDiscoverySettingsSchema = z.object({
 
   if (!value.navidrome) {
     ctx.addIssue({
-      code: 'custom', message: 'Required when catalog_discovery.enabled is true', path: ['navidrome'] 
-    });
-  }
-
-  if (!value.lastfm) {
-    ctx.addIssue({
-      code: 'custom', message: 'Required when catalog_discovery.enabled is true', path: ['lastfm'] 
+      code: 'custom', message: 'Required when catalog_discovery.enabled is true', path: ['navidrome']
     });
   }
 });

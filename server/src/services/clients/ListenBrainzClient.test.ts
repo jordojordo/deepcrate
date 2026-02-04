@@ -236,6 +236,105 @@ describe('ListenBrainzClient', () => {
     });
   });
 
+  describe('getSimilarArtists', () => {
+    it('returns similar artists with scores', async() => {
+      const artistMbid = 'abc-123-def-456';
+
+      nock('https://labs.api.listenbrainz.org')
+        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .reply(200, [
+          {
+            artist_mbid:     artistMbid,
+            similar_artists: [
+              {
+                artist_mbid: 'sim-1', name: 'Similar Artist 1', score: 0.85 
+              },
+              {
+                artist_mbid: 'sim-2', name: 'Similar Artist 2', score: 0.75 
+              },
+            ],
+          },
+        ]);
+
+      const result = await client.getSimilarArtists(artistMbid, 10);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        artist_mbid: 'sim-1',
+        name:        'Similar Artist 1',
+        score:       0.85,
+      });
+      expect(result[1]).toEqual({
+        artist_mbid: 'sim-2',
+        name:        'Similar Artist 2',
+        score:       0.75,
+      });
+    });
+
+    it('respects limit parameter', async() => {
+      const artistMbid = 'abc-123-def-456';
+
+      nock('https://labs.api.listenbrainz.org')
+        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .reply(200, [
+          {
+            artist_mbid:     artistMbid,
+            similar_artists: [
+              {
+                artist_mbid: 'sim-1', name: 'Artist 1', score: 0.9 
+              },
+              {
+                artist_mbid: 'sim-2', name: 'Artist 2', score: 0.8 
+              },
+              {
+                artist_mbid: 'sim-3', name: 'Artist 3', score: 0.7 
+              },
+            ],
+          },
+        ]);
+
+      const result = await client.getSimilarArtists(artistMbid, 2);
+
+      expect(result).toHaveLength(2);
+    });
+
+    it('returns empty array when no similar artists found', async() => {
+      const artistMbid = 'abc-123-def-456';
+
+      nock('https://labs.api.listenbrainz.org')
+        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .reply(200, [{ artist_mbid: artistMbid, similar_artists: [] }]);
+
+      const result = await client.getSimilarArtists(artistMbid, 10);
+
+      expect(result).toEqual([]);
+    });
+
+    it('returns empty array on error response', async() => {
+      const artistMbid = 'abc-123-def-456';
+
+      nock('https://labs.api.listenbrainz.org')
+        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .reply(200, [{ artist_mbid: artistMbid, error: 'Artist not found' }]);
+
+      const result = await client.getSimilarArtists(artistMbid, 10);
+
+      expect(result).toEqual([]);
+    });
+
+    it('returns empty array on API error', async() => {
+      const artistMbid = 'abc-123-def-456';
+
+      nock('https://labs.api.listenbrainz.org')
+        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .reply(500);
+
+      const result = await client.getSimilarArtists(artistMbid, 10);
+
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('extractRecordingMbid', () => {
     it('extracts MBID from valid recording URL', () => {
       const url = 'https://musicbrainz.org/recording/abc-123-def-456';

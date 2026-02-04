@@ -75,3 +75,13 @@ export interface ListenBrainzRecommendation {
   recording_mbid: string;
   score?:         number;
 }
+
+/**
+ * Similar artist from ListenBrainz Labs API
+ * https://labs.api.listenbrainz.org/similar-artists/json
+ */
+export interface ListenBrainzSimilarArtist {
+  artist_mbid: string;
+  name:        string;
+  score:       number;  // 0-1 similarity score
+}

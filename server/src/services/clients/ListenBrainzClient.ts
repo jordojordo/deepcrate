@@ -3,6 +3,7 @@ import type {
   ListenBrainzPlaylistMetadata,
   ListenBrainzPlaylistResponse,
   ListenBrainzRecommendation,
+  ListenBrainzSimilarArtist,
 } from '@server/types/listenbrainz';
 
 import axios from 'axios';
@@ -114,6 +115,65 @@ export class ListenBrainzClient {
     const weeklyPlaylist = playlists.find((p) => p.title.toLowerCase().includes('weekly exploration'));
 
     return weeklyPlaylist || null;
+  }
+
+  /**
+   * Get similar artists from ListenBrainz Labs API.
+   * Requires the artist's MBID.
+   * https://labs.api.listenbrainz.org/similar-artists/json
+   */
+  async getSimilarArtists(
+    artistMbid: string,
+    limit: number = 10
+  ): Promise<ListenBrainzSimilarArtist[]> {
+    const url = 'https://labs.api.listenbrainz.org/similar-artists/json';
+
+    try {
+      const response = await axios.post(url, [{ artist_mbid: artistMbid }], {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 30000,
+      });
+
+      // Response is an array where each element corresponds to an input artist
+      const data = response.data;
+
+      if (!Array.isArray(data) || data.length === 0) {
+        return [];
+      }
+
+      const artistData = data[0];
+
+      if (!artistData || artistData.error) {
+        logger.debug(`ListenBrainz similar artists error for ${ artistMbid }: ${ artistData?.error || 'No data' }`);
+
+        return [];
+      }
+
+      // The response has a structure like:
+      // { artist_mbid: "...", similar_artists: [{ artist_mbid: "...", name: "...", score: 0.5 }, ...] }
+      const similarArtists: ListenBrainzSimilarArtist[] = [];
+      const rawSimilar = artistData.similar_artists || [];
+
+      for (const artist of rawSimilar.slice(0, limit)) {
+        if (artist.artist_mbid && artist.name !== undefined) {
+          similarArtists.push({
+            artist_mbid: artist.artist_mbid,
+            name:        artist.name || '',
+            score:       typeof artist.score === 'number' ? artist.score : 0,
+          });
+        }
+      }
+
+      return similarArtists;
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.debug(`Failed to get similar artists from ListenBrainz for ${ artistMbid }: ${ error.message }`);
+      } else {
+        logger.debug(`Failed to get similar artists from ListenBrainz for ${ artistMbid }: ${ String(error) }`);
+      }
+
+      return [];
+    }
   }
 
   /**

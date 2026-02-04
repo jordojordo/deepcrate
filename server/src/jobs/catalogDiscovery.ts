@@ -1,13 +1,15 @@
+import type { SimilarArtistResult, SimilarityProvider } from '@server/types/similarity';
+
 import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
 import { JOB_NAMES } from '@server/constants/jobs';
 import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
 import { NavidromeClient } from '@server/services/clients/NavidromeClient';
-import { LastFmClient } from '@server/services/clients/LastFmClient';
 import { MusicBrainzClient } from '@server/services/clients/MusicBrainzClient';
 import { CoverArtArchiveClient } from '@server/services/clients/CoverArtArchiveClient';
 import { QueueService } from '@server/services/QueueService';
+import { LastFmSimilarityProvider, ListenBrainzSimilarityProvider } from '@server/services/providers';
 import CatalogArtist from '@server/models/CatalogArtist';
 import DiscoveredArtist from '@server/models/DiscoveredArtist';
 import { isJobCancelled } from '@server/plugins/jobs';
@@ -18,21 +20,23 @@ interface SimilarArtistScore {
   score:       number;
   sourceCount: number; // Number of library artists this is similar to
   similarTo:   Set<string>;
+  providers:   Set<string>; // Track which providers found this artist
 }
 
 /**
  * Catalog Discovery Job
  *
- * Scans the user's Navidrome library and finds similar artists using Last.fm.
+ * Scans the user's Navidrome library and finds similar artists using configured providers.
  * Fetches discographies from MusicBrainz and adds to pending queue.
  *
  * Algorithm:
  * 1. Sync library artists from Navidrome
- * 2. For each library artist, fetch similar artists from Last.fm
+ * 2. For each library artist, fetch similar artists from all configured providers
  * 3. Aggregate similarity scores (artists similar to multiple library artists rank higher)
- * 4. Filter out already-discovered artists and library artists
- * 5. Fetch albums for top N artists from MusicBrainz
- * 6. Add to queue (manual or auto mode)
+ * 4. Apply intersection boost for artists found by multiple providers
+ * 5. Filter out already-discovered artists and library artists
+ * 6. Fetch albums for top N artists from MusicBrainz
+ * 7. Add to queue (manual or auto mode)
  */
 export async function catalogDiscoveryJob(): Promise<void> {
   const config = getConfig();
@@ -44,20 +48,38 @@ export async function catalogDiscoveryJob(): Promise<void> {
     return;
   }
 
-  if (!catalogConfig.navidrome || !catalogConfig.lastfm) {
-    logger.warn('Catalog discovery not fully configured, skipping');
+  if (!catalogConfig.navidrome) {
+    logger.warn('Catalog discovery: navidrome not configured, skipping');
 
     return;
   }
 
-  logger.info('Starting catalog discovery job');
+  // Initialize similarity providers
+  const providers: SimilarityProvider[] = [];
+
+  if (catalogConfig.lastfm?.api_key) {
+    providers.push(new LastFmSimilarityProvider(catalogConfig.lastfm.api_key));
+  }
+
+  if (catalogConfig.listenbrainz?.enabled !== false && catalogConfig.listenbrainz) {
+    providers.push(new ListenBrainzSimilarityProvider());
+  }
+
+  if (providers.length === 0) {
+    logger.warn('Catalog discovery: no similarity providers configured, skipping');
+
+    return;
+  }
+
+  const providerNames = providers.map((p) => p.name).join(', ');
+
+  logger.info(`Starting catalog discovery job (providers: ${ providerNames })`);
 
   const navidromeClient = new NavidromeClient(
     catalogConfig.navidrome.host,
     catalogConfig.navidrome.username,
     catalogConfig.navidrome.password
   );
-  const lastfmClient = new LastFmClient(catalogConfig.lastfm.api_key);
   const mbClient = new MusicBrainzClient();
   const coverClient = new CoverArtArchiveClient();
   const queueService = new QueueService();
@@ -88,8 +110,8 @@ export async function catalogDiscoveryJob(): Promise<void> {
 
     logger.info(`Synced ${ libraryArtistNames.size } library artists`);
 
-    // Step 2: Fetch similar artists from Last.fm
-    logger.info('Fetching similar artists from Last.fm...');
+    // Step 2: Fetch similar artists from all providers
+    logger.info('Fetching similar artists from providers...');
     const similarArtistMap = new Map<string, SimilarArtistScore>();
     const similarArtistLimit = catalogConfig.similar_artist_limit || 10;
     let processedCount = 0;
@@ -103,14 +125,20 @@ export async function catalogDiscoveryJob(): Promise<void> {
 
       processedCount++;
 
-      // Rate limiting for Last.fm (5 requests/second max, we'll do 1/second to be safe)
+      // Rate limiting (1 request/second to be safe across providers)
       if (processedCount > 1) {
         await sleep(1000);
       }
 
-      const similar = await lastfmClient.getSimilarArtists(artist.name, similarArtistLimit);
+      // Fetch from all providers in parallel with timeout
+      const results = await fetchSimilarFromAllProviders(
+        providers,
+        artist.name,
+        undefined,
+        similarArtistLimit
+      );
 
-      for (const sim of similar) {
+      for (const sim of results) {
         const nameLower = sim.name.toLowerCase();
 
         // Skip library artists
@@ -125,6 +153,7 @@ export async function catalogDiscoveryJob(): Promise<void> {
           existing.score += sim.match;
           existing.sourceCount++;
           existing.similarTo.add(artist.name);
+          existing.providers.add(sim.provider);
         } else {
           similarArtistMap.set(nameLower, {
             name:        sim.name,
@@ -132,6 +161,7 @@ export async function catalogDiscoveryJob(): Promise<void> {
             score:       sim.match,
             sourceCount: 1,
             similarTo:   new Set([artist.name]),
+            providers:   new Set([sim.provider]),
           });
         }
       }
@@ -139,7 +169,7 @@ export async function catalogDiscoveryJob(): Promise<void> {
 
     logger.info(`Found ${ similarArtistMap.size } similar artists`);
 
-    // Step 3: Filter and rank
+    // Step 3: Filter and rank with provider bonus
     const minSimilarity = catalogConfig.min_similarity || 0.3;
     const maxArtists = catalogConfig.max_artists_per_run || 10;
 
@@ -152,7 +182,12 @@ export async function catalogDiscoveryJob(): Promise<void> {
       .filter((a) => !discoveredSet.has(a.nameLower))
       .filter((a) => a.sourceCount > 0 && (a.score / a.sourceCount) >= minSimilarity)
       .sort((a, b) => {
-        // Sort by source count first (artists similar to more library artists)
+        // Sort by provider count first (intersection boost)
+        if (b.providers.size !== a.providers.size) {
+          return b.providers.size - a.providers.size;
+        }
+
+        // Then by source count (artists similar to more library artists)
         if (b.sourceCount !== a.sourceCount) {
           return b.sourceCount - a.sourceCount;
         }
@@ -180,6 +215,7 @@ export async function catalogDiscoveryJob(): Promise<void> {
       const weightedScore = calculateWeightedCatalogScoreToPercent(
         artist.score,
         artist.sourceCount,
+        artist.providers.size,
         similarArtistLimit
       );
 
@@ -189,9 +225,11 @@ export async function catalogDiscoveryJob(): Promise<void> {
         throw new Error('Job cancelled');
       }
 
+      const providerList = Array.from(artist.providers).join('+');
+
       logger.info(
         `  Discovering: ${ artist.name } (avg match: ${ avgMatchPercent?.toFixed(2) ?? 'n/a' }%, ` +
-        `weighted: ${ weightedScore?.toFixed(2) ?? 'n/a' }%, sources: ${ artist.sourceCount })`
+        `weighted: ${ weightedScore?.toFixed(2) ?? 'n/a' }%, sources: ${ artist.sourceCount }, providers: ${ providerList })`
       );
 
       // Rate limiting for MusicBrainz (1 request/second)
@@ -265,6 +303,39 @@ export async function catalogDiscoveryJob(): Promise<void> {
 }
 
 /**
+ * Fetch similar artists from all providers in parallel with timeout.
+ */
+async function fetchSimilarFromAllProviders(
+  providers: SimilarityProvider[],
+  artistName: string,
+  artistMbid: string | undefined,
+  limit: number,
+  timeoutMs: number = 10000
+): Promise<SimilarArtistResult[]> {
+  const results: SimilarArtistResult[] = [];
+
+  const fetchWithTimeout = async(provider: SimilarityProvider): Promise<SimilarArtistResult[]> => {
+    return Promise.race([
+      provider.getSimilarArtists(artistName, artistMbid, limit),
+      new Promise<SimilarArtistResult[]>((resolve) => setTimeout(() => {
+        logger.debug(`Provider ${ provider.name } timed out for "${ artistName }"`);
+        resolve([]);
+      }, timeoutMs)),
+    ]);
+  };
+
+  const allResults = await Promise.allSettled(providers.map(fetchWithTimeout));
+
+  for (const result of allResults) {
+    if (result.status === 'fulfilled') {
+      results.push(...result.value);
+    }
+  }
+
+  return results;
+}
+
+/**
  * Sleep helper for rate limiting
  */
 function sleep(ms: number): Promise<void> {
@@ -287,13 +358,16 @@ function normalizeCatalogScoreToPercent(score: number, sourceCount: number): num
 }
 
 /**
- * Calculate a weighted score that incorporates how many library artists suggested this candidate.
+ * Calculate a weighted score that incorporates how many library artists suggested this candidate
+ * and applies intersection boost for multi-provider matches.
  *
- * Uses `avg_match_percent * (sources / similar_artist_limit)`, clamped to 0-100.
+ * Uses `avg_match_percent * (sources / similar_artist_limit) * provider_bonus`, clamped to 0-100.
+ * Provider bonus: 20% per additional provider (1.0 for 1 provider, 1.2 for 2, 1.4 for 3, etc.)
  */
 function calculateWeightedCatalogScoreToPercent(
   score: number,
   sourceCount: number,
+  providerCount: number,
   similarArtistLimit: number,
 ): number | undefined {
   const avgMatchPercent = normalizeCatalogScoreToPercent(score, sourceCount);
@@ -306,7 +380,9 @@ function calculateWeightedCatalogScoreToPercent(
     return avgMatchPercent;
   }
 
-  const weighted = (avgMatchPercent * sourceCount) / similarArtistLimit;
+  // 20% bonus per additional provider
+  const providerBonus = 1 + (Math.max(0, providerCount - 1) * 0.2);
+  const weighted = (avgMatchPercent * sourceCount * providerBonus) / similarArtistLimit;
   const clamped = Math.min(100, Math.max(0, weighted));
 
   return Math.round(clamped * 100) / 100;

@@ -130,7 +130,7 @@ slskd:
 
 # =============================================================================
 # Catalog Discovery
-# Find new artists similar to ones you already own via Last.fm
+# Find new artists similar to ones you already own
 # =============================================================================
 catalog_discovery:
   # Enable/disable catalog discovery
@@ -145,6 +145,11 @@ catalog_discovery:
   # Last.fm API (get free key from https://www.last.fm/api/account/create)
   lastfm:
     api_key: "your_lastfm_api_key"
+
+  # ListenBrainz (optional) - no API key needed
+  # Uses ListenBrainz Labs similar artists API
+  listenbrainz:
+    enabled: true
 
   # Maximum new artists to discover per run
   max_artists_per_run: 10
@@ -407,14 +412,24 @@ If `timeout_hours` is set and the user doesn't select within that time, the down
 | `navidrome.host` | string | Yes* | - | Navidrome URL |
 | `navidrome.username` | string | Yes* | - | Navidrome username |
 | `navidrome.password` | string | Yes* | - | Navidrome password |
-| `lastfm.api_key` | string | Yes* | - | Last.fm API key |
+| `lastfm.api_key` | string | No | - | Last.fm API key (enables Last.fm provider) |
+| `listenbrainz.enabled` | bool | No | `true` | Enable ListenBrainz similarity provider (no API key needed) |
 | `max_artists_per_run` | int | No | `10` | Max new artists per run |
 | `min_similarity` | float | No | `0.3` | Min similarity (0-1) |
 | `similar_artist_limit` | int | No | `10` | Similar artists per query |
 | `albums_per_artist` | int | No | `3` | Albums per new artist |
 | `mode` | string | No | `manual` | `auto` or `manual` |
 
-*Required if `enabled: true`
+\*Required if `enabled: true`. At least one similarity provider (`lastfm` or `listenbrainz`) must be configured when enabled.
+
+**Similarity Providers:**
+
+Catalog discovery uses similarity providers to find artists related to your library. At least one provider must be configured when catalog discovery is enabled.
+
+- **Last.fm** - Requires API key from [last.fm/api](https://www.last.fm/api/account/create). Well-established similarity data.
+- **ListenBrainz** - No API key required. Uses ListenBrainz Labs similar artists API.
+
+When both providers are configured, results are combined and artists found by multiple providers receive higher scores.
 
 ### Library Duplicate Detection
 
