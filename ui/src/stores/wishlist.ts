@@ -14,6 +14,14 @@ import * as wishlistApi from '@/services/wishlist';
 import { useToast } from '@/composables/useToast';
 import { useSettingsStore } from '@/stores/settings';
 
+/**
+ * Wishlist Store
+ *
+ * Error Handling Convention:
+ * - Mutations (update, delete, etc.): Set error state, show toast, AND re-throw
+ *   to allow component-level handling of side effects (e.g., closing dialogs)
+ * - Fetch operations: Set error state only, don't re-throw, to allow graceful degradation
+ */
 export const useWishlistStore = defineStore('wishlist', () => {
   const { showSuccess, showError } = useToast();
   const settingsStore = useSettingsStore();

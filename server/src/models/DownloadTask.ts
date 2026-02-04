@@ -115,7 +115,12 @@ DownloadTask.init(
       type:       DataTypes.UUID,
       allowNull:  true,
       columnName: 'wishlist_item_id',
-      comment:    'FK to wishlist_items table',
+      references: {
+        table: 'wishlist_items',
+        key:   'id',
+      },
+      onDelete: 'SET NULL',
+      comment:  'FK to wishlist_items table',
     },
     artist: {
       type:      DataTypes.STRING(500),

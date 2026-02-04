@@ -286,6 +286,8 @@ export class WishlistService {
           ...(dateTo && { [Op.lte]: new Date(dateTo) }),
         },
       }),
+      // Note: This is NOT vulnerable to SQL injection. Sequelize's Op.like operator
+      // uses parameterized queries internally, safely binding the search value.
       ...(search && {
         [Op.or]: [
           { artist: { [Op.like]: `%${ search }%` } },
@@ -468,7 +470,8 @@ export class WishlistService {
   }
 
   /**
-   * Import items from array with duplicate checking
+   * Import items from array with duplicate checking.
+   * Uses bulk operations for efficiency with large imports.
    */
   async importItems(items: ImportItem[]): Promise<{
     added:   number;
@@ -476,70 +479,101 @@ export class WishlistService {
     errors:  number;
     results: ImportResultItem[];
   }> {
-    const results: ImportResultItem[] = [];
-    let added = 0;
-    let skipped = 0;
-    let errors = 0;
-
-    for (const item of items) {
-      try {
-        const artist = item.artist;
-        const album = item.title || '';
-        const type = item.type as WishlistItemType;
-
-        // Check inside mutex for each item
-        const result = await withDbWrite(async() => {
-          const existing = await this.findByArtistAlbum(artist, album, type);
-
-          if (existing) {
-            return { status: 'skipped' as const, message: 'Already exists' };
-          }
-
-          await WishlistItem.create({
-            artist,
-            album,
-            type,
-            year:     item.year ?? undefined,
-            mbid:     item.mbid ?? undefined,
-            source:   (item.source as WishlistItemSource) ?? 'manual',
-            coverUrl: item.coverUrl ?? undefined,
-            addedAt:  new Date(),
-          });
-
-          return { status: 'added' as const };
-        });
-
-        results.push({
-          artist: item.artist,
-          title:  item.title || '',
-          status: result.status,
-          ...(result.message && { message: result.message }),
-        });
-
-        if (result.status === 'added') {
-          added++;
-        } else {
-          skipped++;
-        }
-      } catch(error) {
-        errors++;
-        results.push({
-          artist:  item.artist,
-          title:   item.title || '',
-          status:  'error',
-          message: (error as Error).message,
-        });
-      }
+    if (!items.length) {
+      return {
+        added: 0, skipped: 0, errors: 0, results: [] 
+      };
     }
 
-    logger.info(`Import complete: ${ added } added, ${ skipped } skipped, ${ errors } errors`);
+    // Normalize items for comparison
+    const normalized = items.map((item) => ({
+      artist: item.artist,
+      album:  item.title || '',
+      type:   (item.type as WishlistItemType) || 'album',
+      year:   item.year,
+      mbid:   item.mbid,
+      source: item.source as WishlistItemSource | undefined,
+    }));
 
-    return {
-      added,
-      skipped,
-      errors,
-      results,
-    };
+    return withDbWrite(async() => {
+      // Find all existing items matching any of the imports in a single query
+      const existing = await WishlistItem.findAll({
+        where: {
+          [Op.or]: normalized.map((n) => ({
+            artist: n.artist,
+            album:  n.album,
+            type:   n.type,
+          })),
+        },
+        attributes: ['artist', 'album', 'type'],
+      });
+
+      // Build set of existing keys for O(1) lookup
+      const existingKeys = new Set(
+        existing.map((e) => `${ e.artist }:::${ e.album }:::${ e.type }`)
+      );
+
+      // Separate new items from duplicates
+      const results: ImportResultItem[] = [];
+      const toCreate: Array<{
+        artist:  string;
+        album:   string;
+        type:    WishlistItemType;
+        year?:   number;
+        mbid?:   string;
+        source:  WishlistItemSource;
+        addedAt: Date;
+      }> = [];
+
+      const now = new Date();
+
+      for (const item of normalized) {
+        const key = `${ item.artist }:::${ item.album }:::${ item.type }`;
+
+        if (existingKeys.has(key)) {
+          results.push({
+            artist:  item.artist,
+            title:   item.album,
+            status:  'skipped',
+            message: 'Already exists',
+          });
+        } else {
+          // Avoid duplicates within the import batch itself
+          existingKeys.add(key);
+          toCreate.push({
+            artist:  item.artist,
+            album:   item.album,
+            type:    item.type,
+            year:    item.year ?? undefined,
+            mbid:    item.mbid ?? undefined,
+            source:  item.source ?? 'manual',
+            addedAt: now,
+          });
+          results.push({
+            artist: item.artist,
+            title:  item.album,
+            status: 'added',
+          });
+        }
+      }
+
+      // Bulk insert all new items
+      if (toCreate.length > 0) {
+        await WishlistItem.bulkCreate(toCreate);
+      }
+
+      const added = toCreate.length;
+      const skipped = items.length - added;
+
+      logger.info(`Import complete: ${ added } added, ${ skipped } skipped`);
+
+      return {
+        added,
+        skipped,
+        errors: 0,
+        results,
+      };
+    });
   }
 }
 
