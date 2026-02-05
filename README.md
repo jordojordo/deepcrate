@@ -2,26 +2,35 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fjordojordo%2Fresonance-blue)](https://ghcr.io/jordojordo/resonance)
+[![AI Assisted](https://img.shields.io/badge/AI-Claude_Code-D97757?logo=claude&logoColor=fff)](https://claude.ai/code)
 
-**Discover music from your listening habits, preview before downloading, auto-fetch via Soulseek.**
+**Curated music discovery for your self-hosted library.** Resonance finds new music through your listening history and existing collection, lets you preview and approve recommendations, then downloads via Soulseek.
 
 https://github.com/user-attachments/assets/8e33838e-a73d-4489-9b72-44cdd9ec8d99
 
+> [!NOTE]
+> *This project was developed with AI assistance. All code is human-reviewed.*
+
 ## Features
 
-- **Multi-source discovery** — ListenBrainz recommendations + Last.fm similar artists
-- **30-second audio previews** — Listen before you approve (via Deezer/Spotify)
-- **Unified approval queue** — Review all recommendations with cover art and metadata
-- **Automatic Soulseek downloads** — Integrates with slskd for P2P music fetching
-- **Library-aware duplicate detection** — Checks your existing library to avoid re-downloading
-- **Single Docker container** — Everything runs in one image
+**Discover**
+- **Dual-source discovery**: ListenBrainz recommendations (listening history) + catalog similarity (library analysis via ListenBrainz/Last.fm)
+
+**Curate**
+- **30-second audio previews**: Listen before you approve (via Deezer/Spotify)
+- **Approval queue**: Review recommendations with cover art and metadata before anything downloads
+
+**Acquire**
+- **Automatic Soulseek downloads**: Integrates with slskd for P2P fetching
+- **Library-aware duplicate detection**: Checks existing library to avoid re-downloading
+- **Single Docker container**: Everything runs in one image
 
 ```mermaid
 flowchart LR
     A[Your Library] --> B[Discovery]
     C[Scrobbles] --> B
-    B --> D[Preview & Approve]
-    D --> E[Soulseek]
+    B --> D{Preview & Approve}
+    D -->|Approved| E[Soulseek]
     E --> A
 ```
 
@@ -53,7 +62,7 @@ slskd:
 catalog_discovery:
   enabled: true
   subsonic:
-    host: "http://navidrome:4533"  # or any Subsonic-compatible server
+    host: "http://subsonic-server:4533"
     username: "your_username"
     password: "your_password"
   lastfm:
@@ -95,7 +104,7 @@ Open `http://localhost:8080` and log in with your configured credentials.
 
 ## Documentation
 
-[Configuration](docs/configuration.md) | [API](docs/api.md) | [Architecture](docs/architecture.md) | [Authelia Integration](docs/authelia-integration.md)
+[Configuration](docs/configuration.md) | [API](docs/api.md) | [Architecture](docs/architecture.md) | [Comparison](docs/comparison.md) | [Authelia Integration](docs/authelia-integration.md)
 
 ## Development
 
@@ -106,12 +115,15 @@ pnpm install && pnpm dev  # Starts on http://localhost:5173
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## Alternatives
+
+Resonance focuses on **curated discovery**, meaning you approve what enters your library. If you prefer fully automated weekly playlists, check out [Explo](https://github.com/LumePart/Explo). If you need to monitor known artists for new releases, [Lidarr](https://lidarr.audio/) is the standard. See [Comparison](docs/comparison.md) for a detailed breakdown.
+
 ## Related Projects
 
-- [slskd](https://github.com/slskd/slskd) — Modern Soulseek client
-- [Navidrome](https://www.navidrome.org/) — Music streaming server
-- [ListenBrainz](https://listenbrainz.org/) — Open music listening data
-- [Lidarr](https://lidarr.audio/) — Music collection manager (alternative approach)
+- [slskd](https://github.com/slskd/slskd): Modern Soulseek client
+- [Navidrome](https://www.navidrome.org/): Music streaming server
+- [ListenBrainz](https://listenbrainz.org/): Open music listening data
 
 ## License
 
