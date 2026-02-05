@@ -1,7 +1,7 @@
 import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
-import { NavidromeClient } from '@server/services/clients/NavidromeClient';
+import { SubsonicClient } from '@server/services/clients/SubsonicClient';
 import LibraryAlbum from '@server/models/LibraryAlbum';
 import QueueItem from '@server/models/QueueItem';
 
@@ -28,51 +28,51 @@ export interface LibraryStats {
  * LibraryService manages the library album cache and duplicate detection.
  */
 export class LibraryService {
-  private navidromeClient: NavidromeClient | null = null;
+  private subsonicClient: SubsonicClient | null = null;
 
   /**
-   * Get or create the Navidrome client based on configuration.
+   * Get or create the Subsonic client based on configuration.
    */
-  private getNavidromeClient(): NavidromeClient | null {
-    if (this.navidromeClient) {
-      return this.navidromeClient;
+  private getSubsonicClient(): SubsonicClient | null {
+    if (this.subsonicClient) {
+      return this.subsonicClient;
     }
 
     const config = getConfig();
-    const navidrome = config.catalog_discovery?.navidrome;
+    const subsonic = config.catalog_discovery?.subsonic;
 
-    if (!navidrome?.host || !navidrome?.username || !navidrome?.password) {
+    if (!subsonic?.host || !subsonic?.username || !subsonic?.password) {
       return null;
     }
 
-    this.navidromeClient = new NavidromeClient(
-      navidrome.host,
-      navidrome.username,
-      navidrome.password
+    this.subsonicClient = new SubsonicClient(
+      subsonic.host,
+      subsonic.username,
+      subsonic.password
     );
 
-    return this.navidromeClient;
+    return this.subsonicClient;
   }
 
   /**
-   * Sync albums from Navidrome to the local LibraryAlbum cache.
+   * Sync albums from Subsonic server to the local LibraryAlbum cache.
    * Returns the number of albums synced.
    */
   async syncLibraryAlbums(): Promise<number> {
-    const client = this.getNavidromeClient();
+    const client = this.getSubsonicClient();
 
     if (!client) {
-      logger.warn('Navidrome not configured, skipping library sync');
+      logger.warn('Subsonic server not configured, skipping library sync');
 
       return 0;
     }
 
-    logger.info('Starting library album sync from Navidrome...');
+    logger.info('Starting library album sync from Subsonic server...');
 
     const albums = await client.getAlbums();
 
     if (albums.length === 0) {
-      logger.info('No albums found in Navidrome library');
+      logger.info('No albums found in Subsonic server library');
 
       return 0;
     }

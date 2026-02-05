@@ -4,11 +4,11 @@ import { sequelize } from '@server/config/db/sequelize';
 
 /**
  * LibraryAlbum attributes.
- * Caches albums from the user's music library (Navidrome) for duplicate detection.
+ * Caches albums from the user's music library (Subsonic-compatible server) for duplicate detection.
  */
 export interface LibraryAlbumAttributes {
   id:           number;
-  navidromeId:  string;     // Subsonic album ID
+  navidromeId:  string;     // Subsonic album ID (column name preserved for DB compatibility)
   name:         string;     // Original album name
   nameLower:    string;     // Lowercase for lookups
   artist:       string;     // Original artist name
@@ -49,8 +49,8 @@ LibraryAlbum.init(
       type:       DataTypes.STRING(255),
       allowNull:  false,
       unique:     true,
-      columnName: 'navidrome_id',
-      comment:    'Navidrome/Subsonic album ID',
+      columnName: 'navidrome_id', // Column name preserved for DB compatibility
+      comment:    'Subsonic server album ID',
     },
     name: {
       type:      DataTypes.STRING(500),

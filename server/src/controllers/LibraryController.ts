@@ -46,7 +46,7 @@ interface LibraryOrganizeConfigResponse {
   interval:          number;
   auto_organize:     boolean;
   delete_after_move: boolean;
-  navidrome_rescan:  boolean;
+  subsonic_rescan:   boolean;
   beets:             { enabled: boolean; command: string };
 }
 
@@ -220,7 +220,7 @@ class LibraryController extends BaseController {
         interval:          organize?.interval ?? 0,
         auto_organize:     organize?.auto_organize ?? false,
         delete_after_move: organize?.delete_after_move ?? true,
-        navidrome_rescan:  organize?.navidrome_rescan ?? false,
+        subsonic_rescan:   organize?.subsonic_rescan ?? false,
         beets:             {
           enabled: organize?.beets?.enabled ?? false,
           command: organize?.beets?.command ?? 'beet import --quiet',
@@ -253,7 +253,7 @@ class LibraryController extends BaseController {
         interval:          body.interval,
         auto_organize:     typeof body.auto_organize === 'boolean' ? body.auto_organize : undefined,
         delete_after_move: typeof body.delete_after_move === 'boolean' ? body.delete_after_move : undefined,
-        navidrome_rescan:  typeof body.navidrome_rescan === 'boolean' ? body.navidrome_rescan : undefined,
+        subsonic_rescan:   typeof body.subsonic_rescan === 'boolean' ? body.subsonic_rescan : undefined,
         beets:             body.beets ? {
           enabled: typeof body.beets.enabled === 'boolean' ? body.beets.enabled : undefined,
           command: beetsCommand ? beetsCommand : undefined,
@@ -273,7 +273,7 @@ class LibraryController extends BaseController {
         interval:          organize?.interval ?? 0,
         auto_organize:     organize?.auto_organize ?? false,
         delete_after_move: organize?.delete_after_move ?? true,
-        navidrome_rescan:  organize?.navidrome_rescan ?? false,
+        subsonic_rescan:   organize?.subsonic_rescan ?? false,
         beets:             {
           enabled: organize?.beets?.enabled ?? false,
           command: organize?.beets?.command ?? 'beet import --quiet',

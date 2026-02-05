@@ -43,7 +43,7 @@ Resonance is designed as a self-contained, single-container application that run
           │  External APIs  │                                   │  Local Services │
           ├─────────────────┤                                   ├─────────────────┤
           │ • ListenBrainz  │                                   │ • slskd         │
-          │ • MusicBrainz   │                                   │ • Navidrome     │
+          │ • MusicBrainz   │                                   │ • Subsonic      │
           │ • Last.fm       │                                   │                 │
           │ • CoverArtArchive                                   │                 │
           └─────────────────┘                                   └─────────────────┘
@@ -113,7 +113,7 @@ Each service is defined in `/etc/s6-overlay/s6-rc.d/`:
 **Purpose:** Find new artists similar to ones in your library using Last.fm.
 
 **Flow:**
-1. Fetch library artists from Navidrome (Subsonic API)
+1. Fetch library artists from Subsonic server (Navidrome, Gonic, Airsonic, etc.)
 2. Query Last.fm `artist.getSimilar` for each artist
 3. Aggregate similarity scores (artists similar to multiple library artists rank higher)
 4. Filter out artists already in library
@@ -262,7 +262,7 @@ Simple JSON arrays of identifiers (MBIDs or entry strings).
 │  ├─────────────┤  ├─────────────┤  ├─────────────┤              │
 │  │ • queue     │  │ • queue_mgr │  │ • QueueItem │              │
 │  │ • wishlist  │  │ • slskd     │  │ • Settings  │              │
-│  │ • downloads │  │ • navidrome │  │ • Download  │              │
+│  │ • downloads │  │ • subsonic  │  │ • Download  │              │
 │  │ • actions   │  │ • scripts   │  │ • etc.      │              │
 │  │ • settings  │  │ • config    │  │             │              │
 │  │ • health    │  │             │  │             │              │
@@ -343,7 +343,7 @@ To also write `/data/combined.log` and `/data/error.log`, set `LOG_TO_FILE=true`
 | Service crashes | s6-overlay restarts it automatically |
 | Container restart | All services resume, state preserved in /data |
 | slskd unreachable | Downloads skip, retry next run |
-| Navidrome unreachable | Catalog discovery skips run |
+| Subsonic server unreachable | Catalog discovery skips run |
 
 ## Future Architecture Considerations
 

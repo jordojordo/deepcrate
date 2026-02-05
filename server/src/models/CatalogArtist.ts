@@ -4,11 +4,11 @@ import { sequelize } from '@server/config/db/sequelize';
 
 /**
  * CatalogArtist attributes.
- * Caches artists from the user's music library (Navidrome).
+ * Caches artists from the user's music library (Subsonic-compatible server).
  */
 export interface CatalogArtistAttributes {
   id:           number;
-  navidromeId:  string;  // Navidrome/Subsonic artist ID
+  navidromeId:  string;  // Subsonic artist ID (column name preserved for DB compatibility)
   name:         string;
   nameLower:    string;  // Lowercase name for case-insensitive lookups
   lastSyncedAt: Date;
@@ -42,8 +42,8 @@ CatalogArtist.init(
     navidromeId: {
       type:       DataTypes.STRING(255),
       allowNull:  false,
-      columnName: 'navidrome_id',
-      comment:    'Navidrome/Subsonic artist ID',
+      columnName: 'navidrome_id', // Column name preserved for DB compatibility
+      comment:    'Subsonic server artist ID',
     },
     name: {
       type:      DataTypes.STRING(500),

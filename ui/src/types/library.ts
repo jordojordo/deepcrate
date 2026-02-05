@@ -8,7 +8,7 @@ export interface LibraryOrganizeConfig {
   interval:          number;
   auto_organize:     boolean;
   delete_after_move: boolean;
-  navidrome_rescan:  boolean;
+  subsonic_rescan:   boolean;
   beets:             { enabled: boolean; command: string };
 }
 

@@ -136,8 +136,9 @@ catalog_discovery:
   # Enable/disable catalog discovery
   enabled: true
 
-  # Navidrome connection (Subsonic API)
-  navidrome:
+  # Subsonic server connection (Navidrome, Gonic, Airsonic, etc.)
+  # Note: "navidrome:" key is deprecated but still supported for backward compatibility
+  subsonic:
     host: "http://navidrome:4533"
     username: "your_username"
     password: "your_password"
@@ -171,7 +172,7 @@ catalog_discovery:
 # =============================================================================
 # Library Duplicate Detection (Optional)
 # Avoid downloading albums you already own
-# Requires catalog_discovery.navidrome to be configured
+# Requires catalog_discovery.subsonic to be configured
 # =============================================================================
 library_duplicate:
   # Enable library duplicate checking
@@ -208,8 +209,9 @@ library_organize:
   # Delete the source folder after a successful transfer
   delete_after_move: true
 
-  # Trigger a Navidrome rescan after organizing (requires catalog_discovery.navidrome)
-  navidrome_rescan: false
+  # Trigger a Subsonic server rescan after organizing (requires catalog_discovery.subsonic)
+  # Note: "navidrome_rescan:" key is deprecated but still supported for backward compatibility
+  subsonic_rescan: false
 
   # Optional beets integration for tagging/import (requires beets installed in the container)
   beets:
@@ -409,9 +411,9 @@ If `timeout_hours` is set and the user doesn't select within that time, the down
 | Key | Type | Required | Default | Description |
 |-----|------|----------|---------|-------------|
 | `enabled` | bool | No | `false` | Enable catalog discovery |
-| `navidrome.host` | string | Yes* | - | Navidrome URL |
-| `navidrome.username` | string | Yes* | - | Navidrome username |
-| `navidrome.password` | string | Yes* | - | Navidrome password |
+| `subsonic.host` | string | Yes* | - | Subsonic server URL (Navidrome, Gonic, Airsonic, etc.) |
+| `subsonic.username` | string | Yes* | - | Subsonic server username |
+| `subsonic.password` | string | Yes* | - | Subsonic server password |
 | `lastfm.api_key` | string | No | - | Last.fm API key (enables Last.fm provider) |
 | `listenbrainz.enabled` | bool | No | `true` | Enable ListenBrainz similarity provider (no API key needed) |
 | `max_artists_per_run` | int | No | `10` | Max new artists per run |
@@ -421,6 +423,8 @@ If `timeout_hours` is set and the user doesn't select within that time, the down
 | `mode` | string | No | `manual` | `auto` or `manual` |
 
 \*Required if `enabled: true`. At least one similarity provider (`lastfm` or `listenbrainz`) must be configured when enabled.
+
+> **Note:** The `navidrome` key is deprecated but still supported for backward compatibility. Use `subsonic` for new configurations.
 
 **Similarity Providers:**
 
@@ -438,7 +442,7 @@ When both providers are configured, results are combined and artists found by mu
 | `enabled` | bool | No | `false` | Enable library duplicate checking |
 | `auto_reject` | bool | No | `false` | Auto-reject items already in library |
 
-Requires `catalog_discovery.navidrome` to be configured for library sync.
+Requires `catalog_discovery.subsonic` to be configured for library sync.
 
 ### Library Organization
 
@@ -450,13 +454,15 @@ Requires `catalog_discovery.navidrome` to be configured for library sync.
 | `organization` | string | No | `artist_album` | `flat` or `artist_album`. **`flat`**: Places album folders directly in library_path **`artist_album`**: Creates Artist/Album folder structure |
 | `auto_organize` | bool | No | `false` | Enable scheduling (requires `LIBRARY_ORGANIZE_INTERVAL > 0`) |
 | `delete_after_move` | bool | No | `true` | Delete source after organizing |
-| `navidrome_rescan` | bool | No | `false` | Trigger Navidrome `startScan` after organizing |
+| `subsonic_rescan` | bool | No | `false` | Trigger Subsonic server `startScan` after organizing |
 | `beets.enabled` | bool | No | `false` | Run beets import before moving |
 | `beets.command` | string | No | `beet import --quiet` | beets command (import path is appended) |
 
 *Required if `enabled: true`
 
-If `navidrome_rescan: true`, `catalog_discovery.navidrome` must be configured.
+If `subsonic_rescan: true`, `catalog_discovery.subsonic` must be configured.
+
+> **Note:** The `navidrome_rescan` key is deprecated but still supported for backward compatibility.
 
 ### Preview Player
 

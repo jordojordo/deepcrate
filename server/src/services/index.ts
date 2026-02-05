@@ -17,7 +17,7 @@ export type {
 } from '@server/types/slskd-client';
 export type { ListenBrainzRecommendation } from '@server/types/listenbrainz';
 export type { SimilarArtist } from './clients/LastFmClient';
-export type { NavidromeArtist } from './clients/NavidromeClient';
+export type { SubsonicArtist, NavidromeArtist } from './clients/SubsonicClient';
 
 // Core services
 export { QueueService, default as QueueServiceDefault } from './QueueService';
@@ -30,7 +30,11 @@ export { ListenBrainzClient, default as ListenBrainzClientDefault } from './clie
 export { MusicBrainzClient, default as MusicBrainzClientDefault } from './clients/MusicBrainzClient';
 
 export { LastFmClient, default as LastFmClientDefault } from './clients/LastFmClient';
-export { NavidromeClient, default as NavidromeClientDefault } from './clients/NavidromeClient';
+export {
+  SubsonicClient, NavidromeClient, default as SubsonicClientDefault 
+} from './clients/SubsonicClient';
+/** @deprecated Use SubsonicClientDefault instead */
+export { default as NavidromeClientDefault } from './clients/SubsonicClient';
 export { SlskdClient, default as SlskdClientDefault } from './clients/SlskdClient';
 
 export { DeezerClient, default as DeezerClientDefault } from './clients/DeezerClient';

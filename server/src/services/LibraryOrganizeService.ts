@@ -7,7 +7,7 @@ import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
 import DownloadTask from '@server/models/DownloadTask';
-import NavidromeClient from '@server/services/clients/NavidromeClient';
+import SubsonicClient from '@server/services/clients/SubsonicClient';
 import { splitCommand } from '@server/utils/command';
 import {
   joinDownloadsPath,
@@ -584,23 +584,23 @@ export class LibraryOrganizeService {
     throw new Error(`Unsupported source type: ${ source }`);
   }
 
-  async triggerNavidromeRescan(): Promise<boolean> {
+  async triggerSubsonicRescan(): Promise<boolean> {
     const config = getConfig();
     const settings = config.library_organize;
 
-    if (!settings?.enabled || !settings.navidrome_rescan) {
+    if (!settings?.enabled || !settings.subsonic_rescan) {
       return false;
     }
 
-    const navidrome = config.catalog_discovery?.navidrome;
+    const subsonic = config.catalog_discovery?.subsonic;
 
-    if (!navidrome) {
-      logger.warn('[library-organize] navidrome not configured, cannot rescan');
+    if (!subsonic) {
+      logger.warn('[library-organize] Subsonic server not configured, cannot rescan');
 
       return false;
     }
 
-    const client = new NavidromeClient(navidrome.host, navidrome.username, navidrome.password);
+    const client = new SubsonicClient(subsonic.host, subsonic.username, subsonic.password);
 
     return client.startScan();
   }

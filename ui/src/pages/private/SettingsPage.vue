@@ -122,7 +122,7 @@ function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
             <div class="settings-page__panel">
               <h2 class="settings-page__section-title">Catalog Discovery</h2>
               <p class="settings-page__section-desc">
-                Find similar artists based on your Navidrome library using Last.fm.
+                Find similar artists based on your Subsonic server library using Last.fm.
               </p>
               <CatalogDiscoveryForm
                 :settings="catalogDiscovery"

@@ -140,12 +140,12 @@ catalog_discovery:
   # Enable catalog discovery
   enabled: true
 
-  # Navidrome connection (Subsonic API)
-  # Works with any Subsonic-compatible server
-  navidrome:
+  # Subsonic server connection (Navidrome, Gonic, Airsonic, etc.)
+  # Note: "navidrome:" key is deprecated but still supported for backward compatibility
+  subsonic:
     host: "http://localhost:4533"
-    username: "your_navidrome_username"
-    password: "your_navidrome_password"
+    username: "your_subsonic_username"
+    password: "your_subsonic_password"
 
   # ----- Similarity Providers -----
   # At least one provider is required when catalog_discovery is enabled.
@@ -182,7 +182,7 @@ catalog_discovery:
 # -----------------------------------------------------------------------------
 # Library Duplicate Detection (Optional)
 # Avoid downloading albums you already own
-# Requires catalog_discovery.navidrome to be configured
+# Requires catalog_discovery.subsonic to be configured
 # -----------------------------------------------------------------------------
 library_duplicate:
   # Enable library duplicate checking
@@ -221,8 +221,9 @@ library_organize:
   # Delete the source folder after a successful transfer
   delete_after_move: true
 
-  # Trigger a Navidrome rescan after organizing (requires catalog_discovery.navidrome)
-  navidrome_rescan: false
+  # Trigger a Subsonic server rescan after organizing (requires catalog_discovery.subsonic)
+  # Note: "navidrome_rescan:" key is deprecated but still supported for backward compatibility
+  subsonic_rescan: false
 
   # Optional beets integration for tagging/import
   beets:

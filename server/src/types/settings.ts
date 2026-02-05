@@ -45,17 +45,20 @@ export const SanitizedSlskdSchema = z.object({
   selection:        z.record(z.string(), z.unknown()).optional(),
 });
 
-export const SanitizedNavidromeSchema = z.object({
+export const SanitizedSubsonicSchema = z.object({
   host:     z.string(),
   username: z.string(),
   password: SecretStatusSchema,
 });
 
+/** @deprecated Use SanitizedSubsonicSchema instead */
+export const SanitizedNavidromeSchema = SanitizedSubsonicSchema;
+
 export const SanitizedLastFmSchema = z.object({ api_key: SecretStatusSchema });
 
 export const SanitizedCatalogDiscoverySchema = z.object({
   enabled:              z.boolean(),
-  navidrome:            SanitizedNavidromeSchema.optional(),
+  subsonic:             SanitizedSubsonicSchema.optional(),
   lastfm:               SanitizedLastFmSchema.optional(),
   max_artists_per_run:  z.number(),
   min_similarity:       z.number(),
@@ -157,7 +160,7 @@ export type UpdateSlskdRequest = z.infer<typeof UpdateSlskdRequestSchema>;
 
 export const UpdateCatalogDiscoveryRequestSchema = z.object({
   enabled:              z.boolean().optional(),
-  navidrome:            z.object({
+  subsonic:             z.object({
     host:     z.string().optional(),
     username: z.string().optional(),
     password: z.string().optional(),

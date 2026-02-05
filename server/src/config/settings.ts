@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Mutex } from 'async-mutex';
 
 import { DEFAULT_PREFERRED_FORMATS } from '@server/constants/slskd';
+import logger from '@server/config/logger';
 
 const configMutex = new Mutex();
 
@@ -130,11 +131,14 @@ const SlskdSettingsSchema = z.object({
   selection:        SlskdSelectionSchema.optional(),
 });
 
-const NavidromeSettingsSchema = z.object({
+const SubsonicSettingsSchema = z.object({
   host:     z.string(),
   username: z.string(),
   password: z.string(),
 });
+
+/** @deprecated Use SubsonicSettingsSchema instead */
+const NavidromeSettingsSchema = SubsonicSettingsSchema;
 
 const LastFmSettingsSchema = z.object({ api_key: z.string() });
 
@@ -170,7 +174,8 @@ const LibraryOrganizeSettingsSchema = z.object({
   interval:          z.number().int().min(0).default(0),
   auto_organize:     z.boolean().default(false),
   delete_after_move: z.boolean().default(true),
-  navidrome_rescan:  z.boolean().default(false),
+  subsonic_rescan:   z.boolean().default(false),
+  navidrome_rescan:  z.boolean().default(false), // deprecated, use subsonic_rescan
   beets:             BeetsSettingsSchema.default({ enabled: false, command: 'beet import --quiet' }),
 }).superRefine((value, ctx) => {
   if (!value.enabled) {
@@ -188,11 +193,21 @@ const LibraryOrganizeSettingsSchema = z.object({
       code: 'custom', message: 'Required when library_organize.enabled is true', path: ['library_path'],
     });
   }
+}).transform((data) => {
+  // Migrate deprecated navidrome_rescan to subsonic_rescan
+  if (data.navidrome_rescan && !data.subsonic_rescan) {
+    logger.warn('DEPRECATION: library_organize.navidrome_rescan is deprecated, use subsonic_rescan instead');
+
+    return { ...data, subsonic_rescan: data.navidrome_rescan };
+  }
+
+  return data;
 });
 
 const CatalogDiscoverySettingsSchema = z.object({
   enabled:              z.boolean(),
-  navidrome:            NavidromeSettingsSchema.optional(),
+  subsonic:             SubsonicSettingsSchema.optional(),
+  navidrome:            NavidromeSettingsSchema.optional(), // deprecated, use subsonic
   lastfm:               LastFmSettingsSchema.optional(),
   listenbrainz:         CatalogListenBrainzSettingsSchema.optional(),
   provider_timeout_ms:  z.number().int().positive().optional(),
@@ -201,14 +216,23 @@ const CatalogDiscoverySettingsSchema = z.object({
   similar_artist_limit: z.number().int().positive().optional(),
   albums_per_artist:    z.number().int().positive().optional(),
   mode:                 z.enum(['auto', 'manual']),
+}).transform((data) => {
+  // Migrate deprecated navidrome to subsonic (run first so validation sees subsonic)
+  if (data.navidrome && !data.subsonic) {
+    logger.warn('DEPRECATION: catalog_discovery.navidrome is deprecated, use subsonic instead');
+
+    return { ...data, subsonic: data.navidrome };
+  }
+
+  return data;
 }).superRefine((value, ctx) => {
   if (!value.enabled) {
     return;
   }
 
-  if (!value.navidrome) {
+  if (!value.subsonic) {
     ctx.addIssue({
-      code: 'custom', message: 'Required when catalog_discovery.enabled is true', path: ['navidrome']
+      code: 'custom', message: 'Required when catalog_discovery.enabled is true', path: ['subsonic']
     });
   }
 });
@@ -262,19 +286,19 @@ const ConfigSchema = z.object({
   preview:           PreviewSettingsSchema.optional(),
   ui:                UISettingsSchema,
 }).superRefine((value, ctx) => {
-  if (value.library_duplicate?.enabled && !value.catalog_discovery?.navidrome) {
+  if (value.library_duplicate?.enabled && !value.catalog_discovery?.subsonic) {
     ctx.addIssue({
       code:    'custom',
-      message: 'catalog_discovery.navidrome is required when library_duplicate.enabled is true',
-      path:    ['catalog_discovery', 'navidrome'],
+      message: 'catalog_discovery.subsonic is required when library_duplicate.enabled is true',
+      path:    ['catalog_discovery', 'subsonic'],
     });
   }
 
-  if (value.library_organize?.enabled && value.library_organize.navidrome_rescan && !value.catalog_discovery?.navidrome) {
+  if (value.library_organize?.enabled && value.library_organize.subsonic_rescan && !value.catalog_discovery?.subsonic) {
     ctx.addIssue({
       code:    'custom',
-      message: 'catalog_discovery.navidrome is required when library_organize.navidrome_rescan is true',
-      path:    ['catalog_discovery', 'navidrome'],
+      message: 'catalog_discovery.subsonic is required when library_organize.subsonic_rescan is true',
+      path:    ['catalog_discovery', 'subsonic'],
     });
   }
 });
@@ -545,7 +569,8 @@ export function ensureDataDir(): string {
 const SECRET_PATHS: string[] = [
   'listenbrainz.token',
   'slskd.api_key',
-  'catalog_discovery.navidrome.password',
+  'catalog_discovery.subsonic.password',
+  'catalog_discovery.navidrome.password', // deprecated, kept for back-compat
   'catalog_discovery.lastfm.api_key',
   'preview.spotify.client_id',
   'preview.spotify.client_secret',

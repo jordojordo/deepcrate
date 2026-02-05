@@ -106,18 +106,18 @@ export async function libraryOrganizeJob(): Promise<void> {
       await service.organizeTask(task, callbacks);
     }
 
-    if (settings.navidrome_rescan) {
+    if (settings.subsonic_rescan) {
       if (isJobCancelled(JOB_NAMES.LIBRARY_ORGANIZE)) {
-        logger.info('[library-organize] cancelled before navidrome rescan');
+        logger.info('[library-organize] cancelled before Subsonic rescan');
         throw new Error('Job cancelled');
       }
 
       emitJobProgress({
         name:    JOB_NAMES.LIBRARY_ORGANIZE,
-        message: 'Triggering Navidrome library rescan',
+        message: 'Triggering Subsonic server library rescan',
       });
 
-      await service.triggerNavidromeRescan();
+      await service.triggerSubsonicRescan();
     }
 
     logger.info('[library-organize] completed');

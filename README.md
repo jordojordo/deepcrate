@@ -31,7 +31,7 @@ flowchart LR
 
 - Docker and Docker Compose
 - [slskd](https://github.com/slskd/slskd) running with API enabled
-- [Navidrome](https://www.navidrome.org/) or compatible music server (for catalog discovery)
+- Subsonic-compatible server ([Navidrome](https://www.navidrome.org/), [Gonic](https://github.com/sentriz/gonic), [Airsonic](https://airsonic.github.io/), etc.) for catalog discovery
 - [ListenBrainz](https://listenbrainz.org/) account + [Last.fm API key](https://www.last.fm/api/account/create)
 
 ### 1. Create configuration
@@ -52,8 +52,8 @@ slskd:
 
 catalog_discovery:
   enabled: true
-  navidrome:
-    host: "http://navidrome:4533"
+  subsonic:
+    host: "http://navidrome:4533"  # or any Subsonic-compatible server
     username: "your_username"
     password: "your_password"
   lastfm:

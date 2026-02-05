@@ -5,7 +5,7 @@ import logger from '@server/config/logger';
 import { JOB_NAMES } from '@server/constants/jobs';
 import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
-import { NavidromeClient } from '@server/services/clients/NavidromeClient';
+import { SubsonicClient } from '@server/services/clients/SubsonicClient';
 import { MusicBrainzClient } from '@server/services/clients/MusicBrainzClient';
 import { CoverArtArchiveClient } from '@server/services/clients/CoverArtArchiveClient';
 import { QueueService } from '@server/services/QueueService';
@@ -26,11 +26,11 @@ interface SimilarArtistScore {
 /**
  * Catalog Discovery Job
  *
- * Scans the user's Navidrome library and finds similar artists using configured providers.
+ * Scans the user's Subsonic server library and finds similar artists using configured providers.
  * Fetches discographies from MusicBrainz and adds to pending queue.
  *
  * Algorithm:
- * 1. Sync library artists from Navidrome
+ * 1. Sync library artists from Subsonic server
  * 2. For each library artist, fetch similar artists from all configured providers
  * 3. Aggregate similarity scores (artists similar to multiple library artists rank higher)
  * 4. Apply intersection boost for artists found by multiple providers
@@ -48,8 +48,8 @@ export async function catalogDiscoveryJob(): Promise<void> {
     return;
   }
 
-  if (!catalogConfig.navidrome) {
-    logger.warn('Catalog discovery: navidrome not configured, skipping');
+  if (!catalogConfig.subsonic) {
+    logger.warn('Catalog discovery: Subsonic server not configured, skipping');
 
     return;
   }
@@ -75,10 +75,10 @@ export async function catalogDiscoveryJob(): Promise<void> {
 
   logger.info(`Starting catalog discovery job (providers: ${ providerNames })`);
 
-  const navidromeClient = new NavidromeClient(
-    catalogConfig.navidrome.host,
-    catalogConfig.navidrome.username,
-    catalogConfig.navidrome.password
+  const subsonicClient = new SubsonicClient(
+    catalogConfig.subsonic.host,
+    catalogConfig.subsonic.username,
+    catalogConfig.subsonic.password
   );
   const mbClient = new MusicBrainzClient();
   const coverClient = new CoverArtArchiveClient();
@@ -91,9 +91,9 @@ export async function catalogDiscoveryJob(): Promise<void> {
       throw new Error('Job cancelled');
     }
 
-    // Step 1: Sync library artists from Navidrome
-    logger.info('Syncing library artists from Navidrome...');
-    const libraryArtists = await navidromeClient.getArtists();
+    // Step 1: Sync library artists from Subsonic server
+    logger.info('Syncing library artists from Subsonic server...');
+    const libraryArtists = await subsonicClient.getArtists();
     const libraryArtistNames = new Set<string>();
 
     // Save to database for future reference

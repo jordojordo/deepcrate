@@ -553,7 +553,7 @@ Get status of running actions.
 
 #### GET /api/v1/library/stats
 
-Get library statistics from Navidrome.
+Get library statistics from Subsonic server.
 
 **Response:**
 ```json

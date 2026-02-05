@@ -99,11 +99,14 @@ export interface SlskdForm extends Omit<SlskdFormData, 'search' | 'selection'> {
 /**
  * Catalog discovery settings
  */
-export interface NavidromeSettings {
+export interface SubsonicSettings {
   host:     string;
   username: string;
   password: SecretStatus;
 }
+
+/** @deprecated Use SubsonicSettings instead */
+export type NavidromeSettings = SubsonicSettings;
 
 export interface LastFmSettings {
   api_key: SecretStatus;
@@ -111,7 +114,7 @@ export interface LastFmSettings {
 
 export interface CatalogDiscoverySettings {
   enabled:               boolean;
-  navidrome?:            NavidromeSettings;
+  subsonic?:             SubsonicSettings;
   lastfm?:               LastFmSettings;
   max_artists_per_run:   number;
   min_similarity:        number;
@@ -121,8 +124,8 @@ export interface CatalogDiscoverySettings {
 }
 
 export interface CatalogDiscoveryFormData {
-  enabled:    boolean;
-  navidrome?: {
+  enabled:   boolean;
+  subsonic?: {
     host?:     string;
     username?: string;
     password?: string;
@@ -137,9 +140,9 @@ export interface CatalogDiscoveryFormData {
   mode:                  'auto' | 'manual';
 }
 
-export interface CatalogDiscoveryForm extends Omit<CatalogDiscoveryFormData, 'navidrome' | 'lastfm'> {
-  navidrome: { host: string; username: string; password?: string };
-  lastfm:    { api_key?: string };
+export interface CatalogDiscoveryForm extends Omit<CatalogDiscoveryFormData, 'subsonic' | 'lastfm'> {
+  subsonic: { host: string; username: string; password?: string };
+  lastfm:   { api_key?: string };
 }
 
 /**
@@ -208,7 +211,7 @@ export interface LibraryOrganizeSettings {
   interval:          number;
   auto_organize:     boolean;
   delete_after_move: boolean;
-  navidrome_rescan:  boolean;
+  subsonic_rescan:   boolean;
   beets?: {
     enabled: boolean;
     command: string;

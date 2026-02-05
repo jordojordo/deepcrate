@@ -32,7 +32,7 @@ const modeOptions = [
 
 const form = reactive<CatalogDiscoveryForm>({
   enabled:              false,
-  navidrome: {
+  subsonic: {
     host:     '',
     username: '',
     password: undefined,
@@ -62,10 +62,10 @@ watch(
     form.albums_per_artist = next.albums_per_artist;
     form.mode = next.mode;
 
-    if (next.navidrome) {
-      form.navidrome = {
-        host:     next.navidrome.host,
-        username: next.navidrome.username,
+    if (next.subsonic) {
+      form.subsonic = {
+        host:     next.subsonic.host,
+        username: next.subsonic.username,
         password: undefined,
       };
     }
@@ -77,8 +77,8 @@ watch(
   { immediate: true }
 );
 
-const navidromePasswordConfigured = computed(
-  () => props.settings?.navidrome?.password?.configured ?? false
+const subsonicPasswordConfigured = computed(
+  () => props.settings?.subsonic?.password?.configured ?? false
 );
 
 const lastfmKeyConfigured = computed(
@@ -103,10 +103,10 @@ async function handleSave() {
   errors.value = [];
   urlError.value = null;
 
-  const host = form.navidrome?.host;
+  const host = form.subsonic?.host;
 
   if (host && !isValidUrl(host)) {
-    urlError.value = 'Invalid Navidrome URL format. Please enter a valid URL (e.g., https://music.example.com)';
+    urlError.value = 'Invalid Subsonic server URL format. Please enter a valid URL (e.g., https://music.example.com)';
 
     return;
   }
@@ -120,15 +120,15 @@ async function handleSave() {
     mode:                 form.mode,
   };
 
-  // Build navidrome object using spread pattern if any field is set
-  const navidromeData = {
-    ...(form.navidrome?.host?.trim() && { host: form.navidrome.host.trim() }),
-    ...(form.navidrome?.username?.trim() && { username: form.navidrome.username.trim() }),
-    ...(form.navidrome?.password?.trim() && { password: form.navidrome.password.trim() }),
+  // Build subsonic object using spread pattern if any field is set
+  const subsonicData = {
+    ...(form.subsonic?.host?.trim() && { host: form.subsonic.host.trim() }),
+    ...(form.subsonic?.username?.trim() && { username: form.subsonic.username.trim() }),
+    ...(form.subsonic?.password?.trim() && { password: form.subsonic.password.trim() }),
   };
 
-  if (Object.keys(navidromeData).length > 0) {
-    data.navidrome = navidromeData;
+  if (Object.keys(subsonicData).length > 0) {
+    data.subsonic = subsonicData;
   }
 
   // Build lastfm object if key is set
@@ -186,46 +186,46 @@ async function handleSave() {
     </div>
 
     <details class="settings-form__section" :open="form.enabled">
-      <summary class="settings-form__section-title">Navidrome Connection</summary>
+      <summary class="settings-form__section-title">Subsonic Server</summary>
       <div class="settings-form__grid settings-form__grid--with-margin">
         <div class="settings-form__field">
-          <label for="setting-catalog-navidrome-host" class="settings-form__label">Host</label>
+          <label for="setting-catalog-subsonic-host" class="settings-form__label">Host</label>
           <InputText
-            id="setting-catalog-navidrome-host"
-            v-model="form.navidrome.host"
+            id="setting-catalog-subsonic-host"
+            v-model="form.subsonic.host"
             :disabled="loading || !form.enabled"
             placeholder="https://music.example.com"
           />
         </div>
 
         <div class="settings-form__field">
-          <label for="setting-catalog-navidrome-username" class="settings-form__label">
+          <label for="setting-catalog-subsonic-username" class="settings-form__label">
             Username
           </label>
           <InputText
-            id="setting-catalog-navidrome-username"
-            v-model="form.navidrome.username"
+            id="setting-catalog-subsonic-username"
+            v-model="form.subsonic.username"
             :disabled="loading || !form.enabled"
             placeholder="admin"
           />
         </div>
 
         <div class="settings-form__field">
-          <label for="setting-catalog-navidrome-password" class="settings-form__label">
+          <label for="setting-catalog-subsonic-password" class="settings-form__label">
             Password
             <Tag
-              v-if="navidromePasswordConfigured"
+              v-if="subsonicPasswordConfigured"
               severity="success"
               value="Configured"
               class="ml-2"
             />
           </label>
           <InputText
-            id="setting-catalog-navidrome-password"
-            v-model="form.navidrome.password"
+            id="setting-catalog-subsonic-password"
+            v-model="form.subsonic.password"
             type="password"
             :disabled="loading || !form.enabled"
-            :placeholder="navidromePasswordConfigured ? 'Enter to change' : 'Password'"
+            :placeholder="subsonicPasswordConfigured ? 'Enter to change' : 'Password'"
           />
         </div>
       </div>

@@ -2,23 +2,29 @@ import axios from 'axios';
 import crypto from 'crypto';
 import logger from '@server/config/logger';
 
-export interface NavidromeArtist {
+export interface SubsonicArtist {
   name: string;
   id:   string;
 }
 
-export interface NavidromeAlbum {
+/** @deprecated Use SubsonicArtist instead */
+export type NavidromeArtist = SubsonicArtist;
+
+export interface SubsonicAlbum {
   id:     string;
   name:   string;
   artist: string;
   year?:  number;
 }
 
+/** @deprecated Use SubsonicAlbum instead */
+export type NavidromeAlbum = SubsonicAlbum;
+
 /**
- * NavidromeClient provides access to Navidrome via Subsonic API.
+ * SubsonicClient provides access to Subsonic-compatible servers (Navidrome, Gonic, Airsonic, etc.).
  * https://www.subsonic.org/pages/api.jsp
  */
-export class NavidromeClient {
+export class SubsonicClient {
   private host:     string;
   private username: string;
   private password: string;
@@ -37,9 +43,9 @@ export class NavidromeClient {
   }
 
   /**
-   * Get all artists from Navidrome library
+   * Get all artists from Subsonic server library
    */
-  async getArtists(): Promise<Record<string, NavidromeArtist>> {
+  async getArtists(): Promise<Record<string, SubsonicArtist>> {
     const salt = 'catalogdisc';
     const token = this.md5Hash(this.password + salt);
 
@@ -55,7 +61,7 @@ export class NavidromeClient {
     const url = `${ this.host }/rest/getArtists`;
 
     try {
-      logger.info(`Fetching artists from Navidrome at ${ this.host }...`);
+      logger.info(`Fetching artists from Subsonic server at ${ this.host }...`);
 
       const response = await axios.get(url, {
         params,
@@ -76,7 +82,7 @@ export class NavidromeClient {
       }
 
       // Parse artist index
-      const artists: Record<string, NavidromeArtist> = {};
+      const artists: Record<string, SubsonicArtist> = {};
       const artistIndex = subsonicResp.artists?.index || [];
 
       for (const indexEntry of artistIndex) {
@@ -98,9 +104,9 @@ export class NavidromeClient {
       return artists;
     } catch(error) {
       if (axios.isAxiosError(error)) {
-        logger.error(`Failed to fetch artists from Navidrome: ${ error.message }`);
+        logger.error(`Failed to fetch artists from Subsonic server: ${ error.message }`);
       } else {
-        logger.error(`Failed to fetch artists from Navidrome: ${ String(error) }`);
+        logger.error(`Failed to fetch artists from Subsonic server: ${ String(error) }`);
       }
 
       return {};
@@ -108,10 +114,10 @@ export class NavidromeClient {
   }
 
   /**
-   * Get all albums from Navidrome library using paginated requests.
+   * Get all albums from Subsonic server library using paginated requests.
    * Uses Subsonic API getAlbumList2 with alphabeticalByName type.
    */
-  async getAlbums(): Promise<NavidromeAlbum[]> {
+  async getAlbums(): Promise<SubsonicAlbum[]> {
     const salt = 'librarySync';
     const token = this.md5Hash(this.password + salt);
 
@@ -124,13 +130,13 @@ export class NavidromeClient {
       f: 'json',
     };
 
-    const albums: NavidromeAlbum[] = [];
+    const albums: SubsonicAlbum[] = [];
     const pageSize = 500;
     let offset = 0;
     let hasMore = true;
 
     try {
-      logger.info(`Fetching albums from Navidrome at ${ this.host }...`);
+      logger.info(`Fetching albums from Subsonic server at ${ this.host }...`);
 
       while (hasMore) {
         const url = `${ this.host }/rest/getAlbumList2`;
@@ -191,9 +197,9 @@ export class NavidromeClient {
       return albums;
     } catch(error) {
       if (axios.isAxiosError(error)) {
-        logger.error(`Failed to fetch albums from Navidrome: ${ error.message }`);
+        logger.error(`Failed to fetch albums from Subsonic server: ${ error.message }`);
       } else {
-        logger.error(`Failed to fetch albums from Navidrome: ${ String(error) }`);
+        logger.error(`Failed to fetch albums from Subsonic server: ${ String(error) }`);
       }
 
       return [];
@@ -201,7 +207,7 @@ export class NavidromeClient {
   }
 
   /**
-   * Trigger a library scan in Navidrome.
+   * Trigger a library scan on Subsonic server.
    * Uses Subsonic API startScan.
    */
   async startScan(): Promise<boolean> {
@@ -220,7 +226,7 @@ export class NavidromeClient {
     const url = `${ this.host }/rest/startScan`;
 
     try {
-      logger.info(`Triggering Navidrome scan at ${ this.host }...`);
+      logger.info(`Triggering Subsonic server scan at ${ this.host }...`);
 
       const response = await axios.get(url, {
         params,
@@ -241,9 +247,9 @@ export class NavidromeClient {
       return true;
     } catch(error) {
       if (axios.isAxiosError(error)) {
-        logger.error(`Failed to trigger Navidrome scan: ${ error.message }`);
+        logger.error(`Failed to trigger Subsonic server scan: ${ error.message }`);
       } else {
-        logger.error(`Failed to trigger Navidrome scan: ${ String(error) }`);
+        logger.error(`Failed to trigger Subsonic server scan: ${ String(error) }`);
       }
 
       return false;
@@ -251,4 +257,7 @@ export class NavidromeClient {
   }
 }
 
-export default NavidromeClient;
+/** @deprecated Use SubsonicClient instead */
+export const NavidromeClient = SubsonicClient;
+
+export default SubsonicClient;

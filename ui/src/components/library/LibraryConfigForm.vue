@@ -32,7 +32,7 @@ interface LibraryOrganizeConfigFormState {
   interval:          number;
   auto_organize:     boolean;
   delete_after_move: boolean;
-  navidrome_rescan:  boolean;
+  subsonic_rescan:   boolean;
   beets:             { enabled: boolean; command: string };
 }
 
@@ -44,7 +44,7 @@ const form = reactive<LibraryOrganizeConfigFormState>({
   interval:          0,
   auto_organize:     false,
   delete_after_move: true,
-  navidrome_rescan:  false,
+  subsonic_rescan:   false,
   beets:             { enabled: false, command: 'beet import --quiet' },
 });
 
@@ -96,7 +96,7 @@ function handleSave() {
     interval:          Number.isFinite(form.interval) ? Math.max(0, Math.floor(form.interval)) : 0,
     auto_organize:     form.auto_organize,
     delete_after_move: form.delete_after_move,
-    navidrome_rescan:  form.navidrome_rescan,
+    subsonic_rescan:   form.subsonic_rescan,
     beets:             {
       enabled: form.beets.enabled,
       command: form.beets.command?.trim() ? form.beets.command.trim() : 'beet import --quiet',
@@ -171,8 +171,8 @@ function handleSave() {
       </label>
 
       <label class="library-config__field">
-        <span class="library-config__label">Navidrome Rescan</span>
-        <ToggleSwitch v-model="form.navidrome_rescan" :disabled="!form.enabled || loading" />
+        <span class="library-config__label">Subsonic Rescan</span>
+        <ToggleSwitch v-model="form.subsonic_rescan" :disabled="!form.enabled || loading" />
       </label>
     </div>
 

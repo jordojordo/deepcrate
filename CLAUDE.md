@@ -48,7 +48,7 @@ Resonance is a music discovery pipeline with a Node.js/TypeScript server and Vue
 - `config/` - Database setup (Sequelize/SQLite), logger (Winston), job scheduling config
 - `jobs/` - Background discovery jobs:
   - `listenbrainzFetch.ts` - Fetches recommendations from ListenBrainz API
-  - `catalogDiscovery.ts` - Finds similar artists via Last.fm based on Navidrome library
+  - `catalogDiscovery.ts` - Finds similar artists via Last.fm based on Subsonic server library
   - `slskdDownloader.ts` - Processes wishlist via slskd Soulseek client
 - `services/` - Business logic: `QueueService.ts`, `WishlistService.ts`, and external API clients in `clients/`
 - `models/` - Sequelize models: `QueueItem`, `ProcessedRecording`, `CatalogArtist`, `DiscoveredArtist`, `DownloadedItem`
