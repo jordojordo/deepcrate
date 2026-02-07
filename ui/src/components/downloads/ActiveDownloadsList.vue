@@ -60,7 +60,7 @@ const handleDelete = () => {
 
   if (ids.length) {
     confirm.require({
-      message: `Delete ${ids.length} selected download(s)?`,
+      message: `Delete ${ ids.length } selected download(s)?`,
       header:  'Confirm Delete',
       icon:    'pi pi-exclamation-triangle',
       accept:  () => {
