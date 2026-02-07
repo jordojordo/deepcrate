@@ -4,6 +4,7 @@ import type { ComponentPublicInstance } from 'vue';
 
 import { ref, watch, computed } from 'vue';
 import { getDefaultCoverUrl } from '@/utils/formatters';
+import { useBreakpoint } from '@/composables/useBreakpoint';
 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -20,6 +21,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), { focusIndex: -1 });
+const { isMobile } = useBreakpoint(1100);
 
 const emit = defineEmits<{
   select:               [id: string];
@@ -152,6 +154,79 @@ function canRequeue(status: DownloadStatus): boolean {
       <p class="text-muted">Items you approve from the queue will appear here.</p>
     </div>
 
+    <!-- Mobile card view -->
+    <div v-else-if="isMobile" class="wishlist-mobile">
+      <div
+        v-for="(item, index) in items"
+        :key="item.id"
+        class="wishlist-mobile__card"
+        :class="{ 'wishlist-mobile__card--focused': index === props.focusIndex }"
+        @click="emit('update:focus-index', index)"
+      >
+        <div class="wishlist-mobile__header">
+          <img
+            :src="item.coverUrl || getDefaultCoverUrl()"
+            :alt="`${item.title} cover`"
+            class="wishlist-mobile__cover"
+            @error="($event.target as HTMLImageElement).src = getDefaultCoverUrl()"
+          />
+          <div class="wishlist-mobile__info">
+            <div class="font-semibold">{{ item.title || 'Unknown' }}</div>
+            <div class="text-sm text-muted">{{ item.artist }}</div>
+            <div v-if="item.year" class="text-sm text-muted">{{ item.year }}</div>
+          </div>
+        </div>
+        <div class="wishlist-mobile__tags">
+          <Tag
+            :value="getSourceLabel(item.source)"
+            :severity="getSourceSeverity(item.source)"
+          />
+          <Tag
+            :value="getStatusLabel(item.downloadStatus)"
+            :severity="getStatusSeverity(item.downloadStatus)"
+          />
+          <Tag
+            v-if="item.type !== 'album'"
+            :value="item.type"
+            severity="secondary"
+          />
+        </div>
+        <div v-if="item.downloadStatus === 'failed' && item.downloadError" class="text-xs text-red-400">
+          {{ item.downloadError }}
+        </div>
+        <div class="wishlist-mobile__actions">
+          <Button
+            v-if="canRequeue(item.downloadStatus)"
+            icon="pi pi-refresh"
+            severity="info"
+            size="small"
+            text
+            :loading="isProcessing(item.id)"
+            :disabled="isProcessing(item.id)"
+            @click.stop="handleRequeue(item.id)"
+          />
+          <Button
+            icon="pi pi-pencil"
+            severity="secondary"
+            size="small"
+            text
+            :disabled="isProcessing(item.id)"
+            @click.stop="handleEdit(item)"
+          />
+          <Button
+            icon="pi pi-trash"
+            severity="danger"
+            size="small"
+            text
+            :loading="isProcessing(item.id)"
+            :disabled="isProcessing(item.id)"
+            @click.stop="handleDelete(item.id)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop DataTable view -->
     <DataTable
       v-else
       ref="tableRef"
@@ -266,6 +341,60 @@ function canRequeue(status: DownloadStatus): boolean {
 </template>
 
 <style scoped>
+/* Mobile card view */
+.wishlist-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.wishlist-mobile__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--r-border-default);
+  background: var(--p-card-background);
+}
+
+.wishlist-mobile__card--focused {
+  background-color: rgba(var(--primary-500-rgb, 99, 102, 241), 0.15);
+  outline: 2px solid var(--primary-500);
+  outline-offset: -2px;
+}
+
+.wishlist-mobile__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.wishlist-mobile__cover {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.25rem;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.wishlist-mobile__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wishlist-mobile__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.wishlist-mobile__actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
 :deep(.wishlist-list__row--focused) {
   background-color: rgba(var(--primary-500-rgb, 99, 102, 241), 0.15) !important;
   outline: 2px solid var(--primary-500);

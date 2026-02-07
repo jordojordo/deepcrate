@@ -2,10 +2,11 @@
 import type { QueueItem } from '@/types/queue';
 
 import { ref, watch } from 'vue';
+import { useJobs } from '@/composables/useJobs';
 
-import QueueItemCard from './QueueItemCard.vue';
 import ProgressSpinner from 'primevue/progressspinner';
 import EmptyState from '@/components/common/EmptyState.vue';
+import QueueItemCard from './QueueItemCard.vue';
 
 interface Props {
   items:         QueueItem[];
@@ -13,6 +14,8 @@ interface Props {
   isProcessing?: (mbid: string) => boolean;
   focusIndex?:   number;
 }
+
+const { triggerListenBrainz } = useJobs();
 
 const props = withDefaults(defineProps<Props>(), {
   loading:      false,
@@ -62,6 +65,9 @@ const handleCardClick = (index: number) => {
       icon="pi-inbox"
       title="No pending items"
       message="New music recommendations will appear here when discovered"
+      action-label="Discover Music"
+      action-icon="pi-search"
+      @action="triggerListenBrainz()"
     />
 
     <div v-else ref="gridItemsRef" class="queue-grid__items">

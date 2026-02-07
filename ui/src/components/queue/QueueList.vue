@@ -4,6 +4,7 @@ import type { ComponentPublicInstance } from 'vue';
 
 import { ref, watch } from 'vue';
 import { getDefaultCoverUrl } from '@/utils/formatters';
+import { useBreakpoint } from '@/composables/useBreakpoint';
 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -18,6 +19,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), { focusIndex: -1 });
+const { isMobile } = useBreakpoint(1280);
 
 const emit = defineEmits<{
   approve:              [mbids: string[]];
@@ -156,6 +158,66 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
       <p class="text-muted">The queue is empty. Check back later for new recommendations.</p>
     </div>
 
+    <!-- Mobile card view -->
+    <div v-else-if="isMobile" class="queue-list-mobile">
+      <div
+        v-for="(item, index) in items"
+        :key="item.mbid"
+        class="queue-list-mobile__card"
+        :class="{ 'queue-list-mobile__card--focused': index === focusIndex }"
+        @click="emit('update:focus-index', index)"
+      >
+        <div class="queue-list-mobile__header">
+          <img
+            :src="item.cover_url || getDefaultCoverUrl()"
+            :alt="`${item.album || item.title} cover`"
+            class="queue-list-mobile__cover"
+            @error="($event.target as HTMLImageElement).src = getDefaultCoverUrl()"
+          />
+          <div class="queue-list-mobile__info">
+            <div class="font-semibold">{{ item.album || item.title }}</div>
+            <div class="text-sm text-muted">{{ item.artist }}</div>
+            <div class="queue-list-mobile__tags">
+              <Tag
+                :value="item.source === 'listenbrainz' ? 'ListenBrainz' : 'Catalog'"
+                :severity="getSourceSeverity(item.source)"
+              />
+              <Tag
+                v-if="item.in_library"
+                value="In Library"
+                severity="success"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="queue-list-mobile__actions">
+          <Button
+            icon="pi pi-play"
+            size="small"
+            severity="info"
+            rounded
+            outlined
+            aria-label="Preview"
+            @click.stop="handlePreview(item)"
+          />
+          <Button
+            icon="pi pi-check"
+            severity="success"
+            size="small"
+            @click.stop="approveItem(item)"
+          />
+          <Button
+            icon="pi pi-times"
+            severity="danger"
+            size="small"
+            outlined
+            @click.stop="rejectItem(item)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop DataTable view -->
     <DataTable
       v-else
       ref="tableRef"
@@ -279,5 +341,60 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
 
 :deep(.queue-list__row--focused td) {
   background-color: transparent !important;
+}
+
+/* Mobile card view */
+.queue-list-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.queue-list-mobile__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--r-border-default);
+  background: var(--p-card-background);
+}
+
+.queue-list-mobile__card--focused {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 2px var(--primary-500);
+}
+
+.queue-list-mobile__header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.queue-list-mobile__cover {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.375rem;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.queue-list-mobile__info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.queue-list-mobile__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.375rem;
+}
+
+.queue-list-mobile__actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 </style>

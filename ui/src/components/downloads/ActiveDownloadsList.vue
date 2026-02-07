@@ -2,7 +2,9 @@
 import type { ActiveDownload } from '@/types';
 
 import { ref } from 'vue';
+import { useConfirm } from 'primevue/useconfirm';
 import { formatRelativeTime } from '@/utils/formatters';
+import { useBreakpoint } from '@/composables/useBreakpoint';
 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -12,6 +14,7 @@ import Button from 'primevue/button';
 import DownloadProgress from './DownloadProgress.vue';
 import QualityBadge from './QualityBadge.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
+import { useJobs } from '@/composables/useJobs';
 
 interface Props {
   downloads: ActiveDownload[];
@@ -23,8 +26,11 @@ interface Emits {
   (e: 'select', download: ActiveDownload): void;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const { triggerDownloader } = useJobs();
+const confirm = useConfirm();
+const { isMobile } = useBreakpoint(1320);
 
 const selectedDownloads = ref<ActiveDownload[]>([]);
 
@@ -53,8 +59,15 @@ const handleDelete = () => {
   const ids = selectedDownloads.value.map((d) => d.id);
 
   if (ids.length) {
-    emit('delete', ids);
-    selectedDownloads.value = [];
+    confirm.require({
+      message: `Delete ${ ids.length } selected download(s)?`,
+      header:  'Confirm Delete',
+      icon:    'pi pi-exclamation-triangle',
+      accept:  () => {
+        emit('delete', ids);
+        selectedDownloads.value = [];
+      },
+    });
   }
 };
 
@@ -98,7 +111,63 @@ function formatTimeRemaining(expiresAt: string | null | undefined): string | nul
       />
     </div>
 
+    <!-- Mobile card view -->
+    <div v-if="isMobile && props.downloads.length > 0" class="downloads-mobile">
+      <div
+        v-for="download in props.downloads"
+        :key="download.id"
+        class="downloads-mobile__card"
+      >
+        <div class="downloads-mobile__header">
+          <div class="downloads-mobile__info">
+            <div class="font-semibold">{{ download.artist }}</div>
+            <div class="text-sm text-surface-400">{{ download.album }}</div>
+          </div>
+          <div class="downloads-mobile__meta">
+            <Tag :value="getStatusLabel(download.status)" :severity="getStatusSeverity(download.status)" />
+            <QualityBadge v-if="download.quality" :quality="download.quality" />
+          </div>
+        </div>
+        <DownloadProgress v-if="download.progress" :progress="download.progress" />
+        <div class="downloads-mobile__actions">
+          <Button
+            v-if="download.status === 'pending_selection'"
+            icon="pi pi-list"
+            severity="info"
+            size="small"
+            label="Select Source"
+            @click="handleSelect(download)"
+          />
+          <Button
+            icon="pi pi-trash"
+            severity="danger"
+            size="small"
+            outlined
+            @click="confirm.require({
+              message: `Delete download for ${download.artist} - ${download.album}?`,
+              header: 'Confirm Delete',
+              icon: 'pi pi-exclamation-triangle',
+              accept: () => emit('delete', [download.id]),
+            })"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state when no downloads (shown for both mobile and desktop) -->
+    <EmptyState
+      v-else-if="props.downloads.length === 0 && !loading"
+      icon="pi-cloud-download"
+      title="No active downloads"
+      message="Approved items will appear here when downloading"
+      action-label="Process Downloads"
+      action-icon="pi-download"
+      @action="triggerDownloader()"
+    />
+
+    <!-- Desktop DataTable view -->
     <DataTable
+      v-else
       v-model:selection="selectedDownloads"
       :value="downloads"
       :loading="loading"
@@ -112,6 +181,9 @@ function formatTimeRemaining(expiresAt: string | null | undefined): string | nul
           icon="pi-cloud-download"
           title="No active downloads"
           message="Approved items will appear here when downloading"
+          action-label="Process Downloads"
+          action-icon="pi-download"
+          @action="triggerDownloader()"
         />
       </template>
       <Column selection-mode="multiple" header-style="width: 3rem"></Column>
@@ -178,7 +250,12 @@ function formatTimeRemaining(expiresAt: string | null | undefined): string | nul
               severity="danger"
               size="small"
               outlined
-              @click="emit('delete', [data.id])"
+              @click="confirm.require({
+                message: `Delete download for ${data.artist} - ${data.album}?`,
+                header: 'Confirm Delete',
+                icon: 'pi pi-exclamation-triangle',
+                accept: () => emit('delete', [data.id]),
+              })"
             />
           </div>
         </template>
@@ -206,5 +283,48 @@ function formatTimeRemaining(expiresAt: string | null | undefined): string | nul
 .actions-cell {
   display: flex;
   gap: 0.5rem;
+}
+
+/* Mobile card view */
+.downloads-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.downloads-mobile__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--r-border-default);
+  background: var(--p-card-background);
+}
+
+.downloads-mobile__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.downloads-mobile__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.downloads-mobile__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.downloads-mobile__actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 </style>

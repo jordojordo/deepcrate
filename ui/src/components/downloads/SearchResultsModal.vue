@@ -6,6 +6,7 @@ import {
 } from 'vue';
 import { formatFileSize, formatSpeed } from '@/utils/formatters';
 import { getSearchResults } from '@/services/downloads';
+import { useBreakpoint } from '@/composables/useBreakpoint';
 
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
@@ -34,6 +35,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), { loading: false });
 const emit = defineEmits<Emits>();
+const { isMobile } = useBreakpoint();
 
 const searchResults = ref<SearchResultsResponse | null>(null);
 const loadingResults = ref(false);
@@ -223,7 +225,7 @@ function handleAutoSelect() {
     :modal="true"
     :closable="true"
     :draggable="false"
-    :style="{ width: '900px', maxWidth: '95vw' }"
+    :style="{ width: isMobile ? '100vw' : '900px', maxWidth: '95vw' }"
     header="Select Download Source"
     @update:visible="handleClose"
   >
@@ -280,6 +282,41 @@ function handleAutoSelect() {
         message="Try modifying the search query and searching again"
       />
 
+      <!-- Mobile card view -->
+      <div v-else-if="isMobile" class="results-mobile">
+        <div
+          v-for="result in visibleResults"
+          :key="result.response.username"
+          class="results-mobile__card"
+        >
+          <div class="results-mobile__header">
+            <div class="font-semibold">{{ result.response.username }}</div>
+            <QualityBadge v-if="result.qualityInfo" :quality="result.qualityInfo" />
+          </div>
+          <div class="results-mobile__meta">
+            <span v-if="result.response.uploadSpeed && result.response.uploadSpeed > 0" class="text-sm">{{ formatSpeed(result.response.uploadSpeed) }}</span>
+            <span class="text-sm">{{ result.musicFileCount }} files</span>
+            <span class="text-sm">{{ formatFileSize(result.totalSize) }}</span>
+          </div>
+          <div class="results-mobile__actions">
+            <Button
+              icon="pi pi-download"
+              size="small"
+              label="Download"
+              @click="handleSelect(result.response.username, result.directories)"
+            />
+            <Button
+              icon="pi pi-times"
+              size="small"
+              severity="secondary"
+              outlined
+              @click="handleSkip(result.response.username)"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop DataTable view -->
       <DataTable
         v-else
         v-model:expandedRows="expandedRows"
@@ -479,5 +516,42 @@ function handleAutoSelect() {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+/* Mobile card view */
+.results-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.results-mobile__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--surface-700);
+  background: var(--surface-800);
+}
+
+.results-mobile__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.results-mobile__meta {
+  display: flex;
+  gap: 1rem;
+  color: var(--surface-400);
+}
+
+.results-mobile__actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 </style>

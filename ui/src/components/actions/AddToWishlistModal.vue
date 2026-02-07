@@ -13,6 +13,7 @@ import ProgressSpinner from 'primevue/progressspinner';
 import { searchMusicBrainz } from '@/services/search';
 import { addToWishlist } from '@/services/wishlist';
 import { useToast } from '@/composables/useToast';
+import { useBreakpoint } from '@/composables/useBreakpoint';
 
 const visible = defineModel<boolean>('visible', { default: false });
 
@@ -29,6 +30,7 @@ const typeOptions = [
 ];
 
 const { showSuccess, showError } = useToast();
+const { isMobile } = useBreakpoint();
 
 let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
 let abortController: AbortController | null = null;
@@ -138,7 +140,7 @@ function handleClose() {
     header="Add to Wishlist"
     :modal="true"
     :closable="true"
-    :style="{ width: '50rem' }"
+    :style="{ width: isMobile ? '100vw' : '50rem' }"
     @hide="handleClose"
   >
     <!-- Search Section -->
@@ -183,7 +185,47 @@ function handleClose() {
         </div>
 
         <div v-if="results.length > 0">
-          <DataTable :value="results" :paginator="false" class="p-datatable-sm">
+          <!-- Mobile card view -->
+          <div v-if="isMobile" class="search-mobile">
+            <div
+              v-for="item in results"
+              :key="item.mbid"
+              class="search-mobile__card"
+            >
+              <div class="search-mobile__header">
+                <img
+                  v-if="item.coverArt"
+                  :src="item.coverArt"
+                  :alt="`${ item.artist } - ${ item.title }`"
+                  class="search-mobile__cover"
+                />
+                <div
+                  v-else
+                  class="search-mobile__cover search-mobile__cover--placeholder"
+                >
+                  <i class="pi pi-image text-muted"></i>
+                </div>
+                <div class="search-mobile__info">
+                  <div class="font-semibold">{{ item.artist }}</div>
+                  <div class="text-sm text-surface-400">{{ item.title }}</div>
+                  <div v-if="searchType === 'track' && item.album" class="text-xs text-surface-400">{{ item.album }}</div>
+                  <div v-if="item.year" class="text-xs text-surface-400">{{ item.year }}</div>
+                </div>
+                <Button
+                  icon="pi pi-plus"
+                  size="small"
+                  rounded
+                  outlined
+                  :loading="addingMbid === item.mbid"
+                  :disabled="addingMbid !== null"
+                  @click="handleAdd(item)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Desktop DataTable view -->
+          <DataTable v-else :value="results" :paginator="false" class="p-datatable-sm">
             <Column header="Cover" style="width: 60px">
               <template #body="{ data }">
                 <img
@@ -238,3 +280,49 @@ function handleClose() {
     </div>
   </Dialog>
 </template>
+
+<style scoped>
+/* Mobile card view */
+.search-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.search-mobile__card {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--r-border-default);
+  background: var(--p-card-background);
+}
+
+.search-mobile__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.search-mobile__cover {
+  width: 50px;
+  height: 50px;
+  border-radius: 0.25rem;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.search-mobile__cover--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-200);
+}
+
+:deep(.dark) .search-mobile__cover--placeholder {
+  background: var(--surface-700);
+}
+
+.search-mobile__info {
+  flex: 1;
+  min-width: 0;
+}
+</style>

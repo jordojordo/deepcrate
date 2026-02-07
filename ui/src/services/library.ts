@@ -1,6 +1,7 @@
 import type {
   LibraryOrganizeConfig,
   LibraryOrganizeStatus,
+  LibrarySyncStats,
   PaginatedUnorganizedTasks,
 } from '@/types';
 
@@ -32,6 +33,18 @@ export async function getUnorganizedTasks(limit: number, offset: number): Promis
 
 export async function triggerOrganize(): Promise<{ success: boolean; message: string }> {
   const response = await client.post<{ success: boolean; message: string }>('/library/organize');
+
+  return response.data;
+}
+
+export async function getSyncStats(): Promise<LibrarySyncStats> {
+  const response = await client.get<LibrarySyncStats>('/library/stats');
+
+  return response.data;
+}
+
+export async function triggerSync(): Promise<{ success: boolean; message: string }> {
+  const response = await client.post<{ success: boolean; message: string }>('/library/sync');
 
   return response.data;
 }

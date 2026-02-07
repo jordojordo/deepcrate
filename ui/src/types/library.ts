@@ -39,3 +39,8 @@ export interface OrganizeProgress {
   total?:   number;
 }
 
+export interface LibrarySyncStats {
+  totalAlbums:  number;
+  lastSyncedAt: string | null;
+}
+

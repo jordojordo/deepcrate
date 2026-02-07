@@ -207,7 +207,6 @@ onMounted(() => {
 .downloads-page {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
 }
 
 .downloads-page__header {
@@ -262,10 +261,6 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .downloads-page {
-    padding: 1rem;
-  }
-
   .downloads-page__header {
     flex-direction: column;
     gap: 1rem;

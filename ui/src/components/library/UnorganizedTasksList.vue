@@ -2,6 +2,7 @@
 import type { UnorganizedTask } from '@/types';
 
 import { formatRelativeTime } from '@/utils/formatters';
+import { useBreakpoint } from '@/composables/useBreakpoint';
 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -9,7 +10,7 @@ import Button from 'primevue/button';
 
 import EmptyState from '@/components/common/EmptyState.vue';
 
-defineProps<{
+const props = defineProps<{
   tasks:   UnorganizedTask[];
   total:   number;
   loading: boolean;
@@ -19,11 +20,43 @@ defineProps<{
 const emit = defineEmits<{
   loadMore: [];
 }>();
+
+const { isMobile } = useBreakpoint(900);
 </script>
 
 <template>
   <div class="unorganized-tasks">
+    <!-- Mobile card view -->
+    <div v-if="isMobile && props.tasks.length > 0" class="unorganized-mobile">
+      <div
+        v-for="task in props.tasks"
+        :key="task.id"
+        class="unorganized-mobile__card"
+      >
+        <div class="unorganized-mobile__info">
+          <div class="font-semibold">{{ task.artist }}</div>
+          <div class="text-sm text-surface-400">{{ task.album }}</div>
+        </div>
+        <div class="unorganized-mobile__meta">
+          <span class="text-sm">{{ task.type }}</span>
+          <span class="text-sm text-surface-400">
+            {{ task.completedAt ? formatRelativeTime(task.completedAt) : 'Unknown' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state (both mobile and desktop) -->
+    <EmptyState
+      v-else-if="props.tasks.length === 0 && !loading"
+      icon="pi-check-circle"
+      title="No unorganized downloads"
+      message="All your downloads have been organized into your library"
+    />
+
+    <!-- Desktop DataTable view -->
     <DataTable
+      v-else
       :value="tasks"
       :loading="loading"
       striped-rows
@@ -75,6 +108,34 @@ const emit = defineEmits<{
 <style scoped>
 .unorganized-tasks {
   width: 100%;
+}
+
+/* Mobile card view */
+.unorganized-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.unorganized-mobile__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--r-border-default);
+  background: var(--p-card-background);
+}
+
+.unorganized-mobile__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.unorganized-mobile__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .unorganized-tasks__load-more {

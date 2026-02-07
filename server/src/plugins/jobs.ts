@@ -1,4 +1,5 @@
 import * as cron from 'node-cron';
+import { CronExpressionParser } from 'cron-parser';
 
 import logger from '@server/config/logger';
 import { JOB_NAMES } from '@server/constants/jobs';
@@ -205,13 +206,29 @@ export function getJobStatus(): Array<{
   cron:    string;
   running: boolean;
   lastRun: string | null;
+  nextRun: string | null;
 }> {
-  return jobs.map((job) => ({
-    name:    job.name,
-    cron:    job.cron,
-    running: job.running,
-    lastRun: job.lastRun ? job.lastRun.toISOString() : null,
-  }));
+  return jobs.map((job) => {
+    let nextRun: string | null = null;
+
+    if (job.cron && job.cron !== 'manual' && job.cron.trim() !== '') {
+      try {
+        const interval = CronExpressionParser.parse(job.cron);
+
+        nextRun = interval.next().toISOString();
+      } catch {
+        // Invalid cron expression — leave nextRun null
+      }
+    }
+
+    return {
+      name:    job.name,
+      cron:    job.cron,
+      running: job.running,
+      lastRun: job.lastRun ? job.lastRun.toISOString() : null,
+      nextRun,
+    };
+  });
 }
 
 /**

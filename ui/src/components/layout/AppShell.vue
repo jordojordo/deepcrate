@@ -9,6 +9,7 @@ import { useRoute } from 'vue-router';
 
 import SidebarNavList from '@/components/layout/SidebarNavList.vue';
 import { useSettings } from '@/composables/useSettings';
+import { usePlayer } from '@/composables/usePlayer';
 
 export interface SidebarItem {
   key:       string;
@@ -30,6 +31,7 @@ const props = defineProps<{
 const slots = useSlots();
 const route = useRoute();
 const { uiPreferences } = useSettings();
+const { hasTrack } = usePlayer();
 
 const mobileSidebarOpen = ref(false);
 const sidebarCollapsed = ref(uiPreferences.value.sidebarCollapsed);
@@ -224,7 +226,7 @@ watch(
         </div>
       </header>
 
-      <main class="shell__content">
+      <main class="shell__content" :style="{ paddingBottom: hasTrack ? '72px' : undefined }">
         <!-- TODO: Implement breadcrumbs when routes become detailed enough to be nested -->
         <!-- <AppBreadcrumbs /> -->
         <slot />
@@ -582,6 +584,7 @@ watch(
 
     &__sidebar.sidebar-open {
       transform: translateX(0);
+      background-color: var(--p-content-background);
     }
 
     &__mobile-toggle {
@@ -590,6 +593,7 @@ watch(
 
     &__content {
       border-top-left-radius: 0;
+      padding: .25rem;
     }
 
     &__collapse-toggle {

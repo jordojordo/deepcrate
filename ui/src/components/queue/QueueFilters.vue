@@ -43,50 +43,42 @@ function setViewMode(mode: ViewMode) {
     <div class="queue-filters__row">
       <!-- Left: Filter dropdowns -->
       <div class="queue-filters__left">
-        <Button
-          class="queue-filters__btn"
-          outlined
+        <Select
+          :model-value="modelValue.source"
+          @update:model-value="updateFilter('source', $event)"
+          :options="sourceOptions"
+          option-label="label"
+          option-value="value"
+          class="queue-filters__select"
         >
-          <span>Source: {{ sourceOptions.find(o => o.value === modelValue.source)?.label }}</span>
-          <i class="pi pi-chevron-down ml-2"></i>
-          <Select
-            :model-value="modelValue.source"
-            @update:model-value="updateFilter('source', $event)"
-            :options="sourceOptions"
-            option-label="label"
-            option-value="value"
-            class="queue-filters__hidden-select"
-          />
-        </Button>
+          <template #value="{ value }">
+            <span>Source: {{ sourceOptions.find(o => o.value === value)?.label }}</span>
+          </template>
+        </Select>
 
-        <Button
-          class="queue-filters__btn"
-          outlined
+        <Select
+          :model-value="modelValue.sort"
+          @update:model-value="updateFilter('sort', $event)"
+          :options="sortOptions"
+          option-label="label"
+          option-value="value"
+          class="queue-filters__select"
         >
-          <span>Sort: {{ sortOptions.find(o => o.value === modelValue.sort)?.label }}</span>
-          <i class="pi pi-chevron-down ml-2"></i>
-          <Select
-            :model-value="modelValue.sort"
-            @update:model-value="updateFilter('sort', $event)"
-            :options="sortOptions"
-            option-label="label"
-            option-value="value"
-            class="queue-filters__hidden-select"
-          />
-        </Button>
+          <template #value="{ value }">
+            <span>Sort: {{ sortOptions.find(o => o.value === value)?.label }}</span>
+          </template>
+        </Select>
       </div>
 
       <!-- Right: Sort direction, hide owned, and view toggle -->
       <div class="queue-filters__right">
-        <span class="queue-filters__label">Sort by</span>
         <Button
-          class="queue-filters__sort-btn"
+          :icon="modelValue.order === 'desc' ? 'pi pi-arrow-down' : 'pi pi-arrow-up'"
+          class="queue-filters__view-btn"
+          :aria-label="modelValue.order === 'desc' ? 'Sort descending' : 'Sort ascending'"
           text
           @click="toggleOrder"
-        >
-          {{ sortOptions.find(o => o.value === modelValue.sort)?.label }}
-          <i :class="['pi ml-2', modelValue.order === 'desc' ? 'pi-arrow-down' : 'pi-arrow-up']"></i>
-        </Button>
+        />
 
         <div class="queue-filters__divider"></div>
 
@@ -154,15 +146,6 @@ function setViewMode(mode: ViewMode) {
   margin-left: auto;
 }
 
-.queue-filters__label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--r-text-muted);
-  margin-right: 0.5rem;
-}
-
 .queue-filters__divider {
   width: 1px;
   height: 1rem;
@@ -170,11 +153,9 @@ function setViewMode(mode: ViewMode) {
   margin: 0 0.5rem;
 }
 
-/* Filter button styling */
-:deep(.queue-filters__btn) {
-  position: relative;
+/* Filter select styling */
+:deep(.queue-filters__select) {
   height: 2.25rem;
-  padding: 0 1rem;
   font-size: 0.875rem;
   font-weight: 500;
   white-space: nowrap;
@@ -183,28 +164,15 @@ function setViewMode(mode: ViewMode) {
   color: var(--r-text-primary);
 }
 
-:deep(.queue-filters__btn:hover) {
+:deep(.queue-filters__select:hover) {
   background: var(--r-hover-bg);
   border-color: var(--r-border-emphasis);
 }
 
-:deep(.queue-filters__btn .queue-filters__hidden-select) {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-/* Sort button */
-:deep(.queue-filters__sort-btn) {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--r-text-primary);
-  padding: 0.5rem;
-}
-
-:deep(.queue-filters__sort-btn:hover) {
-  color: var(--primary-color);
+:deep(.queue-filters__select .p-select-label) {
+  padding: 0 0.75rem;
+  display: flex;
+  align-items: center;
 }
 
 /* View toggle buttons */

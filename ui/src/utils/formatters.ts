@@ -32,6 +32,32 @@ export function formatRelativeTime(date: string): string {
   }
 }
 
+export function formatFutureRelativeTime(date: string): string {
+  const now = new Date();
+  const then = new Date(date);
+  const diffMs = then.getTime() - now.getTime();
+
+  if (diffMs <= 0) {
+    return 'now';
+  }
+
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffMin < 1) {
+    return 'in <1m';
+  } else if (diffMin < 60) {
+    return `in ${ diffMin }m`;
+  } else if (diffHour < 24) {
+    const mins = diffMin % 60;
+
+    return mins > 0 ? `in ${ diffHour }h ${ mins }m` : `in ${ diffHour }h`;
+  }
+
+  return `in ${ diffDay }d`;
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes === 0) {
     return '0 B';

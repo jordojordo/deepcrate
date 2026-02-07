@@ -19,6 +19,7 @@ import QueueList from '@/components/queue/QueueList.vue';
 import QueueGrid from '@/components/queue/QueueGrid.vue';
 import KeyboardShortcutsHelp from '@/components/common/KeyboardShortcutsHelp.vue';
 import ErrorMessage from '@/components/common/ErrorMessage.vue';
+import LibrarySyncInfo from '@/components/queue/LibrarySyncInfo.vue';
 
 const {
   items,
@@ -236,6 +237,7 @@ function handlePreview(item: QueueItem) {
             Press <kbd>?</kbd> for keyboard shortcuts
           </span>
         </p>
+        <LibrarySyncInfo />
       </div>
     </header>
 

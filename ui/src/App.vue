@@ -10,6 +10,7 @@ import { setToastCallback } from '@/services/api';
 
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
+import ConfirmDialog from 'primevue/confirmdialog';
 
 import AppShell from '@/components/layout/AppShell.vue';
 import ThemeToggle from '@/components/common/ThemeToggle.vue';
@@ -80,6 +81,7 @@ function handleLogout(): void {
   </AppShell>
 
   <Toast />
+  <ConfirmDialog />
   <PreviewPlayer />
 </template>
 

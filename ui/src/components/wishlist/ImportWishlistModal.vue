@@ -2,6 +2,7 @@
 import type { ImportItem, ImportResponse, ImportResultItem } from '@/types/wishlist';
 
 import { ref, computed } from 'vue';
+import { useBreakpoint } from '@/composables/useBreakpoint';
 
 import Dialog from 'primevue/dialog';
 import FileUpload from 'primevue/fileupload';
@@ -19,6 +20,8 @@ const emit = defineEmits<{
   'update:visible': [value: boolean];
   import:           [items: ImportItem[]];
 }>();
+
+const { isMobile } = useBreakpoint();
 
 type ImportStep = 'upload' | 'preview' | 'results';
 
@@ -135,7 +138,7 @@ function getResultSeverity(status: ImportResultItem['status']): 'success' | 'war
     :visible="visible"
     modal
     header="Import Wishlist"
-    :style="{ width: step === 'upload' ? '500px' : '700px' }"
+    :style="{ width: isMobile ? '100vw' : (step === 'upload' ? '500px' : '700px') }"
     :closable="!importing"
     @update:visible="$emit('update:visible', $event)"
   >
@@ -183,7 +186,27 @@ function getResultSeverity(status: ImportResultItem['status']): 'success' | 'war
         />
       </div>
 
+      <!-- Mobile card view -->
+      <div v-if="isMobile" class="import-mobile">
+        <div
+          v-for="(item, index) in parsedItems"
+          :key="index"
+          class="import-mobile__card"
+        >
+          <div class="import-mobile__info">
+            <div class="font-semibold">{{ item.artist }}</div>
+            <div class="text-sm text-surface-400">{{ item.title || '—' }}</div>
+          </div>
+          <div class="import-mobile__meta">
+            <Tag :value="item.type" severity="secondary" />
+            <span v-if="item.year" class="text-sm text-surface-400">{{ item.year }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop DataTable view -->
       <DataTable
+        v-else
         :value="parsedItems"
         :paginator="parsedItems.length > 10"
         :rows="10"
@@ -229,7 +252,30 @@ function getResultSeverity(status: ImportResultItem['status']): 'success' | 'war
         </div>
       </div>
 
+      <!-- Mobile card view -->
+      <div v-if="isMobile" class="import-mobile">
+        <div
+          v-for="(item, index) in importResults.results"
+          :key="index"
+          class="import-mobile__card"
+        >
+          <div class="import-mobile__info">
+            <div class="font-semibold">{{ item.artist }}</div>
+            <div class="text-sm text-surface-400">{{ item.title || '—' }}</div>
+          </div>
+          <div class="import-mobile__meta">
+            <Tag
+              :value="item.status"
+              :severity="getResultSeverity(item.status)"
+            />
+            <span v-if="item.message" class="text-sm text-surface-400">{{ item.message }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop DataTable view -->
       <DataTable
+        v-else
         :value="importResults.results"
         :paginator="importResults.results.length > 10"
         :rows="10"
@@ -282,5 +328,36 @@ function getResultSeverity(status: ImportResultItem['status']): 'success' | 'war
 .import-preview-table {
   max-height: 400px;
   overflow: auto;
+}
+
+/* Mobile card view */
+.import-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.import-mobile__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--r-border-default);
+  background: var(--p-card-background);
+}
+
+.import-mobile__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.import-mobile__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 </style>

@@ -2,6 +2,7 @@ export interface JobStatus {
   name:     string;
   running:  boolean;
   lastRun?: string;
+  nextRun?: string;
   cron:     string;
 }
 
