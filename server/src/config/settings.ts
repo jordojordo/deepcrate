@@ -349,7 +349,7 @@ let cachedConfig: Config | null = null;
  * 3. ./config.yaml (local development)
  *
  * Environment variable overrides:
- * - RESONANCE_* env vars with __ for nesting (e.g., RESONANCE_UI__AUTH__ENABLED=true)
+ * - DEEPCRATE_* env vars with __ for nesting (e.g., DEEPCRATE_UI__AUTH__ENABLED=true)
  */
 export function loadConfig(): Config {
   if (cachedConfig) {
@@ -453,16 +453,16 @@ function resolveConfigPath(): string {
 }
 
 /**
- * Apply RESONANCE_* environment variable overrides to config object.
+ * Apply DEEPCRATE_* environment variable overrides to config object.
  * Uses __ as a separator for nested keys.
  *
  * Examples:
- * - RESONANCE_DEBUG=true -> { debug: true }
- * - RESONANCE_UI__AUTH__ENABLED=true -> { ui: { auth: { enabled: true } } }
- * - RESONANCE_SLSKD__HOST=http://localhost:5030 -> { slskd: { host: 'http://localhost:5030' } }
+ * - DEEPCRATE_DEBUG=true -> { debug: true }
+ * - DEEPCRATE_UI__AUTH__ENABLED=true -> { ui: { auth: { enabled: true } } }
+ * - DEEPCRATE_SLSKD__HOST=http://localhost:5030 -> { slskd: { host: 'http://localhost:5030' } }
  */
 function applyEnvOverrides(config: Record<string, unknown>): Record<string, unknown> {
-  const prefix = 'RESONANCE_';
+  const prefix = 'DEEPCRATE_';
 
   for (const [key, value] of Object.entries(process.env)) {
     if (!key.startsWith(prefix) || value === undefined) {

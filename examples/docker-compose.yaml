@@ -1,5 +1,5 @@
 # =============================================================================
-# Resonance Docker Compose Example
+# DeepCrate Docker Compose Example
 # Standalone deployment (slskd running separately)
 #
 # Use this when you already have slskd running in another container/compose.
@@ -7,9 +7,9 @@
 # =============================================================================
 
 services:
-  resonance:
-    image: ghcr.io/jordojordo/resonance:latest
-    container_name: resonance
+  deepcrate:
+    image: ghcr.io/jordojordo/deepcrate:latest
+    container_name: deepcrate
     environment:
       # Discovery intervals (optional, these are defaults)
       # - LB_FETCH_INTERVAL=21600      # 6 hours
@@ -36,7 +36,7 @@ services:
       - "8080:8080"
     restart: unless-stopped
 
-    # IMPORTANT: If slskd is running in Docker, Resonance must be on the same
+    # IMPORTANT: If slskd is running in Docker, DeepCrate must be on the same
     # network to reach it via hostname (e.g., http://slskd:5030)
     # networks:
     #   - slskd-network

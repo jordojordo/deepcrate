@@ -1,14 +1,14 @@
-# Resonance Architecture
+# DeepCrate Architecture
 
 ## Overview
 
-Resonance is designed as a self-contained, single-container application that runs multiple services using s6-overlay for process supervision. This document describes the technical architecture.
+DeepCrate is designed as a self-contained, single-container application that runs multiple services using s6-overlay for process supervision. This document describes the technical architecture.
 
 ## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           RESONANCE CONTAINER                               │
+│                           DEEPCRATE CONTAINER                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
@@ -293,7 +293,7 @@ Three options:
 For production deployments, use Authelia via reverse proxy forward auth:
 
 ```
-Client → Reverse Proxy (Caddy/nginx/Traefik) → Authelia (verify) → Resonance
+Client → Reverse Proxy (Caddy/nginx/Traefik) → Authelia (verify) → DeepCrate
 ```
 
 Supported reverse proxies:
@@ -316,7 +316,7 @@ The container is lightweight - most resource usage comes from API calls to exter
 
 ## Scalability
 
-Resonance is designed for single-user/household use. It is **not** designed for:
+DeepCrate is designed for single-user/household use. It is **not** designed for:
 - Multi-tenant deployments
 - Horizontal scaling
 - High-availability
@@ -328,8 +328,8 @@ For larger deployments, consider running multiple instances with separate config
 Logs are written to stdout/stderr and can be viewed via:
 
 ```bash
-docker logs resonance
-docker logs -f resonance  # Follow
+docker logs deepcrate
+docker logs -f deepcrate  # Follow
 ```
 
 Log levels are controlled via `LOG_LEVEL` environment variable.

@@ -54,7 +54,7 @@ export class SubsonicClient {
       t: token,
       s: salt,
       v: '1.16.1',
-      c: 'resonance',
+      c: 'deepcrate',
       f: 'json',
     };
 
@@ -126,7 +126,7 @@ export class SubsonicClient {
       t: token,
       s: salt,
       v: '1.16.1',
-      c: 'resonance',
+      c: 'deepcrate',
       f: 'json',
     };
 
@@ -219,7 +219,7 @@ export class SubsonicClient {
       t: token,
       s: salt,
       v: '1.16.1',
-      c: 'resonance',
+      c: 'deepcrate',
       f: 'json',
     };
 

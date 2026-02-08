@@ -1,4 +1,4 @@
-# Resonance UI
+# DeepCrate UI
 
 Modern web UI for managing music discovery queue, built with Vue 3 and PrimeVue.
 
@@ -17,7 +17,7 @@ Modern web UI for managing music discovery queue, built with Vue 3 and PrimeVue.
 ```
 src/
 ├── assets/styles/      # Theme preset and global styles
-│   ├── theme.ts        # Custom Resonance PrimeVue theme preset
+│   ├── theme.ts        # Custom DeepCrate PrimeVue theme preset
 │   └── index.css       # Global CSS and utility classes
 ├── components/         # Reusable Vue components
 │   ├── common/         # Shared components (LoadingSpinner, StatsCard)
@@ -84,7 +84,7 @@ import type { QueueItem } from '@/types'
 
 ## Theme Customization
 
-The Resonance theme is defined in `src/assets/styles/theme.ts` using PrimeVue's preset system.
+The DeepCrate theme is defined in `src/assets/styles/theme.ts` using PrimeVue's preset system.
 
 ### Custom Colors
 
@@ -97,7 +97,7 @@ The Resonance theme is defined in `src/assets/styles/theme.ts` using PrimeVue's 
 Edit `src/assets/styles/theme.ts`:
 
 ```typescript
-export const ResonancePreset = definePreset(Aura, {
+export const DeepCratePreset = definePreset(Aura, {
   semantic: {
     primary: {
       50: '#eef2ff',   // Lightest indigo

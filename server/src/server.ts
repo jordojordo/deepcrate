@@ -17,7 +17,7 @@ let server: http.Server | null = null;
 
 async function startServer(): Promise<void> {
   try {
-    logger.info('Starting Resonance server...');
+    logger.info('Starting DeepCrate server...');
 
     logger.info('Initializing database...');
     await initDb();
@@ -52,7 +52,7 @@ async function startServer(): Promise<void> {
     logger.info('Starting download progress sync...');
     startProgressSync();
 
-    logger.info('Resonance server started successfully');
+    logger.info('DeepCrate server started successfully');
   } catch(error) {
     logger.error('Failed to start server:', { error });
     process.exit(1);

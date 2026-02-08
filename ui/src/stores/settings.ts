@@ -10,7 +10,7 @@ import { ref, computed } from 'vue';
 import * as settingsApi from '@/services/settings';
 import { DEFAULT_UI_PREFERENCES } from '@/types/settings';
 
-const UI_PREFS_KEY = 'resonance_ui_prefs';
+const UI_PREFS_KEY = 'deepcrate_ui_prefs';
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<SettingsResponse | null>(null);

@@ -85,7 +85,7 @@ function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
       <div>
         <h1 class="settings-page__title">Settings</h1>
         <p class="settings-page__subtitle">
-          Configure your Resonance discovery pipeline preferences.
+          Configure your DeepCrate discovery pipeline preferences.
         </p>
       </div>
     </header>
@@ -167,7 +167,7 @@ function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
             <div class="settings-page__panel">
               <h2 class="settings-page__section-title">Authentication</h2>
               <p class="settings-page__section-desc">
-                Configure how users authenticate to access Resonance.
+                Configure how users authenticate to access DeepCrate.
               </p>
               <AuthForm
                 :settings="ui"
@@ -182,7 +182,7 @@ function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
             <div class="settings-page__panel">
               <h2 class="settings-page__section-title">UI Preferences</h2>
               <p class="settings-page__section-desc">
-                Customize the look and feel of the Resonance interface.
+                Customize the look and feel of the DeepCrate interface.
               </p>
               <UIPreferencesForm
                 :preferences="uiPreferences"

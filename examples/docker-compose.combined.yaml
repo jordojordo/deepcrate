@@ -1,15 +1,15 @@
 # =============================================================================
-# Resonance + slskd Combined Docker Compose Example
+# DeepCrate + slskd Combined Docker Compose Example
 # Deploy both services together with shared volumes for library organization
 #
-# Use this when you want to run slskd and Resonance together.
-# See docker-compose.yaml for standalone Resonance deployment.
+# Use this when you want to run slskd and DeepCrate together.
+# See docker-compose.yaml for standalone DeepCrate deployment.
 # =============================================================================
 
 services:
-  resonance:
-    image: ghcr.io/jordojordo/resonance:latest
-    container_name: resonance
+  deepcrate:
+    image: ghcr.io/jordojordo/deepcrate:latest
+    container_name: deepcrate
     environment:
       - LOG_LEVEL=info
       # Discovery intervals (optional, these are defaults)
@@ -32,7 +32,7 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - resonance-net
+      - deepcrate-net
     depends_on:
       - slskd
     restart: unless-stopped
@@ -49,7 +49,7 @@ services:
       # slskd configuration and data
       - ./slskd/config:/app:rw
 
-      # Downloads directory (shared with Resonance for library organization)
+      # Downloads directory (shared with DeepCrate for library organization)
       - ./downloads:/downloads:rw
 
       # Music to share on Soulseek (read-only)
@@ -60,11 +60,11 @@ services:
       # Web UI port
       - "5030:5030"
     networks:
-      - resonance-net
+      - deepcrate-net
     restart: unless-stopped
 
 networks:
-  resonance-net:
+  deepcrate-net:
     driver: bridge
 
 # =============================================================================
@@ -74,13 +74,13 @@ networks:
 # After setup, your directory should look like:
 #
 # ./
-# ├── config.yaml              # Resonance config
+# ├── config.yaml              # DeepCrate config
 # ├── docker-compose.yaml      # This file
-# ├── data/                    # Resonance state (SQLite DB, logs)
+# ├── data/                    # DeepCrate state (SQLite DB, logs)
 # ├── downloads/
-# │   ├── complete/            # slskd completed downloads -> Resonance reads from here
+# │   ├── complete/            # slskd completed downloads -> DeepCrate reads from here
 # │   └── incomplete/          # slskd in-progress downloads
-# ├── music/                   # Your music library (shared with slskd and Resonance)
+# ├── music/                   # Your music library (shared with slskd and DeepCrate)
 # └── slskd/
 #     └── config/
 #         └── slskd.yml        # slskd configuration
@@ -106,12 +106,12 @@ networks:
 #   port: 5030
 #   authentication:
 #     api_keys:
-#       resonance:
+#       deepcrate:
 #         key: "generate-a-secure-api-key-here"
 #         role: readwrite
 #
 # =============================================================================
-# Resonance config.yaml library_organize section
+# DeepCrate config.yaml library_organize section
 # =============================================================================
 #
 # library_organize:

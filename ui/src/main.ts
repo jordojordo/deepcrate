@@ -11,7 +11,7 @@ import ToastService from 'primevue/toastservice';
 import ConfirmationService from 'primevue/confirmationservice';
 import Tooltip from 'primevue/tooltip';
 
-import { ResonancePreset } from '@/assets/styles/theme';
+import { DeepCratePreset } from '@/assets/styles/theme';
 import '@/assets/styles/index.css';
 import 'primeicons/primeicons.css';
 
@@ -26,7 +26,7 @@ useThemeStore(pinia).initialize();
 app.use(router);
 app.use(PrimeVue, {
   theme: {
-    preset:  ResonancePreset,
+    preset:  DeepCratePreset,
     options: {
       darkModeSelector: '.dark',
       cssLayer:         false,

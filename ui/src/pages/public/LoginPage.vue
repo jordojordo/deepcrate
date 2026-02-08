@@ -93,7 +93,7 @@ async function handleApiKeySubmit() {
           width="100"
           height="100"
         />
-        <h1 class="text-2xl font-bold text-color">Resonance</h1>
+        <h1 class="text-2xl font-bold text-color">DeepCrate</h1>
         <p class="mt-2 text-muted">Sign in to manage your music queue</p>
       </div>
 

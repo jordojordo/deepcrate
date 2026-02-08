@@ -10,7 +10,7 @@ import type {
 import axios from 'axios';
 import logger from '@server/config/logger';
 
-const USER_AGENT = 'resonance/1.0 (music-discovery)';
+const USER_AGENT = 'deepcrate/1.0 (music-discovery)';
 const BASE_URL = 'https://musicbrainz.org/ws/2';
 
 /**

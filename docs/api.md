@@ -1,6 +1,6 @@
 # API Reference
 
-Resonance exposes a REST API for managing the music discovery pipeline.
+DeepCrate exposes a REST API for managing the music discovery pipeline.
 
 ## Base URL
 

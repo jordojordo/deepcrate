@@ -1,5 +1,5 @@
 {
-  "name": "resonance-monorepo",
+  "name": "deepcrate-monorepo",
   "private": true,
   "scripts": {
     "deps:check": "pnpm list -r",

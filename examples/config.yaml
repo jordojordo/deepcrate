@@ -1,5 +1,5 @@
 # =============================================================================
-# Resonance Configuration Example
+# DeepCrate Configuration Example
 # Copy this file to config.yaml and fill in your values
 # =============================================================================
 
@@ -54,7 +54,7 @@ slskd:
   # web:
   #   authentication:
   #     api_keys:
-  #       resonance:
+  #       deepcrate:
   #         key: "your_api_key"
   #         role: readwrite
   api_key: "your_slskd_api_key"
@@ -200,12 +200,12 @@ library_organize:
   # Enable library organization
   enabled: false
 
-  # Where slskd saves completed downloads (must be accessible to Resonance)
+  # Where slskd saves completed downloads (must be accessible to DeepCrate)
   # This path must be mounted as a volume in your docker-compose.yaml
   # Example: ./downloads/complete:/downloads/complete:rw
   downloads_path: "/downloads/complete"
 
-  # Destination music library path (must be accessible to Resonance)
+  # Destination music library path (must be accessible to DeepCrate)
   # This path must be mounted as a volume in your docker-compose.yaml
   # Example: ./music:/music/library:rw
   library_path: "/music/library"

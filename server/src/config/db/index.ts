@@ -41,7 +41,7 @@ export async function initDb(): Promise<void> {
     // Sync tables from model definitions (creates tables, indexes, etc.)
     await sequelize.sync();
 
-    logger.info('[db] connected and synced', { file: process.env.RESONANCE_DB_FILE });
+    logger.info('[db] connected and synced', { file: process.env.DEEPCRATE_DB_FILE });
   } catch(error) {
     logger.error('[db] failed to initialize', { error: (error as Error)?.message ?? String(error) });
 

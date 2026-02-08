@@ -32,13 +32,13 @@ pnpm run build         # Production build to dist/
 
 ### Docker
 ```bash
-docker build -t resonance .
-docker run -v ./config.yaml:/config/config.yaml -v ./data:/data -p 8080:8080 resonance
+docker build -t deepcrate .
+docker run -v ./config.yaml:/config/config.yaml -v ./data:/data -p 8080:8080 deepcrate
 ```
 
 ## Architecture
 
-Resonance is a music discovery pipeline with a Node.js/TypeScript server and Vue 3 ui.
+DeepCrate is a music discovery pipeline with a Node.js/TypeScript server and Vue 3 ui.
 
 ### Server (`/server/src`)
 
@@ -80,7 +80,7 @@ Vue 3 + TypeScript + Pinia + PrimeVue 4.
 
 **Path alias:** `@/*` maps to `./src/*` (configured in vite.config.ts and tsconfig.app.json)
 
-**Theme:** Custom Resonance preset extending PrimeVue Aura base theme with indigo primary colors and dark mode optimized surfaces. See `assets/styles/theme.ts`.
+**Theme:** Custom DeepCrate preset extending PrimeVue Aura base theme with indigo primary colors and dark mode optimized surfaces. See `assets/styles/theme.ts`.
 
 **Composables Pattern:** Composables wrap Pinia stores for convenient access and don't duplicate state. Always use composables in page components for better separation of concerns.
 
@@ -93,7 +93,7 @@ Vue 3 + TypeScript + Pinia + PrimeVue 4.
 
 ### Database
 
-SQLite via Sequelize 7 alpha. DB file at `$DATA_PATH/resonance.sqlite` (default `/data/resonance.sqlite`).
+SQLite via Sequelize 7 alpha. DB file at `$DATA_PATH/deepcrate.sqlite` (default `/data/deepcrate.sqlite`).
 
 ## Code Style
 

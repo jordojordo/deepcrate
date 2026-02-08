@@ -83,7 +83,7 @@ const logger = createLogger({
     format.splat(),
     format.json()
   ),
-  defaultMeta: { service: 'resonance' },
+  defaultMeta: { service: 'deepcrate' },
   transports:  [],
 });
 

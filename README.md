@@ -1,10 +1,10 @@
-# Resonance
+# DeepCrate
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fjordojordo%2Fresonance-blue)](https://ghcr.io/jordojordo/resonance)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fjordojordo%2Fdeepcrate-blue)](https://ghcr.io/jordojordo/deepcrate)
 [![AI Assisted](https://img.shields.io/badge/AI-Claude_Code-D97757?logo=claude&logoColor=fff)](https://claude.ai/code)
 
-**A digital record shop for your self-hosted library.** Resonance surfaces music through your listening history and existing collection, lets you preview and approve recommendations, then downloads via Soulseek.
+**A digital record shop for your self-hosted library.** DeepCrate surfaces music through your listening history and existing collection, lets you preview and approve recommendations, then downloads via Soulseek.
 
 https://github.com/user-attachments/assets/8e33838e-a73d-4489-9b72-44cdd9ec8d99
 
@@ -46,7 +46,7 @@ flowchart LR
 ### 1. Create configuration
 
 ```bash
-mkdir -p resonance/data && cd resonance
+mkdir -p deepcrate/data && cd deepcrate
 ```
 
 Create `config.yaml`:
@@ -83,9 +83,9 @@ Create `docker-compose.yaml`:
 
 ```yaml
 services:
-  resonance:
-    image: ghcr.io/jordojordo/resonance:latest
-    container_name: resonance
+  deepcrate:
+    image: ghcr.io/jordojordo/deepcrate:latest
+    container_name: deepcrate
     volumes:
       - ./config.yaml:/config/config.yaml:rw
       - ./data:/data
@@ -109,7 +109,7 @@ Open `http://localhost:8080` and log in with your configured credentials.
 ## Development
 
 ```bash
-git clone https://github.com/jordojordo/resonance.git && cd resonance
+git clone https://github.com/jordojordo/deepcrate.git && cd deepcrate
 pnpm install && pnpm dev  # Starts on http://localhost:5173
 ```
 
@@ -117,7 +117,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Alternatives
 
-Resonance focuses on **curated discovery**, meaning you approve what enters your library. If you prefer fully automated weekly playlists, check out [Explo](https://github.com/LumePart/Explo). If you need to monitor known artists for new releases, [Lidarr](https://lidarr.audio/) is the standard. See [Comparison](docs/comparison.md) for a detailed breakdown.
+DeepCrate focuses on **curated discovery**, meaning you approve what enters your library. If you prefer fully automated weekly playlists, check out [Explo](https://github.com/LumePart/Explo). If you need to monitor known artists for new releases, [Lidarr](https://lidarr.audio/) is the standard. See [Comparison](docs/comparison.md) for a detailed breakdown.
 
 ## Related Projects
 

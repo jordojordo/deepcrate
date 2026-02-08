@@ -1,5 +1,5 @@
 /**
- * Model exports for Resonance
+ * Model exports for DeepCrate
  */
 
 export { default as QueueItem } from './QueueItem';

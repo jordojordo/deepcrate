@@ -1,7 +1,7 @@
 import { definePreset } from '@primeuix/themes';
 import Aura from '@primeuix/themes/aura';
 
-export const ResonancePreset = definePreset(Aura, {
+export const DeepCratePreset = definePreset(Aura, {
   primitive: {
     borderRadius: {
       none: '0',

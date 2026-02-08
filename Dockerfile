@@ -1,5 +1,5 @@
 # =============================================================================
-# Resonance Dockerfile (Node.js Migration)
+# DeepCrate Dockerfile (Node.js Migration)
 # Multi-stage build: UI → Server → Production Runtime
 # =============================================================================
 
@@ -22,13 +22,13 @@ COPY ui/package.json ./ui/
 COPY server/package.json ./server/
 
 # Install UI dependencies using workspace filter
-RUN pnpm --filter @resonance/ui install --frozen-lockfile
+RUN pnpm --filter @deepcrate/ui install --frozen-lockfile
 
 # Copy UI source files
 COPY ui/ ./ui/
 
 # Build production bundle
-RUN pnpm --filter @resonance/ui run build
+RUN pnpm --filter @deepcrate/ui run build
 
 # =============================================================================
 # Stage 2: Build Server
@@ -52,7 +52,7 @@ COPY server/package.json ./server/
 COPY ui/package.json ./ui/
 
 # Install server dependencies (including devDependencies for build)
-RUN pnpm --filter @resonance/server install --frozen-lockfile
+RUN pnpm --filter @deepcrate/server install --frozen-lockfile
 
 # Navigate into sqlite3's actual directory and build it manually
 RUN cd /build/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3 && \
@@ -65,7 +65,7 @@ COPY server/src ./server/src
 COPY server/tsconfig.json server/tsconfig.build.json ./server/
 
 # Build TypeScript to JavaScript
-RUN pnpm --filter @resonance/server run build
+RUN pnpm --filter @deepcrate/server run build
 
 # =============================================================================
 # Stage 3: Production Runtime
@@ -89,7 +89,7 @@ COPY server/package.json ./server/
 COPY ui/package.json ./ui/
 
 # Install production dependencies (this will rebuild native modules for runtime image)
-RUN pnpm --filter @resonance/server install --prod --frozen-lockfile
+RUN pnpm --filter @deepcrate/server install --prod --frozen-lockfile
 
 # Navigate into sqlite3's actual directory and build it manually for production
 RUN cd /app/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3 && \
@@ -119,10 +119,10 @@ ENV NODE_ENV=production \
     RUN_JOBS_ON_STARTUP=true
 
 # Create non-root user (use GID/UID 1001 to avoid conflict with node user at 1000)
-RUN addgroup -g 1001 resonance \
-    && adduser -D -u 1001 -G resonance resonance \
+RUN addgroup -g 1001 deepcrate \
+    && adduser -D -u 1001 -G deepcrate deepcrate \
     && mkdir -p /data /config \
-    && chown -R resonance:resonance /app /data /config
+    && chown -R deepcrate:deepcrate /app /data /config
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
@@ -135,5 +135,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# Entrypoint handles permissions and drops to resonance user
+# Entrypoint handles permissions and drops to deepcrate user
 ENTRYPOINT ["docker-entrypoint.sh"]

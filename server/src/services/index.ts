@@ -1,5 +1,5 @@
 /**
- * Service exports for Resonance
+ * Service exports for DeepCrate
  */
 
 // Types

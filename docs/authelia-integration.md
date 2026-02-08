@@ -1,6 +1,6 @@
 # Authelia Integration
 
-This guide explains how to protect Resonance with [Authelia](https://www.authelia.com/) for advanced authentication features like:
+This guide explains how to protect DeepCrate with [Authelia](https://www.authelia.com/) for advanced authentication features like:
 
 - Single Sign-On (SSO)
 - Two-Factor Authentication (2FA)
@@ -14,7 +14,7 @@ Authelia works as a forward authentication server with your reverse proxy (Caddy
 
 ```
 ┌─────────┐     ┌──────────────┐     ┌──────────┐     ┌───────────┐
-│ Browser │────►│ Reverse Proxy│────►│ Authelia │────►│ Resonance │
+│ Browser │────►│ Reverse Proxy│────►│ Authelia │────►│ DeepCrate │
 │         │     │ (Caddy/nginx)│     │          │     │           │
 └─────────┘     └──────────────┘     └──────────┘     └───────────┘
                        │                   │
@@ -32,9 +32,9 @@ Authelia works as a forward authentication server with your reverse proxy (Caddy
 - DNS configured for your domain
 - SSL certificates (automatic with Caddy, manual with nginx/Traefik)
 
-## Resonance Configuration
+## DeepCrate Configuration
 
-When using Authelia, disable Resonance's built-in auth:
+When using Authelia, disable DeepCrate's built-in auth:
 
 ```yaml
 # config.yaml
@@ -55,7 +55,7 @@ ui:
       - "Remote-Groups"
 ```
 
-**Note:** When `type: "proxy"` is set, the Resonance UI will:
+**Note:** When `type: "proxy"` is set, the DeepCrate UI will:
 1. Detect the auth mode via `/api/v1/auth/info`
 2. Skip the login form and auto-redirect to the dashboard
 3. Display the username from the `Remote-User` header (set by Authelia)
@@ -67,7 +67,7 @@ ui:
 ```caddy
 # /etc/caddy/Caddyfile
 
-resonance.example.com {
+deepcrate.example.com {
     # Automatic HTTPS with Let's Encrypt
     
     # Forward auth to Authelia for all requests except health
@@ -80,8 +80,8 @@ resonance.example.com {
         copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
     }
     
-    # Proxy to Resonance
-    reverse_proxy resonance:8080
+    # Proxy to DeepCrate
+    reverse_proxy deepcrate:8080
 }
 ```
 
@@ -90,7 +90,7 @@ resonance.example.com {
 ```caddy
 # /etc/caddy/Caddyfile
 
-resonance.example.com {
+deepcrate.example.com {
     # Root path - protected by Authelia
     @authenticated {
         not path /health
@@ -103,17 +103,17 @@ resonance.example.com {
     
     # API endpoints - also protected
     handle /api/* {
-        reverse_proxy resonance:8080
+        reverse_proxy deepcrate:8080
     }
     
     # Health endpoint - no auth required
     handle /health {
-        reverse_proxy resonance:8080
+        reverse_proxy deepcrate:8080
     }
     
     # Everything else
     handle {
-        reverse_proxy resonance:8080
+        reverse_proxy deepcrate:8080
     }
 }
 ```
@@ -125,11 +125,11 @@ If you prefer nginx over Caddy:
 ### Basic Forward Auth Setup
 
 ```nginx
-# /etc/nginx/conf.d/resonance.conf
+# /etc/nginx/conf.d/deepcrate.conf
 
 server {
     listen 443 ssl http2;
-    server_name resonance.example.com;
+    server_name deepcrate.example.com;
 
     ssl_certificate /etc/ssl/certs/example.com.crt;
     ssl_certificate_key /etc/ssl/private/example.com.key;
@@ -141,8 +141,8 @@ server {
         # Protect with Authelia
         include /etc/nginx/includes/authelia-authrequest.conf;
 
-        # Proxy to Resonance
-        proxy_pass http://resonance:8080;
+        # Proxy to DeepCrate
+        proxy_pass http://deepcrate:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -159,7 +159,7 @@ server {
     location /api/ {
         include /etc/nginx/includes/authelia-authrequest.conf;
 
-        proxy_pass http://resonance:8080;
+        proxy_pass http://deepcrate:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -169,7 +169,7 @@ server {
 
     # Health endpoint - no auth required
     location /health {
-        proxy_pass http://resonance:8080;
+        proxy_pass http://deepcrate:8080;
     }
 }
 ```
@@ -213,7 +213,7 @@ error_page 401 =302 https://auth.example.com/?rd=$target_url;
 
 ### Access Control Policy
 
-Add Resonance to your Authelia access control:
+Add DeepCrate to your Authelia access control:
 
 ```yaml
 # authelia/configuration.yml
@@ -221,18 +221,18 @@ Add Resonance to your Authelia access control:
 access_control:
   default_policy: deny
   rules:
-    # Resonance - require authentication
-    - domain: resonance.example.com
+    # DeepCrate - require authentication
+    - domain: deepcrate.example.com
       policy: one_factor  # or two_factor for 2FA
 
-    # Resonance API - require authentication
-    - domain: resonance.example.com
+    # DeepCrate API - require authentication
+    - domain: deepcrate.example.com
       resources:
         - "^/api/.*"
       policy: one_factor
 
     # Health endpoint - bypass auth
-    - domain: resonance.example.com
+    - domain: deepcrate.example.com
       resources:
         - "^/health$"
       policy: bypass
@@ -240,12 +240,12 @@ access_control:
 
 ### Two-Factor Authentication
 
-For 2FA on Resonance:
+For 2FA on DeepCrate:
 
 ```yaml
 access_control:
   rules:
-    - domain: resonance.example.com
+    - domain: deepcrate.example.com
       policy: two_factor
 ```
 
@@ -256,7 +256,7 @@ Restrict to specific groups:
 ```yaml
 access_control:
   rules:
-    - domain: resonance.example.com
+    - domain: deepcrate.example.com
       policy: one_factor
       subject:
         - "group:music_admins"
@@ -264,7 +264,7 @@ access_control:
 
 ## Docker Compose Example
 
-Complete example with Caddy, Authelia, and Resonance:
+Complete example with Caddy, Authelia, and DeepCrate:
 
 ```yaml
 # docker-compose.yaml
@@ -280,30 +280,30 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     networks:
-      - resonance-net
+      - deepcrate-net
     depends_on:
       - authelia
-      - resonance
+      - deepcrate
 
   authelia:
     image: authelia/authelia:latest
     volumes:
       - ./authelia:/config
     networks:
-      - resonance-net
+      - deepcrate-net
     environment:
       - TZ=America/New_York
 
-  resonance:
-    image: ghcr.io/jordojordo/resonance:latest
+  deepcrate:
+    image: ghcr.io/jordojordo/deepcrate:latest
     volumes:
-      - ./resonance/config.yaml:/config/config.yaml:ro
-      - ./resonance/data:/data
+      - ./deepcrate/config.yaml:/config/config.yaml:ro
+      - ./deepcrate/data:/data
     networks:
-      - resonance-net
+      - deepcrate-net
 
 networks:
-  resonance-net:
+  deepcrate-net:
 
 volumes:
   caddy-data:
@@ -312,7 +312,7 @@ volumes:
 
 ## nginx Docker Compose Example
 
-Complete example with nginx, Authelia, and Resonance:
+Complete example with nginx, Authelia, and DeepCrate:
 
 ```yaml
 # docker-compose.yaml
@@ -328,32 +328,32 @@ services:
       - ./nginx/includes:/etc/nginx/includes:ro
       - ./ssl:/etc/ssl:ro
     networks:
-      - resonance-net
+      - deepcrate-net
     depends_on:
       - authelia
-      - resonance
+      - deepcrate
 
   authelia:
     image: authelia/authelia:latest
     volumes:
       - ./authelia:/config
     networks:
-      - resonance-net
+      - deepcrate-net
     environment:
       - TZ=America/New_York
 
-  resonance:
-    image: ghcr.io/jordojordo/resonance:latest
+  deepcrate:
+    image: ghcr.io/jordojordo/deepcrate:latest
     volumes:
-      - ./resonance/config.yaml:/config/config.yaml:ro
-      - ./resonance/data:/data
+      - ./deepcrate/config.yaml:/config/config.yaml:ro
+      - ./deepcrate/data:/data
     networks:
-      - resonance-net
+      - deepcrate-net
     environment:
       - TZ=America/New_York
 
 networks:
-  resonance-net:
+  deepcrate-net:
 ```
 
 ## Traefik Configuration
@@ -364,43 +364,43 @@ If using Traefik:
 # docker-compose.yaml (Traefik labels)
 
 services:
-  resonance:
-    image: ghcr.io/jordojordo/resonance:latest
+  deepcrate:
+    image: ghcr.io/jordojordo/deepcrate:latest
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.resonance.rule=Host(`resonance.example.com`)"
-      - "traefik.http.routers.resonance.entrypoints=websecure"
-      - "traefik.http.routers.resonance.tls=true"
-      - "traefik.http.routers.resonance.middlewares=authelia@docker"
-      - "traefik.http.services.resonance.loadbalancer.server.port=8080"
+      - "traefik.http.routers.deepcrate.rule=Host(`deepcrate.example.com`)"
+      - "traefik.http.routers.deepcrate.entrypoints=websecure"
+      - "traefik.http.routers.deepcrate.tls=true"
+      - "traefik.http.routers.deepcrate.middlewares=authelia@docker"
+      - "traefik.http.services.deepcrate.loadbalancer.server.port=8080"
 ```
 
 ## Verifying Integration
 
 ### Test Authentication Flow
 
-1. Visit `https://resonance.example.com`
+1. Visit `https://deepcrate.example.com`
 2. Should redirect to Authelia login
 3. Log in with your credentials
-4. Should redirect back to Resonance
+4. Should redirect back to DeepCrate
 
 ### Test API Access
 
 ```bash
 # Without auth - should fail
-curl https://resonance.example.com/api/v1/queue/pending
+curl https://deepcrate.example.com/api/v1/queue/pending
 # Returns: 401 Unauthorized
 
 # With Authelia session cookie - should work
-curl -b "authelia_session=..." https://resonance.example.com/api/v1/queue/pending
+curl -b "authelia_session=..." https://deepcrate.example.com/api/v1/queue/pending
 ```
 
 ### Check Headers
 
-Verify Authelia headers reach Resonance:
+Verify Authelia headers reach DeepCrate:
 
 ```bash
-docker logs resonance | grep "Remote-User"
+docker logs deepcrate | grep "Remote-User"
 ```
 
 ## Troubleshooting
@@ -429,7 +429,7 @@ docker logs resonance | grep "Remote-User"
   - **nginx:** Verify `auth_request_set` and `proxy_set_header` directives
   - **Traefik:** Check `authResponseHeaders` in middleware
 - Check Authelia is returning the expected headers
-- Ensure Resonance is configured for proxy auth
+- Ensure DeepCrate is configured for proxy auth
 
 ### Session Issues
 
@@ -443,7 +443,7 @@ docker logs resonance | grep "Remote-User"
 2. **Set strong session secrets** - In Authelia configuration
 3. **Enable 2FA for admin users** - Extra security layer
 4. **Restrict by IP if possible** - Additional access control
-5. **Monitor access logs** - Track who's accessing Resonance
+5. **Monitor access logs** - Track who's accessing DeepCrate
 
 ## Additional Resources
 

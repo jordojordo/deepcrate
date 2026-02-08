@@ -12,7 +12,7 @@ This document describes the migration from Tailwind CSS v4 to PrimeVue 4, comple
 
 ### UI Framework
 - **Before:** Tailwind CSS v4 with custom utility classes
-- **After:** PrimeVue 4 with custom Resonance theme preset
+- **After:** PrimeVue 4 with custom DeepCrate theme preset
 - **Theme:** Custom indigo/purple color scheme maintained from Tailwind design
 
 ### Directory Structure
@@ -103,7 +103,7 @@ import { ROUTE_PATHS, ROUTE_NAMES } from '@/constants/routes'
 ### Phase 1: Foundation Setup ✅
 - Added PrimeVue, removed Tailwind dependencies
 - Created directory structure (composables, constants, pages, services, utils)
-- Created custom Resonance theme preset (indigo/purple colors)
+- Created custom DeepCrate theme preset (indigo/purple colors)
 - Added @ path alias configuration
 - Deleted Tailwind files
 

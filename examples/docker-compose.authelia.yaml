@@ -1,22 +1,22 @@
 # =============================================================================
-# Resonance Docker Compose with Authelia
+# DeepCrate Docker Compose with Authelia
 # Production deployment with external authentication
 # =============================================================================
 
 services:
   # ---------------------------------------------------------------------------
-  # Resonance - Music Discovery
+  # DeepCrate - Music Discovery
   # ---------------------------------------------------------------------------
-  resonance:
-    image: ghcr.io/jordojordo/resonance:latest
-    container_name: resonance
+  deepcrate:
+    image: ghcr.io/jordojordo/deepcrate:latest
+    container_name: deepcrate
     environment:
       - LOG_LEVEL=info
     volumes:
-      - ./resonance/config.yaml:/config/config.yaml:rw
-      - ./resonance/data:/data
+      - ./deepcrate/config.yaml:/config/config.yaml:rw
+      - ./deepcrate/data:/data
     networks:
-      - resonance-net
+      - deepcrate-net
     # No ports exposed - access via Caddy only
     restart: unless-stopped
 
@@ -34,9 +34,9 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     networks:
-      - resonance-net
+      - deepcrate-net
     depends_on:
-      - resonance
+      - deepcrate
       - authelia
     restart: unless-stopped
 
@@ -49,7 +49,7 @@ services:
     volumes:
       - ./authelia:/config
     networks:
-      - resonance-net
+      - deepcrate-net
     environment:
       - TZ=America/New_York
     restart: unless-stopped
@@ -63,11 +63,11 @@ services:
     volumes:
       - redis-data:/data
     networks:
-      - resonance-net
+      - deepcrate-net
     restart: unless-stopped
 
 networks:
-  resonance-net:
+  deepcrate-net:
     driver: bridge
 
 volumes:

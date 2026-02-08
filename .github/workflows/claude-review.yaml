@@ -38,7 +38,7 @@ jobs:
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
 
-            Review this pull request for the Resonance music discovery application.
+            Review this pull request for the DeepCrate music discovery application.
 
             ## Code Quality Review
             - TypeScript best practices and type safety

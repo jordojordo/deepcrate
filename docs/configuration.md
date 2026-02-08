@@ -1,6 +1,6 @@
 # Configuration Reference
 
-Resonance is configured via a YAML file mounted at `/config/config.yaml`.
+DeepCrate is configured via a YAML file mounted at `/config/config.yaml`.
 
 ## Full Configuration Example
 
@@ -190,11 +190,11 @@ library_organize:
   # Enable library organization
   enabled: false
 
-  # Where slskd saves completed downloads (must be accessible to Resonance)
+  # Where slskd saves completed downloads (must be accessible to DeepCrate)
   # This path must be mounted as a volume in your docker-compose.yaml
   downloads_path: "/downloads/complete"
 
-  # Destination music library path (must be accessible to Resonance)
+  # Destination music library path (must be accessible to DeepCrate)
   # This path must be mounted as a volume in your docker-compose.yaml
   library_path: "/music/library"
 
@@ -274,22 +274,22 @@ Environment variables can override or supplement the config file:
 | `LOG_TO_FILE` | `false` | Enable file logging |
 | `CONFIG_PATH` | `/config/config.yaml` | Path to config file |
 | `DATA_PATH` | `/data` | Path to data directory |
-| `RESONANCE_DB_FILE` | `DATA_PATH/resonance.sqlite` | SQLite DB file path |
-| `RESONANCE_DB_LOGGING` | `false` | Enable Sequelize SQL logging (`true`/`false`) |
+| `DEEPCRATE_DB_FILE` | `DATA_PATH/deepcrate.sqlite` | SQLite DB file path |
+| `DEEPCRATE_DB_LOGGING` | `false` | Enable Sequelize SQL logging (`true`/`false`) |
 
 ### Override Config Values via Environment
 
-Config values can be overridden using environment variables with the `RESONANCE_` prefix:
+Config values can be overridden using environment variables with the `DEEPCRATE_` prefix:
 
 ```bash
 # Override ListenBrainz username
-RESONANCE_LISTENBRAINZ__USERNAME=myuser
+DEEPCRATE_LISTENBRAINZ__USERNAME=myuser
 
 # Override slskd host
-RESONANCE_SLSKD__HOST=http://10.100.0.11:5030
+DEEPCRATE_SLSKD__HOST=http://10.100.0.11:5030
 
 # Override catalog discovery enabled
-RESONANCE_CATALOG_DISCOVERY__ENABLED=false
+DEEPCRATE_CATALOG_DISCOVERY__ENABLED=false
 ```
 
 Note: Use double underscore `__` for nested keys.
@@ -505,7 +505,7 @@ When `enabled: false`, the UI behaves the same as `proxy` mode - users are autom
 
 ## Minimal Configuration
 
-The bare minimum to run Resonance with ListenBrainz only:
+The bare minimum to run DeepCrate with ListenBrainz only:
 
 ```yaml
 listenbrainz:
@@ -521,8 +521,8 @@ slskd:
 
 ```yaml
 services:
-  resonance:
-    image: ghcr.io/jordojordo/resonance:latest
+  deepcrate:
+    image: ghcr.io/jordojordo/deepcrate:latest
     environment:
       - LB_FETCH_INTERVAL=21600
       - CATALOG_INTERVAL=604800
@@ -537,7 +537,7 @@ services:
 
 ## Config Validation
 
-On startup, Resonance validates the configuration and logs any issues:
+On startup, DeepCrate validates the configuration and logs any issues:
 
 ```
 2026-01-11 10:00:00 - INFO - Loading configuration from /config/config.yaml
@@ -570,12 +570,12 @@ listenbrainz:
 ```yaml
 # docker-compose.yaml
 services:
-  resonance:
+  deepcrate:
     secrets:
       - listenbrainz_token
       - slskd_api_key
     environment:
-      - RESONANCE_LISTENBRAINZ__TOKEN_FILE=/run/secrets/listenbrainz_token
+      - DEEPCRATE_LISTENBRAINZ__TOKEN_FILE=/run/secrets/listenbrainz_token
 
 secrets:
   listenbrainz_token:
@@ -593,7 +593,7 @@ For Kubernetes or advanced setups, mount secrets as files and reference via `*_F
 The UI supports importing and exporting wishlist items as JSON files. This is useful for:
 - Bulk importing wishlists from other sources
 - Backing up your wishlist
-- Migrating between Resonance instances
+- Migrating between DeepCrate instances
 
 ### JSON Schema
 
@@ -660,7 +660,7 @@ Import files must be a JSON array of objects with the following structure:
 
 ## Network Requirements
 
-Resonance needs network access to the following services:
+DeepCrate needs network access to the following services:
 
 | Service | Purpose |
 |---------|---------|

@@ -1,6 +1,6 @@
-# Contributing to Resonance
+# Contributing to DeepCrate
 
-Thank you for your interest in contributing to Resonance! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to DeepCrate! This document provides guidelines and information for contributors.
 
 ## Getting Started
 
@@ -16,8 +16,8 @@ Thank you for your interest in contributing to Resonance! This document provides
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/jordojordo/resonance.git
-cd resonance
+git clone https://github.com/jordojordo/deepcrate.git
+cd deepcrate
 ```
 
 2. **Install server dependencies (Node.js/TypeScript)**
@@ -51,7 +51,7 @@ cd server
 pnpm run dev    # Starts on http://localhost:8080 with hot reload
 ```
 
-Resonance runs as a single Node.js process. Background jobs (lb-fetch, catalog-discovery, slskd-downloader) are scheduled via node-cron.
+DeepCrate runs as a single Node.js process. Background jobs (lb-fetch, catalog-discovery, slskd-downloader) are scheduled via node-cron.
 
 You can also trigger jobs via the API actions endpoints (useful for local testing):
 
@@ -102,8 +102,8 @@ pnpm run typecheck
 ## Building and Running with Docker
 
 ```bash
-docker build -t resonance:dev .
-docker run -v ./config.yaml:/config/config.yaml -v ./data:/data -p 8080:8080 resonance:dev
+docker build -t deepcrate:dev .
+docker run -v ./config.yaml:/config/config.yaml -v ./data:/data -p 8080:8080 deepcrate:dev
 ```
 
 ## Project Structure
@@ -111,7 +111,7 @@ docker run -v ./config.yaml:/config/config.yaml -v ./data:/data -p 8080:8080 res
 The server is Node.js/TypeScript and the ui is Vue 3. Local development is typically two processes (server on :8080, ui on :5173).
 
 ```
-resonance/
+deepcrate/
 ├── server/
 │   ├── src/                  # Node.js/TypeScript server code (Express + jobs)
 │   ├── tests/                # Server tests
@@ -245,7 +245,7 @@ Look for issues labeled `good first issue`:
 
 ## Questions?
 
-- Open a [GitHub Discussion](https://github.com/jordojordo/resonance/discussions)
+- Open a [GitHub Discussion](https://github.com/jordojordo/deepcrate/discussions)
 - Check existing issues for similar questions
 - Read the [documentation](docs/)
 
@@ -255,4 +255,4 @@ By contributing, you agree that your contributions will be licensed under the Ap
 
 ---
 
-Thank you for contributing to Resonance!
+Thank you for contributing to DeepCrate!

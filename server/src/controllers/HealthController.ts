@@ -15,7 +15,7 @@ class HealthController extends BaseController {
     const response: HealthResponse = {
       status:  'ok',
       version: '1.0.0',
-      service: 'resonance',
+      service: 'deepcrate',
     };
 
     return res.json(response);
