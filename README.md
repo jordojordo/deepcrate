@@ -6,7 +6,7 @@
 
 **A digital record shop for your self-hosted library.** DeepCrate surfaces music through your listening history and existing collection, lets you preview and approve recommendations, then downloads via Soulseek.
 
-https://github.com/user-attachments/assets/8e33838e-a73d-4489-9b72-44cdd9ec8d99
+https://github.com/user-attachments/assets/f7e24984-12cd-4730-beef-05eeda49364d
 
 > [!NOTE]
 > *This project was developed with AI assistance. All code is human-reviewed.*
