@@ -153,7 +153,7 @@ onMounted(() => {
       @retry="loadData"
     />
 
-    <DownloadStats :stats="stats" />
+    <DownloadStats :loading="loading" :stats="stats" />
 
     <Tabs class="downloads-page__tabs" v-model:value="activeTab">
       <TabList>

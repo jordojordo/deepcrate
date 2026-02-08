@@ -113,7 +113,7 @@ onMounted(() => {
       @retry="loadData"
     />
 
-    <LibraryStats :status="status" />
+    <LibraryStats :loading="loading" :status="status" />
 
     <LibraryOrganizeActions
       :status="status"

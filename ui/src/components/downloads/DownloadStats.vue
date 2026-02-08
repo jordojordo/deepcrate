@@ -4,7 +4,8 @@ import type { DownloadStats as DownloadStatsType } from '@/types';
 import DashboardStatsCard from '@/components/dashboard/DashboardStatsCard.vue';
 
 interface Props {
-  stats: DownloadStatsType | null;
+  loading: boolean;
+  stats:   DownloadStatsType | null;
 }
 
 defineProps<Props>();
@@ -14,6 +15,7 @@ defineProps<Props>();
   <div class="download-stats">
     <div class="flex gap-4">
       <DashboardStatsCard
+        :loading="loading"
         title="Active"
         :value="stats?.active ?? 0"
         color="primary"
@@ -22,6 +24,7 @@ defineProps<Props>();
       />
 
       <DashboardStatsCard
+        :loading="loading"
         title="Queued"
         :value="stats?.queued ?? 0"
         color="orange"
@@ -29,6 +32,7 @@ defineProps<Props>();
       />
 
       <DashboardStatsCard
+        :loading="loading"
         title="Completed"
         :value="stats?.completed ?? 0"
         color="green"
@@ -36,6 +40,7 @@ defineProps<Props>();
       />
 
       <DashboardStatsCard
+        :loading="loading"
         title="Failed"
         :value="stats?.failed ?? 0"
         color="purple"

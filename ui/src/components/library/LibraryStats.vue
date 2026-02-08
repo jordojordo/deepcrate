@@ -4,7 +4,8 @@ import type { LibraryOrganizeStatus } from '@/types';
 import DashboardStatsCard from '@/components/dashboard/DashboardStatsCard.vue';
 
 defineProps<{
-  status: LibraryOrganizeStatus | null;
+  loading: boolean;
+  status:  LibraryOrganizeStatus | null;
 }>();
 </script>
 
@@ -12,6 +13,7 @@ defineProps<{
   <div class="library-stats">
     <div class="flex gap-4">
       <DashboardStatsCard
+        :loading="loading"
         title="Completed"
         :value="status?.completed ?? 0"
         color="teal"
@@ -19,6 +21,7 @@ defineProps<{
       />
 
       <DashboardStatsCard
+        :loading="loading"
         title="Unorganized"
         :value="status?.unorganized ?? 0"
         color="orange"
@@ -27,6 +30,7 @@ defineProps<{
       />
 
       <DashboardStatsCard
+        :loading="loading"
         title="Organized"
         :value="status?.organized ?? 0"
         color="green"
@@ -41,4 +45,3 @@ defineProps<{
   margin-bottom: 1.5rem;
 }
 </style>
-

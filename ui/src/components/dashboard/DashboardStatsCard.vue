@@ -3,10 +3,10 @@ import type { ActiveDownload } from '@/types';
 
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
+import { formatSpeed } from '@/utils/formatters';
 
 import Button from 'primevue/button';
-
-import { formatSpeed } from '@/utils/formatters';
+import Skeleton from 'primevue/skeleton';
 
 interface TrendData {
   value:    string;
@@ -14,6 +14,7 @@ interface TrendData {
 }
 
 interface Props {
+  loading:      boolean;
   title:        string;
   value:        string | number;
   unit?:        string;
@@ -120,8 +121,14 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
       </div>
 
       <div class="flex align-items-end gap-2 mb-1">
-        <p class="text-4xl font-bold text-white leading-none">{{ value }}</p>
-        <span v-if="unit" class="text-2xl text-white/50 mb-0.5">{{ unit }}</span>
+        <div v-if="loading" class="loading-unit">
+          <Skeleton width="5rem" height="3rem"></Skeleton>
+          <Skeleton width="2rem" height="2rem" class="mb-2"></Skeleton>
+        </div>
+        <div v-else>
+          <p class="text-4xl font-bold text-white leading-none">{{ value }}</p>
+          <span v-if="unit" class="text-2xl text-white/50 mb-0.5">{{ unit }}</span>
+        </div>
       </div>
 
       <p v-if="subtitle" class="text-white/40 text-sm mb-4">{{ subtitle }}</p>
@@ -242,5 +249,11 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
 /* Space-y utility */
 .space-y-3 > * + * {
   margin-top: 0.75rem;
+}
+
+.loading-unit {
+  display: flex;
+  align-items: baseline;
+  gap: .25rem;
 }
 </style>

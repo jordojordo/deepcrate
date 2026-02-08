@@ -172,15 +172,19 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
             :src="item.cover_url || getDefaultCoverUrl()"
             :alt="`${item.album || item.title} cover`"
             class="queue-list-mobile__cover"
+            @click.stop="handlePreview(item)"
             @error="($event.target as HTMLImageElement).src = getDefaultCoverUrl()"
           />
           <div class="queue-list-mobile__info">
             <div class="font-semibold">{{ item.album || item.title }}</div>
             <div class="text-sm text-muted">{{ item.artist }}</div>
-            <div class="queue-list-mobile__tags">
+          </div>
+          <div class="queue-list-mobile__tags">
+            <div>
               <Tag
                 :value="item.source === 'listenbrainz' ? 'ListenBrainz' : 'Catalog'"
                 :severity="getSourceSeverity(item.source)"
+                v-tooltip.left="'Item source'"
               />
               <Tag
                 v-if="item.in_library"
@@ -188,31 +192,48 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
                 severity="success"
               />
             </div>
+            <Tag
+              v-if="item.score"
+              :value="`${ item.score }%`"
+              v-tooltip.left="'Item score'"
+              severity="info"
+            />
           </div>
+
         </div>
-        <div class="queue-list-mobile__actions">
-          <Button
-            icon="pi pi-play"
-            size="small"
-            severity="info"
-            rounded
-            outlined
-            aria-label="Preview"
-            @click.stop="handlePreview(item)"
-          />
-          <Button
-            icon="pi pi-check"
-            severity="success"
-            size="small"
-            @click.stop="approveItem(item)"
-          />
-          <Button
-            icon="pi pi-times"
-            severity="danger"
-            size="small"
-            outlined
-            @click.stop="rejectItem(item)"
-          />
+        <div class="queue-list-mobile__footer">
+          <div class="queue-list-mobile__metadata">
+            <Tag
+              v-if="getSimilarTag(item.similar_to)"
+              :value="getSimilarTag(item.similar_to)"
+              v-tooltip.bottom="getSimilarTooltip(item.similar_to)"
+              icon="pi pi-link"
+            />
+          </div>
+          <div class="queue-list-mobile__actions">
+            <Button
+              icon="pi pi-play"
+              size="small"
+              severity="info"
+              rounded
+              outlined
+              aria-label="Preview"
+              @click.stop="handlePreview(item)"
+            />
+            <Button
+              icon="pi pi-check"
+              severity="success"
+              size="small"
+              @click.stop="approveItem(item)"
+            />
+            <Button
+              icon="pi pi-times"
+              severity="danger"
+              size="small"
+              outlined
+              @click.stop="rejectItem(item)"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -377,6 +398,7 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
   border-radius: 0.375rem;
   object-fit: cover;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .queue-list-mobile__info {
@@ -387,14 +409,30 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
 
 .queue-list-mobile__tags {
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: 0.375rem;
-  margin-top: 0.375rem;
+  flex-shrink: 0;
+}
+
+.queue-list-mobile__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.queue-list-mobile__metadata {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .queue-list-mobile__actions {
   display: flex;
   gap: 0.5rem;
-  justify-content: flex-end;
+  flex-shrink: 0;
 }
 </style>

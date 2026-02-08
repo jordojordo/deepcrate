@@ -175,53 +175,67 @@ function canRequeue(status: DownloadStatus): boolean {
             <div class="text-sm text-muted">{{ item.artist }}</div>
             <div v-if="item.year" class="text-sm text-muted">{{ item.year }}</div>
           </div>
+          <div class="wishlist-mobile__tags">
+            <div class="wishlist-mobile__tags-item">
+              <Tag
+                :value="getSourceLabel(item.source)"
+                :severity="getSourceSeverity(item.source)"
+              />
+              <Tag
+                :value="getStatusLabel(item.downloadStatus)"
+                :severity="getStatusSeverity(item.downloadStatus)"
+              />
+            </div>
+            <div class="wishlist-mobile__tags-item">
+              <Tag
+                v-if="item.type !== 'album'"
+                :value="item.type"
+                severity="secondary"
+              />
+              <Tag
+                :value="new Date(item.addedAt).toLocaleDateString()"
+                severity="secondary"
+              />
+            </div>
+
+          </div>
         </div>
-        <div class="wishlist-mobile__tags">
-          <Tag
-            :value="getSourceLabel(item.source)"
-            :severity="getSourceSeverity(item.source)"
-          />
-          <Tag
-            :value="getStatusLabel(item.downloadStatus)"
-            :severity="getStatusSeverity(item.downloadStatus)"
-          />
-          <Tag
-            v-if="item.type !== 'album'"
-            :value="item.type"
-            severity="secondary"
-          />
-        </div>
-        <div v-if="item.downloadStatus === 'failed' && item.downloadError" class="text-xs text-red-400">
-          {{ item.downloadError }}
-        </div>
-        <div class="wishlist-mobile__actions">
-          <Button
-            v-if="canRequeue(item.downloadStatus)"
-            icon="pi pi-refresh"
-            severity="info"
-            size="small"
-            text
-            :loading="isProcessing(item.id)"
-            :disabled="isProcessing(item.id)"
-            @click.stop="handleRequeue(item.id)"
-          />
-          <Button
-            icon="pi pi-pencil"
-            severity="secondary"
-            size="small"
-            text
-            :disabled="isProcessing(item.id)"
-            @click.stop="handleEdit(item)"
-          />
-          <Button
-            icon="pi pi-trash"
-            severity="danger"
-            size="small"
-            text
-            :loading="isProcessing(item.id)"
-            :disabled="isProcessing(item.id)"
-            @click.stop="handleDelete(item.id)"
-          />
+
+        <div class="wishlist-mobile__footer">
+          <div class="wishlist-mobile__metadata">
+            <div v-if="item.downloadStatus === 'failed' && item.downloadError" class="text-xs text-red-400">
+              {{ item.downloadError }}
+            </div>
+          </div>
+          <div class="wishlist-mobile__actions">
+            <Button
+              v-if="canRequeue(item.downloadStatus)"
+              icon="pi pi-refresh"
+              severity="info"
+              size="small"
+              text
+              :loading="isProcessing(item.id)"
+              :disabled="isProcessing(item.id)"
+              @click.stop="handleRequeue(item.id)"
+            />
+            <Button
+              icon="pi pi-pencil"
+              severity="secondary"
+              size="small"
+              text
+              :disabled="isProcessing(item.id)"
+              @click.stop="handleEdit(item)"
+            />
+            <Button
+              icon="pi pi-trash"
+              severity="danger"
+              size="small"
+              text
+              :loading="isProcessing(item.id)"
+              :disabled="isProcessing(item.id)"
+              @click.stop="handleDelete(item.id)"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -284,7 +298,7 @@ function canRequeue(status: DownloadStatus): boolean {
             :value="getStatusLabel(data.downloadStatus)"
             :severity="getStatusSeverity(data.downloadStatus)"
           />
-          <div v-if="data.downloadStatus === 'failed' && data.downloadError" class="text-xs text-red-400 mt-1">
+          <div v-if="data.downloadStatus === 'failed' && data.downloadError" class="text-xs">
             {{ data.downloadError }}
           </div>
         </template>
@@ -385,14 +399,37 @@ function canRequeue(status: DownloadStatus): boolean {
 
 .wishlist-mobile__tags {
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.wishlist-mobile__tags-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.wishlist-mobile__footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.wishlist-mobile__metadata {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .wishlist-mobile__actions {
   display: flex;
   gap: 0.5rem;
-  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 :deep(.wishlist-list__row--focused) {
@@ -403,5 +440,17 @@ function canRequeue(status: DownloadStatus): boolean {
 
 :deep(.wishlist-list__row--focused td) {
   background-color: transparent !important;
+}
+
+@media (max-width: 1100px) {
+  :deep(.p-button-sm) {
+    padding: 0 var(--p-button-sm-padding-x);
+  }
+}
+
+@media (max-width: 768px) {
+  .wishlist-mobile__card {
+    padding: 0.25rem;
+  }
 }
 </style>

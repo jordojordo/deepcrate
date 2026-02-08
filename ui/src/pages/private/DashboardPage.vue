@@ -11,7 +11,6 @@ import { useDownloadsSocket } from '@/composables/useDownloadsSocket';
 import { useJobsSocket } from '@/composables/useJobsSocket';
 import { ROUTE_PATHS } from '@/constants/routes';
 
-import ProgressSpinner from 'primevue/progressspinner';
 import Button from 'primevue/button';
 
 import DashboardStatsCard from '@/components/dashboard/DashboardStatsCard.vue';
@@ -67,10 +66,6 @@ onMounted(() => {
       </div>
     </header>
 
-    <div v-if="loading && !error" class="flex justify-content-center py-8">
-      <ProgressSpinner style="width: 64px; height: 64px" />
-    </div>
-
     <ErrorMessage
       :error="error"
       :loading="loading"
@@ -85,6 +80,7 @@ onMounted(() => {
     <div class="dashboard__stats-grid">
       <!-- Pending Approvals (Actionable) -->
       <DashboardStatsCard
+        :loading="loading"
         title="Pending Approvals"
         :value="stats.pending"
         subtitle="Items awaiting review"
@@ -96,6 +92,7 @@ onMounted(() => {
 
       <!-- Active Downloads (Progress) -->
       <DashboardStatsCard
+        :loading="loading"
         title="Active Downloads"
         :value="downloadStats?.active ?? 0"
         :speed="downloadStats?.totalBandwidth ?? 0"
@@ -107,6 +104,7 @@ onMounted(() => {
 
       <!-- In Library (Duplicates) -->
       <DashboardStatsCard
+        :loading="loading"
         title="In Library"
         :value="stats.inLibrary || 0"
         subtitle="Pending items you already own"
