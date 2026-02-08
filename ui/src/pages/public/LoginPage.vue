@@ -9,6 +9,7 @@ import Message from 'primevue/message';
 import ProgressSpinner from 'primevue/progressspinner';
 import { useAuthStore } from '@/stores/auth';
 import { ROUTE_PATHS } from '@/constants/routes';
+import CrateIcon from '@/components/icons/CrateIcon.vue';
 
 const store = useAuthStore();
 const router = useRouter();
@@ -88,15 +89,10 @@ async function handleApiKeySubmit() {
     <div class="max-w-md w-full">
       <!-- Logo -->
       <div class="text-center mb-6">
-        <div
-          class="logo-container w-4rem h-4rem mx-auto bg-gradient border-round-2xl flex align-items-center justify-content-center mb-4"
-        >
-          <img
-            src="@/assets/images/bars.png"
-            alt="Resonance logo"
-            class="logo"
-          >
-        </div>
+        <CrateIcon
+          width="100"
+          height="100"
+        />
         <h1 class="text-2xl font-bold text-color">Resonance</h1>
         <p class="mt-2 text-muted">Sign in to manage your music queue</p>
       </div>
@@ -206,12 +202,6 @@ async function handleApiKeySubmit() {
   background: linear-gradient(135deg, var(--primary-500, #2b2bee) 0%, #6366f1 100%);
   border-radius: 0.75rem;
   box-shadow: 0 4px 12px rgba(43, 43, 238, 0.3);
-}
-
-.logo {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  filter: brightness(0) invert(1);
+  color: white;
 }
 </style>

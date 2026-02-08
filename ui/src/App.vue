@@ -15,6 +15,7 @@ import ConfirmDialog from 'primevue/confirmdialog';
 import AppShell from '@/components/layout/AppShell.vue';
 import ThemeToggle from '@/components/common/ThemeToggle.vue';
 import PreviewPlayer from '@/components/player/PreviewPlayer.vue';
+import CrateIcon from '@/components/icons/CrateIcon.vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -48,11 +49,10 @@ function handleLogout(): void {
         class="sidebar__header-logo"
       >
         <div class="sidebar__logo-container">
-          <img
-            src="@/assets/images/bars.png"
-            alt="Resonance logo"
-            class="sidebar__logo"
-          >
+          <CrateIcon
+            width="100"
+            height="100"
+          />
         </div>
         <div class="sidebar__branding">
           <span class="sidebar__title">Resonance</span>
@@ -107,16 +107,7 @@ function handleLogout(): void {
     justify-content: center;
     width: 40px;
     height: 40px;
-    background: linear-gradient(135deg, var(--primary-500, #2b2bee) 0%, #6366f1 100%);
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 12px rgba(43, 43, 238, 0.3);
-  }
-
-  &__logo {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    filter: brightness(0) invert(1);
+    color: var(--r-text-primary);
   }
 
   &__branding {
