@@ -1,10 +1,12 @@
+import type { PreviewResponse, AlbumPreviewResponse, AlbumPreviewQuery } from '@server/types/preview';
+
 import { LRUCache } from 'lru-cache';
+
 import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
 import { DeezerClient } from './clients/DeezerClient';
 import { SpotifyClient } from './clients/SpotifyClient';
 import { AlbumTrackSelector } from './AlbumTrackSelector';
-import type { PreviewResponse, AlbumPreviewResponse, AlbumPreviewQuery } from '@server/types/preview';
 
 interface CachedPreview {
   url:    string | null;

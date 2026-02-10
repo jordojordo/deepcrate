@@ -8,16 +8,13 @@ import type {
 
 import axios from 'axios';
 import logger from '@server/config/logger';
-
-
+import { LB_BASE_URL } from '@server/constants/clients';
 
 /**
  * ListenBrainzClient provides access to ListenBrainz recommendation API.
  * https://api.listenbrainz.org/
  */
 export class ListenBrainzClient {
-  private baseUrl = 'https://api.listenbrainz.org/1';
-
   /**
    * Fetch recording recommendations for a user
    */
@@ -26,7 +23,7 @@ export class ListenBrainzClient {
     token: string,
     count: number = 100
   ): Promise<ListenBrainzRecommendation[]> {
-    const url = `${ this.baseUrl }/cf/recommendation/user/${ username }/recording`;
+    const url = `${ LB_BASE_URL }/cf/recommendation/user/${ username }/recording`;
 
     try {
       const response = await axios.get(url, {
@@ -64,7 +61,7 @@ export class ListenBrainzClient {
     username: string,
     count: number = 25
   ): Promise<ListenBrainzPlaylistMetadata[]> {
-    const url = `${ this.baseUrl }/user/${ username }/playlists/createdfor`;
+    const url = `${ LB_BASE_URL }/user/${ username }/playlists/createdfor`;
 
     try {
       const response = await axios.get<ListenBrainzPlaylistsCreatedForResponse>(url, {
@@ -89,7 +86,7 @@ export class ListenBrainzClient {
    * Needed because fetchPlaylistsCreatedFor only returns metadata without tracks.
    */
   async fetchPlaylist(playlistMbid: string): Promise<ListenBrainzPlaylistResponse | null> {
-    const url = `${ this.baseUrl }/playlist/${ playlistMbid }`;
+    const url = `${ LB_BASE_URL }/playlist/${ playlistMbid }`;
 
     try {
       const response = await axios.get<ListenBrainzPlaylistResponse>(url, { timeout: 30000 });

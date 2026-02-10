@@ -31,10 +31,12 @@ export { MusicBrainzClient, default as MusicBrainzClientDefault } from './client
 
 export { LastFmClient, default as LastFmClientDefault } from './clients/LastFmClient';
 export {
-  SubsonicClient, NavidromeClient, default as SubsonicClientDefault 
+  SubsonicClient, NavidromeClient, default as SubsonicClientDefault
 } from './clients/SubsonicClient';
+
 /** @deprecated Use SubsonicClientDefault instead */
 export { default as NavidromeClientDefault } from './clients/SubsonicClient';
+
 export { SlskdClient, default as SlskdClientDefault } from './clients/SlskdClient';
 
 export { DeezerClient, default as DeezerClientDefault } from './clients/DeezerClient';

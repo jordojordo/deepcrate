@@ -1,5 +1,5 @@
 import type DownloadTask from '@server/models/DownloadTask';
-import type { OrganizePhase, OrganizeResult } from '@server/services/LibraryOrganizeService';
+import type { OrganizePhase, OrganizeResult } from '@server/types/library-organize';
 
 import logger from '@server/config/logger';
 import { JOB_NAMES } from '@server/constants/jobs';

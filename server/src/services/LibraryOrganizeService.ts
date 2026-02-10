@@ -1,3 +1,5 @@
+import type { FoundDownload, OrganizeCallbacks, OrganizeResult } from '@server/types/library-organize';
+
 import fs from 'fs';
 import path from 'path';
 import { execFile as execFileCallback } from 'child_process';
@@ -18,28 +20,6 @@ import {
 } from '@server/utils/slskdPaths';
 
 const execFile = promisify(execFileCallback);
-
-export type OrganizePhase = 'finding_files' | 'running_beets' | 'transferring' | 'cleanup' | 'complete';
-
-export interface OrganizeResult {
-  status:           'organized' | 'skipped' | 'failed';
-  message:          string;
-  sourcePath?:      string;
-  destinationPath?: string;
-}
-
-export interface OrganizeCallbacks {
-  onTaskStart?:    (_task: DownloadTask) => void;
-  onPhase?:        (_task: DownloadTask, _phase: OrganizePhase, _detail?: string) => void;
-  onFileProgress?: (_task: DownloadTask, _current: number, _total: number, _filename: string) => void;
-  onTaskComplete?: (_task: DownloadTask, _result: OrganizeResult) => void;
-  isCancelled?:    () => boolean;
-}
-
-interface FoundDownload {
-  sourcePath:    string;
-  sourceDirName: string;
-}
 
 function normalizeName(value: string): string {
   return value

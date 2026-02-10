@@ -1,7 +1,6 @@
 import axios from 'axios';
 import logger from '@server/config/logger';
-
-const BASE_URL = 'https://ws.audioscrobbler.com/2.0/';
+import { LASTFM_BASE_URL } from '@server/constants/clients';
 
 export interface SimilarArtist {
   name:  string;
@@ -25,7 +24,7 @@ export class LastFmClient {
    */
   async getSimilarArtists(artistName: string, limit: number = 10): Promise<SimilarArtist[]> {
     try {
-      const response = await axios.get(BASE_URL, {
+      const response = await axios.get(LASTFM_BASE_URL, {
         params: {
           method:  'artist.getsimilar',
           artist:  artistName,

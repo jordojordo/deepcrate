@@ -11,8 +11,8 @@ import {
   calculateAverageQualityScore,
   shouldRejectFile,
 } from '@server/utils/audioQuality';
-import { QUALITY_SCORES } from '@server/constants/slskd';
 import { filterMusicFiles } from '@server/services/downloads/musicFileFilter';
+import { QUALITY_SCORES } from '@server/constants/slskd';
 
 export interface ScorerConfig {
   constraints:         FileSizeConstraints;
@@ -93,7 +93,7 @@ function scoreResponse(
   maxScore: number
 ): ScoredSearchResponse | null {
   const {
-    constraints, qualityPreferences, expectedTrackCount, completenessConfig 
+    constraints, qualityPreferences, expectedTrackCount, completenessConfig
   } = config;
 
   let musicFiles = filterMusicFiles(response.files, constraints);
@@ -163,7 +163,7 @@ function scoreResponse(
     score,
     scorePercent,
     scoreBreakdown: {
-      hasSlot, qualityScore, fileCountScore, uploadSpeedBonus, completenessScore 
+      hasSlot, qualityScore, fileCountScore, uploadSpeedBonus, completenessScore
     },
     musicFileCount: musicFiles.length,
     totalSize:      musicFiles.reduce((sum, f) => sum + (f.size || 0), 0),

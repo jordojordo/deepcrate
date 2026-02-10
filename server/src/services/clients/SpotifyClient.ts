@@ -1,5 +1,3 @@
-import axios from 'axios';
-import logger from '@server/config/logger';
 import type {
   SpotifyTokenResponse,
   SpotifySearchResponse,
@@ -8,8 +6,9 @@ import type {
   SpotifyAlbumTrack,
 } from '@server/types/preview';
 
-const AUTH_URL = 'https://accounts.spotify.com/api/token';
-const API_URL = 'https://api.spotify.com/v1';
+import axios from 'axios';
+import logger from '@server/config/logger';
+import { SPOTIFY_AUTH_URL, SPOTIFY_API_URL } from '@server/constants/clients';
 
 /**
  * SpotifyClient provides access to Spotify API for track preview URLs.
@@ -36,7 +35,7 @@ export class SpotifyClient {
       await this.ensureAccessToken();
 
       const query = `artist:${ artist } track:${ track }`;
-      const response = await axios.get<SpotifySearchResponse>(`${ API_URL }/search`, {
+      const response = await axios.get<SpotifySearchResponse>(`${ SPOTIFY_API_URL }/search`, {
         params: {
           q:     query,
           type:  'track',
@@ -75,7 +74,7 @@ export class SpotifyClient {
       await this.ensureAccessToken();
 
       const query = `artist:${ artist } album:${ album }`;
-      const response = await axios.get<SpotifyAlbumSearchResponse>(`${ API_URL }/search`, {
+      const response = await axios.get<SpotifyAlbumSearchResponse>(`${ SPOTIFY_API_URL }/search`, {
         params: {
           q:     query,
           type:  'album',
@@ -110,7 +109,7 @@ export class SpotifyClient {
     try {
       await this.ensureAccessToken();
 
-      const response = await axios.get<SpotifyAlbumTracksResponse>(`${ API_URL }/albums/${ albumId }/tracks`, {
+      const response = await axios.get<SpotifyAlbumTracksResponse>(`${ SPOTIFY_API_URL }/albums/${ albumId }/tracks`, {
         params:  { limit: 50 },
         headers: { Authorization: `Bearer ${ this.accessToken }` },
         timeout: 10000,
@@ -172,7 +171,7 @@ export class SpotifyClient {
 
     const credentials = Buffer.from(`${ this.clientId }:${ this.clientSecret }`).toString('base64');
 
-    const response = await axios.post<SpotifyTokenResponse>(AUTH_URL, 'grant_type=client_credentials', {
+    const response = await axios.post<SpotifyTokenResponse>(SPOTIFY_AUTH_URL, 'grant_type=client_credentials', {
       headers: {
         'Authorization': `Basic ${ credentials }`,
         'Content-Type':  'application/x-www-form-urlencoded',

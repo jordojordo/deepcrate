@@ -9,9 +9,7 @@ import type {
 
 import axios from 'axios';
 import logger from '@server/config/logger';
-
-const USER_AGENT = 'deepcrate/1.0 (music-discovery)';
-const BASE_URL = 'https://musicbrainz.org/ws/2';
+import { MB_BASE_URL, MB_USER_AGENT } from '@server/constants/clients';
 
 /**
  * MusicBrainzClient provides access to MusicBrainz metadata API.
@@ -23,11 +21,11 @@ export class MusicBrainzClient {
    * Resolve a recording MBID to artist + title + release-group MBID
    */
   async resolveRecording(mbid: string): Promise<RecordingInfo | null> {
-    const url = `${ BASE_URL }/recording/${ mbid }`;
+    const url = `${ MB_BASE_URL }/recording/${ mbid }`;
 
     try {
       const response = await axios.get(url, {
-        headers: { 'User-Agent': USER_AGENT },
+        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           inc: 'artists+releases+release-groups',
           fmt: 'json',
@@ -100,11 +98,11 @@ export class MusicBrainzClient {
    * Resolve a recording MBID to its parent album (release-group)
    */
   async resolveRecordingToAlbum(mbid: string): Promise<AlbumInfo | null> {
-    const url = `${ BASE_URL }/recording/${ mbid }`;
+    const url = `${ MB_BASE_URL }/recording/${ mbid }`;
 
     try {
       const response = await axios.get(url, {
-        headers: { 'User-Agent': USER_AGENT },
+        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           inc: 'artists+releases+release-groups',
           fmt: 'json',
@@ -203,11 +201,11 @@ export class MusicBrainzClient {
     type: 'Album' | 'EP' | 'Single' = 'Album',
     limit: number = 20
   ): Promise<ReleaseGroup[]> {
-    const url = `${ BASE_URL }/release-group`;
+    const url = `${ MB_BASE_URL }/release-group`;
 
     try {
       const response = await axios.get(url, {
-        headers: { 'User-Agent': USER_AGENT },
+        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query:  `artist:"${ artist }" AND type:${ type }`,
           limit,
@@ -235,11 +233,11 @@ export class MusicBrainzClient {
     query: string,
     limit: number = 20
   ): Promise<SearchResults<AlbumSearchResult>> {
-    const url = `${ BASE_URL }/release-group`;
+    const url = `${ MB_BASE_URL }/release-group`;
 
     try {
       const response = await axios.get(url, {
-        headers: { 'User-Agent': USER_AGENT },
+        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query,
           limit,
@@ -285,11 +283,11 @@ export class MusicBrainzClient {
     query: string,
     limit: number = 20
   ): Promise<SearchResults<RecordingSearchResult>> {
-    const url = `${ BASE_URL }/recording`;
+    const url = `${ MB_BASE_URL }/recording`;
 
     try {
       const response = await axios.get(url, {
-        headers: { 'User-Agent': USER_AGENT },
+        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query,
           limit,
@@ -341,11 +339,11 @@ export class MusicBrainzClient {
     query: string,
     limit: number = 20
   ): Promise<SearchResults<ArtistSearchResult>> {
-    const url = `${ BASE_URL }/artist`;
+    const url = `${ MB_BASE_URL }/artist`;
 
     try {
       const response = await axios.get(url, {
-        headers: { 'User-Agent': USER_AGENT },
+        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query,
           limit,
@@ -390,11 +388,11 @@ export class MusicBrainzClient {
    * Uses a single API call (browse releases with status=official) to avoid rate limiting.
    */
   async getExpectedTrackCount(mbid: string): Promise<number | null> {
-    const url = `${ BASE_URL }/release`;
+    const url = `${ MB_BASE_URL }/release`;
 
     try {
       const response = await axios.get(url, {
-        headers: { 'User-Agent': USER_AGENT },
+        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           'release-group': mbid,
           status:          'official',
@@ -449,11 +447,11 @@ export class MusicBrainzClient {
    */
   async getReleaseGroupTracks(mbid: string): Promise<ReleaseGroupTrack[]> {
     // First, get releases for this release-group
-    const releasesUrl = `${ BASE_URL }/release`;
+    const releasesUrl = `${ MB_BASE_URL }/release`;
 
     try {
       const releasesResponse = await axios.get(releasesUrl, {
-        headers: { 'User-Agent': USER_AGENT },
+        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           'release-group': mbid,
           limit:           1,
@@ -474,9 +472,9 @@ export class MusicBrainzClient {
       const releaseId = releases[0].id;
 
       // Now get the full release with recordings
-      const releaseUrl = `${ BASE_URL }/release/${ releaseId }`;
+      const releaseUrl = `${ MB_BASE_URL }/release/${ releaseId }`;
       const releaseResponse = await axios.get(releaseUrl, {
-        headers: { 'User-Agent': USER_AGENT },
+        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           inc: 'recordings',
           fmt: 'json',

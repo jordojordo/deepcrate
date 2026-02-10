@@ -22,13 +22,7 @@ import {
 import { scoreSearchResponses } from '@server/services/downloads/searchResultScorer';
 import DownloadTask, { DownloadTaskType, DownloadTaskStatus } from '@server/models/DownloadTask';
 import WishlistItem from '@server/models/WishlistItem';
-import {
-  emitDownloadTaskCreated,
-  emitDownloadTaskUpdated,
-  emitDownloadProgress,
-  emitDownloadStatsUpdated,
-  emitDownloadSelectionExpired,
-} from '@server/plugins/io/namespaces/downloadsNamespace';
+import { downloadsNs } from '@server/plugins/io/namespaces';
 import { normalizeSlskdPath } from '@server/utils/slskdPaths';
 import { getDominantQualityInfo } from '@server/utils/audioQuality';
 import { JOB_INTERVALS } from '@server/config/jobs';
@@ -60,7 +54,7 @@ export class DownloadService {
   private async emitStatsUpdate(): Promise<void> {
     const stats = await this.getStats();
 
-    emitDownloadStatsUpdated(stats);
+    downloadsNs.emitDownloadStatsUpdated(stats);
   }
 
   async getActive(params: {
@@ -180,7 +174,7 @@ export class DownloadService {
       const progress = calculateProgress(task, slskdTransfers);
 
       if (progress) {
-        emitDownloadProgress({
+        downloadsNs.emitDownloadProgress({
           id: task.id,
           progress,
         });
@@ -525,8 +519,7 @@ export class DownloadService {
 
     logger.info(`Created download task: ${ params.wishlistKey }`);
 
-    // Emit socket events
-    emitDownloadTaskCreated({
+    downloadsNs.emitDownloadTaskCreated({
       task: {
         id:             task.id,
         wishlistKey:    task.wishlistKey,
@@ -627,8 +620,7 @@ export class DownloadService {
 
     logger.debug(`Updated task ${ id } to status ${ status }`);
 
-    // Emit socket events
-    emitDownloadTaskUpdated({
+    downloadsNs.emitDownloadTaskUpdated({
       id,
       status,
       slskdUsername: details?.slskdUsername,
@@ -803,7 +795,7 @@ export class DownloadService {
       errorMessage:       undefined,
     }));
 
-    emitDownloadTaskUpdated({
+    downloadsNs.emitDownloadTaskUpdated({
       id:            task.id,
       status:        'queued',
       slskdUsername: username,
@@ -879,7 +871,7 @@ export class DownloadService {
       errorMessage:       undefined,
     }));
 
-    emitDownloadTaskUpdated({
+    downloadsNs.emitDownloadTaskUpdated({
       id:     task.id,
       status: 'searching',
     });
@@ -966,13 +958,13 @@ export class DownloadService {
           skippedUsernames:   undefined,
         }));
 
-        emitDownloadSelectionExpired({
+        downloadsNs.emitDownloadSelectionExpired({
           id:     task.id,
           artist: task.artist,
           album:  task.album,
         });
 
-        emitDownloadTaskUpdated({
+        downloadsNs.emitDownloadTaskUpdated({
           id:           task.id,
           status:       'failed',
           errorMessage: 'Selection timeout expired',

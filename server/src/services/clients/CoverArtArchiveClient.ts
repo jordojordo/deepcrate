@@ -1,3 +1,5 @@
+import { COVER_ART_ARCHIVE_BASE_URL } from '@server/constants/clients';
+
 /**
  * CoverArtArchiveClient provides access to album cover art.
  * https://coverartarchive.org/
@@ -11,7 +13,7 @@ export class CoverArtArchiveClient {
       return null;
     }
 
-    return `https://coverartarchive.org/release-group/${ releaseGroupMbid }/front-${ size }`;
+    return `${ COVER_ART_ARCHIVE_BASE_URL }/release-group/${ releaseGroupMbid }/front-${ size }`;
   }
 }
 

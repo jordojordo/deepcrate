@@ -1,10 +1,12 @@
+import type { SelectedAlbumTrack, AlbumPreviewQuery } from '@server/types/preview';
+
 import { LRUCache } from 'lru-cache';
+
 import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
-import { DeezerClient } from './clients/DeezerClient';
-import { SpotifyClient } from './clients/SpotifyClient';
-import { MusicBrainzClient } from './clients/MusicBrainzClient';
-import type { SelectedAlbumTrack, AlbumPreviewQuery } from '@server/types/preview';
+import { DeezerClient } from '@server/services/clients/DeezerClient';
+import { SpotifyClient } from '@server/services/clients/SpotifyClient';
+import { MusicBrainzClient } from '@server/services/clients/MusicBrainzClient';
 
 interface CachedTrack {
   track: SelectedAlbumTrack | null;
@@ -48,7 +50,7 @@ export class AlbumTrackSelector {
    */
   async selectTrack(query: AlbumPreviewQuery): Promise<SelectedAlbumTrack | null> {
     const {
-      artist, album, mbid, sourceTrack 
+      artist, album, mbid, sourceTrack
     } = query;
 
     const cacheKey = this.getCacheKey(artist, album);

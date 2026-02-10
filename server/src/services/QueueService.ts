@@ -1,15 +1,12 @@
 import { Op } from '@sequelize/core';
+
 import QueueItem, { QueueItemSource } from '@server/models/QueueItem';
-import WishlistService from './WishlistService';
-import LibraryService from './LibraryService';
+import WishlistService from '@server/services/WishlistService';
+import LibraryService from '@server/services/LibraryService';
 import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
 import logger from '@server/config/logger';
-import {
-  emitQueueItemAdded,
-  emitQueueItemUpdated,
-  emitQueueStatsUpdated,
-} from '@server/plugins/io/namespaces/queueNamespace';
+import { queueNs } from '@server/plugins/io/namespaces';
 
 /**
  * QueueService manages the pending approval queue.
@@ -130,17 +127,16 @@ export class QueueService {
     const processedAt = new Date();
 
     for (const item of items) {
-      emitQueueItemUpdated({
+      queueNs.emitQueueItemUpdated({
         mbid:   item.mbid,
         status: 'approved',
         processedAt,
       });
     }
 
-    // Emit stats update
     const stats = await this.getStats();
 
-    emitQueueStatsUpdated(stats);
+    queueNs.emitQueueStatsUpdated(stats);
 
     return items.length;
   }
@@ -191,17 +187,16 @@ export class QueueService {
 
     // Emit socket events for each rejected item
     for (const mbid of mbids) {
-      emitQueueItemUpdated({
+      queueNs.emitQueueItemUpdated({
         mbid,
         status: 'rejected',
         processedAt,
       });
     }
 
-    // Emit stats update
     const stats = await this.getStats();
 
-    emitQueueStatsUpdated(stats);
+    queueNs.emitQueueStatsUpdated(stats);
 
     return affectedCount;
   }
@@ -282,12 +277,11 @@ export class QueueService {
 
     logger.info(`Added to pending queue: ${ item.artist } - ${ item.album || item.title }${ inLibrary ? ' (in library)' : '' }`);
 
-    // Emit socket events
-    emitQueueItemAdded({ item: queueItem });
+    queueNs.emitQueueItemAdded({ item: queueItem });
 
     const stats = await this.getStats();
 
-    emitQueueStatsUpdated(stats);
+    queueNs.emitQueueStatsUpdated(stats);
 
     return queueItem;
   }
