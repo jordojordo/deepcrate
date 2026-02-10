@@ -19,6 +19,7 @@ import WishlistItem from '@server/models/WishlistItem';
 import { DownloadService } from '@server/services/DownloadService';
 import { WishlistService } from '@server/services/WishlistService';
 import { SearchQueryBuilder } from '@server/services/SearchQueryBuilder';
+import { TrackCountService } from '@server/services/TrackCountService';
 import { SlskdClient } from '@server/services/clients/SlskdClient';
 import { isJobCancelled } from '@server/plugins/jobs';
 
@@ -146,6 +147,24 @@ export async function slskdDownloaderJob(): Promise<void> {
             await withDbWrite(() => task.update({ wishlistItemId: wishlistItem.id }));
           }
 
+          // Resolve expected track count if not yet set (album tasks only)
+          if (task.expectedTrackCount == null && task.type === 'album') {
+            try {
+              const trackCountService = new TrackCountService();
+              const count = await trackCountService.resolveExpectedTrackCount({
+                mbid:   task.mbid ?? undefined,
+                artist: task.artist,
+                album:  task.album,
+              });
+
+              if (count !== null) {
+                await withDbWrite(() => task.update({ expectedTrackCount: count }));
+              }
+            } catch(error) {
+              logger.debug(`Failed to resolve track count for ${ wishlistKey }: ${ error instanceof Error ? error.message : String(error) }`);
+            }
+          }
+
           await wishlistService.markProcessed(wishlistItem.id);
         } catch(error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -267,6 +286,7 @@ async function findOrCreateTask(wishlistItem: WishlistItem, wishlistKey: string)
       retryCount:     0,
       queuedAt:       new Date(),
       year:           wishlistItem.year ?? undefined,
+      mbid:           wishlistItem.mbid ?? undefined,
     },
   }));
 
@@ -574,7 +594,14 @@ async function attemptSearch(params: {
   }
 
   // Auto mode: pick the best response automatically
-  const response = pickBestResponse(responses, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes, qualityPreferences);
+  const response = pickBestResponse(
+    responses,
+    maxResponsesToEval,
+    minFileSizeBytes,
+    maxFileSizeBytes,
+    qualityPreferences,
+    task.expectedTrackCount ?? undefined
+  );
 
   if (!response) {
     await slskdClient.deleteSearch(searchId);
@@ -626,6 +653,7 @@ function pickBestResponse(
   minFileSizeBytes: number,
   maxFileSizeBytes: number,
   qualityPreferences?: QualityPreferences,
+  expectedTrackCount?: number,
 ): SlskdSearchResponse | null {
   // Limit responses to evaluate for performance
   const toEvaluate = responses.slice(0, maxToEvaluate);
@@ -664,11 +692,23 @@ function pickBestResponse(
       // Calculate quality score
       const qualityScore = qualityPreferences?.enabled ? calculateAverageQualityScore(musicFiles, qualityPreferences) : QUALITY_SCORES.unknown;
 
+      // 3-level exactness: 2 = exact match, 1 = overcomplete, 0 = incomplete
+      let exactnessScore = 0;
+
+      if (expectedTrackCount && expectedTrackCount > 0) {
+        if (musicFiles.length === expectedTrackCount) {
+          exactnessScore = 2;
+        } else if (musicFiles.length > expectedTrackCount) {
+          exactnessScore = 1;
+        }
+      }
+
       return {
         response,
         musicFiles,
         musicFileCount: musicFiles.length,
         qualityScore,
+        exactnessScore,
         totalSize:      musicFiles.reduce((sum, file) => sum + (file.size || 0), 0),
         uploadSpeed:    response.uploadSpeed || 0,
         hasSlot:        response.hasFreeUploadSlot ? 1 : 0,
@@ -680,7 +720,7 @@ function pickBestResponse(
     return null;
   }
 
-  // Sort: hasSlot → qualityScore → musicFileCount → totalSize → uploadSpeed
+  // Sort: hasSlot → qualityScore → exactnessScore → closeness-to-expected → totalSize → uploadSpeed
   scored.sort((a, b) => {
     if (b.hasSlot !== a.hasSlot) {
       return b.hasSlot - a.hasSlot;
@@ -690,8 +730,22 @@ function pickBestResponse(
       return b.qualityScore - a.qualityScore;
     }
 
-    if (b.musicFileCount !== a.musicFileCount) {
-      return b.musicFileCount - a.musicFileCount;
+    if (b.exactnessScore !== a.exactnessScore) {
+      return b.exactnessScore - a.exactnessScore;
+    }
+
+    // Prefer file count closest to expected (if known), otherwise prefer more
+    if (expectedTrackCount && expectedTrackCount > 0) {
+      const aDiff = Math.abs(a.musicFileCount - expectedTrackCount);
+      const bDiff = Math.abs(b.musicFileCount - expectedTrackCount);
+
+      if (aDiff !== bDiff) {
+        return aDiff - bDiff;
+      }
+    } else {
+      if (b.musicFileCount !== a.musicFileCount) {
+        return b.musicFileCount - a.musicFileCount;
+      }
     }
 
     if (b.totalSize !== a.totalSize) {

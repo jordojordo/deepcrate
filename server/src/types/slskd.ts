@@ -138,13 +138,28 @@ export interface DirectoryGroup {
 }
 
 /**
+ * Breakdown of individual score components for transparency
+ */
+export interface ScoreBreakdown {
+  hasSlot:           number; // 0 or 100
+  qualityScore:      number; // 0-1000
+  fileCountScore:    number; // 0-file_count_cap (peaks at expected track count, decays for excess)
+  uploadSpeedBonus:  number; // 0-100
+  completenessScore: number; // 0-completeness_weight (decays for excess when penalize_excess enabled)
+}
+
+/**
  * Search response with scoring info for UI display
  */
 export interface ScoredSearchResponse {
-  response:       SlskdSearchResponse;
-  score:          number;
-  musicFileCount: number;
-  totalSize:      number;
-  qualityInfo:    QualityInfo | null;
-  directories:    DirectoryGroup[];
+  response:            SlskdSearchResponse;
+  score:               number;
+  scorePercent:        number; // 0-100, score as percentage of theoretical max
+  scoreBreakdown:      ScoreBreakdown;
+  musicFileCount:      number;
+  totalSize:           number;
+  qualityInfo:         QualityInfo | null;
+  directories:         DirectoryGroup[];
+  expectedTrackCount?: number;
+  completenessRatio?:  number;
 }

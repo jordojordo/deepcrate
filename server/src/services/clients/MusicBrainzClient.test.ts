@@ -142,4 +142,95 @@ describe('MusicBrainzClient', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('getExpectedTrackCount', () => {
+    it('returns track count from a single release', async() => {
+      const mbid = 'rg-single';
+
+      nock('https://musicbrainz.org')
+        .get('/ws/2/release')
+        .query({
+          'release-group': mbid, status: 'official', limit: '5', fmt: 'json' 
+        })
+        .reply(200, {
+          releases: [
+            { id: 'r1', media: [{ 'track-count': 10 }] },
+          ],
+        });
+
+      const result = await client.getExpectedTrackCount(mbid);
+
+      expect(result).toBe(10);
+    });
+
+    it('returns median track count across multiple releases', async() => {
+      const mbid = 'rg-multi';
+
+      nock('https://musicbrainz.org')
+        .get('/ws/2/release')
+        .query({
+          'release-group': mbid, status: 'official', limit: '5', fmt: 'json' 
+        })
+        .reply(200, {
+          releases: [
+            { id: 'r1', media: [{ 'track-count': 10 }] },
+            { id: 'r2', media: [{ 'track-count': 10 }] },
+            { id: 'r3', media: [{ 'track-count': 15 }] }, // deluxe edition
+          ],
+        });
+
+      const result = await client.getExpectedTrackCount(mbid);
+
+      expect(result).toBe(10);
+    });
+
+    it('returns null when no releases found', async() => {
+      const mbid = 'rg-empty';
+
+      nock('https://musicbrainz.org')
+        .get('/ws/2/release')
+        .query({
+          'release-group': mbid, status: 'official', limit: '5', fmt: 'json' 
+        })
+        .reply(200, { releases: [] });
+
+      const result = await client.getExpectedTrackCount(mbid);
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null on API error', async() => {
+      const mbid = 'rg-error';
+
+      nock('https://musicbrainz.org')
+        .get('/ws/2/release')
+        .query({
+          'release-group': mbid, status: 'official', limit: '5', fmt: 'json' 
+        })
+        .reply(503);
+
+      const result = await client.getExpectedTrackCount(mbid);
+
+      expect(result).toBeNull();
+    });
+
+    it('sums track counts across multi-disc releases', async() => {
+      const mbid = 'rg-multi-disc';
+
+      nock('https://musicbrainz.org')
+        .get('/ws/2/release')
+        .query({
+          'release-group': mbid, status: 'official', limit: '5', fmt: 'json' 
+        })
+        .reply(200, {
+          releases: [
+            { id: 'r1', media: [{ 'track-count': 8 }, { 'track-count': 7 }] },
+          ],
+        });
+
+      const result = await client.getExpectedTrackCount(mbid);
+
+      expect(result).toBe(15);
+    });
+  });
 });

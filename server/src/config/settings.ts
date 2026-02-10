@@ -82,6 +82,20 @@ const SlskdQualityPreferencesSchema = z.object({
   reject_lossless:    z.boolean().default(false),
 });
 
+const SlskdCompletenessSchema = z.object({
+  enabled:              z.boolean().default(true),
+  require_complete:     z.boolean().default(false),
+  completeness_weight:  z.number().int().min(0).max(1000)
+    .default(500),
+  min_completeness_ratio: z.number().min(0).max(1)
+    .default(0.5),
+  file_count_cap:       z.number().int().min(0).max(1000)
+    .default(200),
+  penalize_excess:      z.boolean().default(true),
+  excess_decay_rate:    z.number().min(0).max(10)
+    .default(2.0),
+});
+
 const SlskdSearchSchema = z.object({
   // Query templates - variables: {artist}, {album}, {title}, {year}
   artist_query_template:     z.string().default('{artist}'),
@@ -114,6 +128,7 @@ const SlskdSearchSchema = z.object({
   }),
 
   quality_preferences: SlskdQualityPreferencesSchema.optional(),
+  completeness:        SlskdCompletenessSchema.optional(),
 });
 
 const SlskdSelectionSchema = z.object({
@@ -311,6 +326,7 @@ export type SlskdSettings = z.infer<typeof SlskdSettingsSchema>;
 export type SlskdSearchSettings = z.infer<typeof SlskdSearchSchema>;
 export type SlskdSearchRetrySettings = z.infer<typeof SlskdSearchRetrySchema>;
 export type SlskdQualityPreferencesSettings = z.infer<typeof SlskdQualityPreferencesSchema>;
+export type SlskdCompletenessSettings = z.infer<typeof SlskdCompletenessSchema>;
 export type SlskdSelectionSettings = z.infer<typeof SlskdSelectionSchema>;
 export type CatalogDiscoverySettings = z.infer<typeof CatalogDiscoverySettingsSchema>;
 export type LibraryDuplicateSettings = z.infer<typeof LibraryDuplicateSettingsSchema>;

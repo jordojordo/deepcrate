@@ -114,6 +114,48 @@ export class DeezerClient {
   }
 
   /**
+   * Get album track count from search results (no additional API call needed)
+   */
+  async getAlbumTrackCount(artist: string, album: string): Promise<number | null> {
+    try {
+      const exactQuery = `artist:"${ artist }" album:"${ album }"`;
+      const response = await axios.get<DeezerAlbumSearchResponse>(`${ BASE_URL }/search/album`, {
+        params:  { q: exactQuery },
+        timeout: 10000,
+      });
+
+      const { data } = response.data;
+
+      if (data && data.length > 0 && data[0].nb_tracks > 0) {
+        return data[0].nb_tracks;
+      }
+
+      // Fallback to looser search
+      const looseQuery = `${ artist } ${ album }`;
+      const looseResponse = await axios.get<DeezerAlbumSearchResponse>(`${ BASE_URL }/search/album`, {
+        params:  { q: looseQuery },
+        timeout: 10000,
+      });
+
+      const looseData = looseResponse.data.data;
+
+      if (looseData && looseData.length > 0 && looseData[0].nb_tracks > 0) {
+        return looseData[0].nb_tracks;
+      }
+
+      return null;
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.debug(`Deezer album track count failed for '${ artist } - ${ album }': ${ error.message }`);
+      } else {
+        logger.debug(`Deezer album track count failed for '${ artist } - ${ album }': ${ String(error) }`);
+      }
+
+      return null;
+    }
+  }
+
+  /**
    * Get tracks for an album
    */
   async getAlbumTracks(albumId: number): Promise<DeezerAlbumTracksResponse['data']> {

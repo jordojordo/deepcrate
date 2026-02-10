@@ -45,6 +45,8 @@ export interface DownloadTaskAttributes {
   searchQuery?:        string;           // Query used for search (for editing/retry)
   selectionExpiresAt?: Date;             // When selection times out
   skippedUsernames?:   string[];         // Usernames skipped for this download
+  mbid?:               string;           // MusicBrainz release-group ID
+  expectedTrackCount?: number;           // Expected number of tracks from metadata sources
   errorMessage?:       string;           // Error details for failed status
   retryCount:          number;           // Number of retry attempts
   queuedAt:            Date;             // When added to download queue
@@ -88,6 +90,8 @@ class DownloadTask extends Model<DownloadTaskAttributes, DownloadTaskCreationAtt
   declare searchQuery?:        string;
   declare selectionExpiresAt?: Date;
   declare skippedUsernames?:   string[];
+  declare mbid?:               string;
+  declare expectedTrackCount?: number;
   declare errorMessage?:       string;
   declare retryCount:          number;
   declare queuedAt:            Date;
@@ -240,6 +244,17 @@ DownloadTask.init(
       allowNull:  true,
       columnName: 'skipped_usernames',
       comment:    'Usernames skipped for this download',
+    },
+    mbid: {
+      type:      DataTypes.STRING(255),
+      allowNull: true,
+      comment:   'MusicBrainz release-group ID',
+    },
+    expectedTrackCount: {
+      type:       DataTypes.INTEGER,
+      allowNull:  true,
+      columnName: 'expected_track_count',
+      comment:    'Expected number of tracks from metadata sources',
     },
     errorMessage: {
       type:       DataTypes.TEXT,

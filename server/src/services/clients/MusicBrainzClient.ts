@@ -386,6 +386,65 @@ export class MusicBrainzClient {
   }
 
   /**
+   * Get expected track count for a release group using median across official releases.
+   * Uses a single API call (browse releases with status=official) to avoid rate limiting.
+   */
+  async getExpectedTrackCount(mbid: string): Promise<number | null> {
+    const url = `${ BASE_URL }/release`;
+
+    try {
+      const response = await axios.get(url, {
+        headers: { 'User-Agent': USER_AGENT },
+        params:  {
+          'release-group': mbid,
+          status:          'official',
+          limit:           5,
+          fmt:             'json',
+        },
+        timeout: 15000,
+      });
+
+      const releases = response.data.releases || [];
+
+      if (!releases.length) {
+        logger.debug(`No official releases found for release-group ${ mbid }`);
+
+        return null;
+      }
+
+      // Extract track counts from media arrays
+      const trackCounts: number[] = [];
+
+      for (const release of releases) {
+        const media = release.media || [];
+        const count = media.reduce((sum: number, m: { 'track-count'?: number }) => sum + (m['track-count'] || 0), 0);
+
+        if (count > 0) {
+          trackCounts.push(count);
+        }
+      }
+
+      if (!trackCounts.length) {
+        return null;
+      }
+
+      // Use median to avoid deluxe/bonus edition skew
+      trackCounts.sort((a, b) => a - b);
+      const mid = Math.floor(trackCounts.length / 2);
+
+      return trackCounts.length % 2 === 0? Math.round((trackCounts[mid - 1] + trackCounts[mid]) / 2): trackCounts[mid];
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.error(`Failed to get expected track count for ${ mbid }: ${ error.message }`);
+      } else {
+        logger.error(`Failed to get expected track count for ${ mbid }: ${ String(error) }`);
+      }
+
+      return null;
+    }
+  }
+
+  /**
    * Get track listing for a release group (album) by MBID
    */
   async getReleaseGroupTracks(mbid: string): Promise<ReleaseGroupTrack[]> {

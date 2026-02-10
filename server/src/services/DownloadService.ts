@@ -946,7 +946,8 @@ export class DownloadService {
     const scoredResults = this.scoreSearchResponses(
       responses,
       skippedUsernames,
-      qualityPreferences
+      qualityPreferences,
+      task.expectedTrackCount ?? undefined
     );
 
     return {
@@ -963,17 +964,58 @@ export class DownloadService {
   }
 
   /**
+   * Compute the theoretical max score for the current config.
+   * Used to derive a meaningful percentage for each result.
+   */
+  private computeMaxScore(
+    qualityPreferences: QualityPreferences | undefined,
+    completenessConfig: { file_count_cap?: number; completeness_weight?: number; enabled?: boolean } | undefined,
+    hasExpectedTrackCount: boolean
+  ): number {
+    const maxHasSlot = 100;
+    const maxUploadSpeedBonus = 100;
+    const maxFileCountScore = completenessConfig?.file_count_cap ?? 200;
+
+    let maxQualityScore: number;
+
+    if (!qualityPreferences?.enabled) {
+      maxQualityScore = QUALITY_SCORES.unknown;
+    } else if (qualityPreferences.rejectLossless) {
+      // Best non-lossless: high tier + preferred format + bitrate bonus
+      maxQualityScore = QUALITY_SCORES.high + 100 + 50;
+    } else if (qualityPreferences.preferLossless) {
+      // Lossless + preferred format + lossless bonus
+      maxQualityScore = QUALITY_SCORES.lossless + 100 + 500;
+    } else {
+      // Lossless + preferred format (no lossless bonus)
+      maxQualityScore = QUALITY_SCORES.lossless + 100;
+    }
+
+    let maxCompletenessScore = 0;
+
+    if (hasExpectedTrackCount && completenessConfig?.enabled !== false) {
+      maxCompletenessScore = completenessConfig?.completeness_weight ?? 500;
+    }
+
+    return maxHasSlot + maxQualityScore + maxFileCountScore + maxUploadSpeedBonus + maxCompletenessScore;
+  }
+
+  /**
    * Score and group search responses for UI display
    */
   private scoreSearchResponses(
     responses: SlskdSearchResponse[],
     skippedUsernames: string[],
-    qualityPreferences?: QualityPreferences
+    qualityPreferences?: QualityPreferences,
+    expectedTrackCount?: number
   ): ScoredSearchResponse[] {
     const config = getConfig();
     const searchSettings = config.slskd?.search;
     const minFileSizeBytes = (searchSettings?.min_file_size_mb ?? 1) * MB_TO_BYTES;
     const maxFileSizeBytes = (searchSettings?.max_file_size_mb ?? 500) * MB_TO_BYTES;
+    const completenessConfig = searchSettings?.completeness;
+    const hasExpectedTrackCount = !!(expectedTrackCount && expectedTrackCount > 0);
+    const maxScore = this.computeMaxScore(qualityPreferences, completenessConfig, hasExpectedTrackCount);
 
     return responses
       .filter(response => !skippedUsernames.includes(response.username))
@@ -1008,22 +1050,92 @@ export class DownloadService {
 
         const qualityScore = qualityPreferences?.enabled? calculateAverageQualityScore(musicFiles, qualityPreferences): QUALITY_SCORES.unknown;
 
-        const hasSlot = response.hasFreeUploadSlot ? 1000 : 0;
+        const hasSlot = response.hasFreeUploadSlot ? 100 : 0;
+        const fileCountCap = completenessConfig?.file_count_cap ?? 200;
+        let fileCountScore: number;
+
+        if (expectedTrackCount && expectedTrackCount > 0) {
+          if (musicFiles.length <= expectedTrackCount) {
+            fileCountScore = fileCountCap * (musicFiles.length / expectedTrackCount);
+          } else {
+            const excessRatio = (musicFiles.length - expectedTrackCount) / expectedTrackCount;
+            const decayRate = completenessConfig?.excess_decay_rate ?? 2.0;
+
+            fileCountScore = fileCountCap / (1 + decayRate * excessRatio);
+          }
+        } else {
+          fileCountScore = Math.min(musicFiles.length * 10, fileCountCap);
+        }
+
         const uploadSpeedBonus = Math.min(response.uploadSpeed || 0, 1000000) / 10000; // Max 100 points for 1MB/s
-        const score = hasSlot + qualityScore + (musicFiles.length * 10) + uploadSpeedBonus;
+
+        let completenessScore = 0;
+        let completenessRatio: number | undefined;
+
+        if (expectedTrackCount && expectedTrackCount > 0 && completenessConfig?.enabled !== false) {
+          completenessRatio = musicFiles.length / expectedTrackCount;
+          const weight = completenessConfig?.completeness_weight ?? 500;
+          const minRatio = completenessConfig?.min_completeness_ratio ?? 0.5;
+
+          if (completenessRatio >= 1.0) {
+            const penalizeExcess = completenessConfig?.penalize_excess !== false;
+
+            if (penalizeExcess && completenessRatio > 1.0) {
+              const excessRatio = (musicFiles.length - expectedTrackCount) / expectedTrackCount;
+              const decayRate = completenessConfig?.excess_decay_rate ?? 2.0;
+
+              completenessScore = weight / (1 + decayRate * excessRatio);
+            } else {
+              completenessScore = weight;
+            }
+          } else if (completenessRatio >= minRatio) {
+            completenessScore = weight * completenessRatio;
+          }
+        }
+
+        const score = hasSlot + qualityScore + fileCountScore + uploadSpeedBonus + completenessScore;
+
+        const scoreBreakdown = {
+          hasSlot,
+          qualityScore,
+          fileCountScore,
+          uploadSpeedBonus,
+          completenessScore,
+        };
 
         const directories = this.groupFilesByDirectory(musicFiles);
+
+        const scorePercent = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 
         return {
           response,
           score,
+          scorePercent,
+          scoreBreakdown,
           musicFileCount: musicFiles.length,
           totalSize:      musicFiles.reduce((sum, f) => sum + (f.size || 0), 0),
           qualityInfo:    getDominantQualityInfo(musicFiles),
           directories,
+          expectedTrackCount,
+          completenessRatio,
         };
       })
-      .filter(scored => scored.musicFileCount > 0)
+      .filter(scored => {
+        if (scored.musicFileCount === 0) {
+          return false;
+        }
+
+        // Hard reject incomplete results if configured
+        if (
+          completenessConfig?.require_complete
+          && expectedTrackCount
+          && scored.musicFileCount < expectedTrackCount
+        ) {
+          return false;
+        }
+
+        return true;
+      })
       .sort((a, b) => b.score - a.score);
   }
 
@@ -1332,7 +1444,9 @@ export class DownloadService {
       rejectLossless:   qualityPrefs.reject_lossless ?? false,
     } : undefined;
 
-    const scoredResults = this.scoreSearchResponses(responses, skippedUsernames, qualityPreferences);
+    const scoredResults = this.scoreSearchResponses(
+      responses, skippedUsernames, qualityPreferences, task.expectedTrackCount ?? undefined
+    );
 
     if (scoredResults.length === 0) {
       return { success: false, error: 'No valid results after filtering' };
