@@ -5,7 +5,7 @@ import type { DownloadsTab } from '@/types';
 import { onMounted } from 'vue';
 
 import { useTabSync } from '@/composables/useTabSync';
-import { DOWNLOADS_TABS } from '@/types';
+import { DOWNLOADS_TABS } from '@/constants/settings';
 import { useDownloads } from '@/composables/useDownloads';
 import { useDownloadsSocket } from '@/composables/useDownloadsSocket';
 import { useJobs } from '@/composables/useJobs';

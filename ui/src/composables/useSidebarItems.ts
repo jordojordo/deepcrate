@@ -1,6 +1,7 @@
-import type { SidebarItem } from '@/components/layout/AppShell.vue';
+import type { SidebarItem } from '@/types';
 
 import { computed } from 'vue';
+
 import { useAuthStore } from '@/stores/auth';
 import { useStats } from '@/composables/useStats';
 import { ROUTE_PATHS, ROUTE_NAMES } from '@/constants/routes';

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { DownloadStats as DownloadStatsType } from '@/types';
+import type { DownloadStats } from '@/types';
 
 import DashboardStatsCard from '@/components/dashboard/DashboardStatsCard.vue';
 
 interface Props {
   loading: boolean;
-  stats:   DownloadStatsType | null;
+  stats:   DownloadStats | null;
 }
 
 defineProps<Props>();

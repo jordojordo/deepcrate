@@ -130,3 +130,11 @@ export interface SearchResultsResponse {
   skippedUsernames:     string[];
   minCompletenessRatio: number;
 }
+
+export interface RetryRequest {
+  ids: string[];
+}
+
+export interface DeleteRequest {
+  ids: string[];
+}

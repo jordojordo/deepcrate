@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type {
-  WishlistFilters, WishlistSort, ProcessedFilter, WishlistItemSource, WishlistItemType
+  WishlistFilters,
+  WishlistSort,
+  ProcessedFilter,
+  WishlistItemSource,
+  WishlistItemType,
+  ViewMode
 } from '@/types';
 
 import Select from 'primevue/select';
 import Button from 'primevue/button';
-
-export type ViewMode = 'grid' | 'list';
 
 const props = defineProps<{
   modelValue:    WishlistFilters;

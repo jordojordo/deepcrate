@@ -1,6 +1,7 @@
-import type { QueueStats } from '@/services/queue';
+import type { QueueStats } from '@/types';
 
 import { ref, computed, watch } from 'vue';
+
 import * as queueApi from '@/services/queue';
 import * as downloadsApi from '@/services/downloads';
 import * as libraryApi from '@/services/library';

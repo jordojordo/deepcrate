@@ -33,6 +33,18 @@ export interface PlayerState {
   source:       'deezer' | 'spotify' | null;
 }
 
+export interface GetPreviewParams {
+  artist: string;
+  track:  string;
+}
+
+export interface GetAlbumPreviewParams {
+  artist:       string;
+  album:        string;
+  mbid?:        string;
+  sourceTrack?: string;
+}
+
 /**
  * Convert a QueueItem to a PreviewTrack
  */

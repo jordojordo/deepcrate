@@ -1,6 +1,7 @@
+import type { QueueFilters } from '@/types';
+
 import { computed } from 'vue';
 import { useQueueStore } from '@/stores/queue';
-import type { QueueFilters } from '@/types';
 
 export function useQueue() {
   const store = useQueueStore();

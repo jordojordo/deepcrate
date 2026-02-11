@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShortcutDefinition } from '@/composables/useKeyboardShortcuts';
+import type { ShortcutDefinition } from '@/types';
 
 import Dialog from 'primevue/dialog';
 

@@ -1,10 +1,6 @@
-import type { JobStatus, TriggerResponse, CancelResponse } from '@/types';
+import type { JobStatusResponse, TriggerResponse, CancelResponse } from '@/types';
 
 import client from './api';
-
-export interface JobStatusResponse {
-  jobs: JobStatus[];
-}
 
 export async function getJobStatus(): Promise<JobStatusResponse> {
   const response = await client.get<JobStatusResponse>('/jobs/status');

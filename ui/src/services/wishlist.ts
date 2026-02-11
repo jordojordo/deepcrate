@@ -1,7 +1,10 @@
 import type {
-  WishlistEntry,
+  AddWishlistResponse,
   AddWishlistRequest,
+  DeleteWishlistResponse,
+  UpdateWishlistResponse,
   UpdateWishlistRequest,
+  WishlistResponse,
   WishlistFilters,
   PaginatedWishlistResponse,
   BulkOperationResponse,
@@ -11,28 +14,6 @@ import type {
 } from '@/types';
 
 import client from './api';
-
-export interface WishlistResponse {
-  entries: WishlistEntry[];
-  total:   number;
-}
-
-export interface AddWishlistResponse {
-  success: boolean;
-  message: string;
-  entry:   WishlistEntry;
-}
-
-export interface UpdateWishlistResponse {
-  success: boolean;
-  message: string;
-  entry:   WishlistEntry;
-}
-
-export interface DeleteWishlistResponse {
-  success: boolean;
-  message: string;
-}
 
 export async function getWishlist(): Promise<WishlistResponse> {
   const response = await client.get<WishlistResponse>('/wishlist');

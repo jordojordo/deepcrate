@@ -1,12 +1,11 @@
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 import axios from 'axios';
+
+import { MAX_RETRIES, RETRY_DELAYS } from '@/constants/api';
 import { ROUTE_PATHS } from '@/constants/routes';
 
 let redirectingToLogin = false;
-
-const MAX_RETRIES = 3;
-const RETRY_DELAYS = [500, 1000, 2000]; // exponential backoff in ms
 
 /**
  * Toast callback for showing error messages from outside Vue components.
@@ -26,9 +25,6 @@ interface RetryConfig extends InternalAxiosRequestConfig {
   _retryCount?: number;
 }
 
-/**
- * Check if error is a database busy error (503 with database_busy code)
- */
 function isDatabaseBusyError(error: AxiosError): boolean {
   if (error.response?.status !== 503) {
     return false;
@@ -119,7 +115,6 @@ client.interceptors.response.use(
         return client.request(config);
       }
 
-      // All retries exhausted - show toast and reject
       if (showErrorToast) {
         showErrorToast('Database Busy', `The database is busy after ${ MAX_RETRIES } retries. Please try again later.`);
       }

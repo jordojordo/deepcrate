@@ -8,9 +8,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 
 import * as settingsApi from '@/services/settings';
-import { DEFAULT_UI_PREFERENCES } from '@/constants/settings';
-
-const UI_PREFS_KEY = 'deepcrate_ui_prefs';
+import { DEFAULT_UI_PREFERENCES, UI_PREFS_KEY } from '@/constants/settings';
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<SettingsResponse | null>(null);
@@ -18,7 +16,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const saving = ref(false);
   const error = ref<string | null>(null);
 
-  // UI preferences (localStorage only)
+  // localStorage only
   const uiPreferences = ref<UIPreferences>(loadUIPreferences());
 
   const listenbrainz = computed(() => settings.value?.listenbrainz);

@@ -1,6 +1,7 @@
 import type { SettingsSection, UIPreferences } from '@/types';
 
 import { computed } from 'vue';
+
 import { useSettingsStore } from '@/stores/settings';
 import { useToast } from '@/composables/useToast';
 

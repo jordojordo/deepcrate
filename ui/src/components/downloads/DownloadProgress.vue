@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import type { DownloadProgress as DownloadProgressType } from '@/types';
+import type { DownloadProgress } from '@/types';
 
 import { computed } from 'vue';
+import { formatBytes, formatSpeed, formatDuration } from '@/utils/formatters';
 
 import ProgressBar from 'primevue/progressbar';
 
-import { formatBytes, formatSpeed, formatDuration } from '@/utils/formatters';
-
 interface Props {
-  progress: DownloadProgressType;
+  progress: DownloadProgress;
 }
 
 const props = defineProps<Props>();

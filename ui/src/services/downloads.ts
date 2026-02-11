@@ -6,17 +6,11 @@ import type {
   DownloadFilters,
   PaginatedResponse,
   SearchResultsResponse,
+  RetryRequest,
+  DeleteRequest
 } from '@/types';
 
 import client from './api';
-
-export interface RetryRequest {
-  ids: string[];
-}
-
-export interface DeleteRequest {
-  ids: string[];
-}
 
 export async function getActive(filters: DownloadFilters): Promise<PaginatedResponse<ActiveDownload>> {
   const params: Record<string, number> = {

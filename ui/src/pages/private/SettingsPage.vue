@@ -5,15 +5,15 @@ import type {
   SlskdFormData,
   PreviewFormData,
   AuthFormData,
+  SettingsTab,
   UIPreferences,
 } from '@/types';
-import type { SettingsTab } from '@/types';
 
 import { onMounted } from 'vue';
 
 import { useTabSync } from '@/composables/useTabSync';
 import { useSettings } from '@/composables/useSettings';
-import { SETTINGS_TABS } from '@/types';
+import { SETTINGS_TABS } from '@/constants/settings';
 
 import Tabs from 'primevue/tabs';
 import TabList from 'primevue/tablist';

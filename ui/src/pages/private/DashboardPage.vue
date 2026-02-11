@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// import type { ActivityItem } from '@/components/dashboard/RecentActivityFeed.vue';
+// import type { ActivityItem } from '@/types';
 
 import { onMounted } from 'vue';
 import { RouterLink } from 'vue-router';

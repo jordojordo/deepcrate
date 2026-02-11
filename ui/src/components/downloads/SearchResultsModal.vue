@@ -16,8 +16,8 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 
 import EmptyState from '@/components/common/EmptyState.vue';
-import QualityBadge from './QualityBadge.vue';
-import FileList from './FileList.vue';
+import QualityBadge from '@/components/downloads/QualityBadge.vue';
+import FileList from '@/components/downloads/FileList.vue';
 
 interface Props {
   visible:  boolean;

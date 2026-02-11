@@ -170,9 +170,6 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
-  /**
-   * Seek to a position (0-1)
-   */
   function seek(position: number): void {
     if (!audio || duration.value === 0) return;
 
@@ -180,9 +177,6 @@ export const usePlayerStore = defineStore('player', () => {
     currentTime.value = audio.currentTime;
   }
 
-  /**
-   * Set volume (0-1)
-   */
   function setVolume(newVolume: number): void {
     volume.value = Math.max(0, Math.min(1, newVolume));
 

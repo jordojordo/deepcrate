@@ -2,14 +2,13 @@
 import type { ListenBrainzSettings, ListenBrainzFormData } from '@/types';
 
 import { reactive, ref, watch, computed } from 'vue';
+import { useSettings } from '@/composables/useSettings';
 
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Tag from 'primevue/tag';
 import Message from 'primevue/message';
-
-import { useSettings } from '@/composables/useSettings';
 
 const props = defineProps<{
   settings: ListenBrainzSettings | undefined;

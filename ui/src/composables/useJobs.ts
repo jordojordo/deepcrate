@@ -1,6 +1,7 @@
 import { computed } from 'vue';
-import { JOB_NAMES } from '@/constants/jobs';
+
 import { useJobsStore } from '@/stores/jobs';
+import { JOB_NAMES } from '@/constants/jobs';
 
 export function useJobs() {
   const store = useJobsStore();

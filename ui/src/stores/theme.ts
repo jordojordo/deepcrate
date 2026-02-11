@@ -1,9 +1,9 @@
+import type { ThemeMode } from '@/types';
+
 import { defineStore, storeToRefs } from 'pinia';
 import { ref, computed, watch } from 'vue';
 
 import { useSettingsStore } from '@/stores/settings';
-
-export type ThemeMode = 'light' | 'dark' | 'system';
 
 export const useThemeStore = defineStore('theme', () => {
   const settingsStore = useSettingsStore();
@@ -62,7 +62,7 @@ export const useThemeStore = defineStore('theme', () => {
     applyTheme();
   }
 
-  // Watch for mode changes (from settings or elsewhere)
+  // Watch for mode changes from settings or elsewhere
   watch(mode, () => {
     applyTheme();
   });

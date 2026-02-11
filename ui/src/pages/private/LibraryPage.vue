@@ -5,7 +5,7 @@ import type { LibraryTab } from '@/types';
 import { computed, onMounted } from 'vue';
 
 import { useTabSync } from '@/composables/useTabSync';
-import { LIBRARY_TABS } from '@/types';
+import { LIBRARY_TABS } from '@/constants/settings';
 import { useLibrary } from '@/composables/useLibrary';
 import { useJobsSocket } from '@/composables/useJobsSocket';
 import { useJobsStore } from '@/stores/jobs';

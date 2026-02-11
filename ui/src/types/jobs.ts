@@ -6,6 +6,10 @@ export interface JobStatus {
   cron:     string;
 }
 
+export interface JobStatusResponse {
+  jobs: JobStatus[];
+}
+
 export interface TriggerResponse {
   success: boolean;
   message: string;

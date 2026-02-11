@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import type { QueueFilters, ViewMode } from '@/types';
+
+import { SORT_OPTIONS } from '@/constants/queue';
+
 import Select from 'primevue/select';
 import Button from 'primevue/button';
 import ToggleSwitch from 'primevue/toggleswitch';
-import type { QueueFilters } from '@/types';
-import { SORT_OPTIONS } from '@/constants/queue';
-
-export type ViewMode = 'grid' | 'list';
 
 const sortOptions = [...SORT_OPTIONS];
 

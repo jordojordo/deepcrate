@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { QueueItem } from '@/types';
-import type { ViewMode } from '@/components/queue/QueueFilters.vue';
-import type { NavigationDirection } from '@/composables/useKeyboardShortcuts';
+import type { NavigationDirection, QueueItem, ViewMode } from '@/types';
 
 import {
   onMounted, onUnmounted, ref, watch, computed

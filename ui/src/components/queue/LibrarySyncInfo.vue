@@ -2,9 +2,10 @@
 import type { LibrarySyncStats } from '@/types';
 
 import { ref, computed, onMounted } from 'vue';
-import Button from 'primevue/button';
 import { getSyncStats, triggerSync } from '@/services/library';
 import { formatRelativeTime } from '@/utils/formatters';
+
+import Button from 'primevue/button';
 
 const stats = ref<LibrarySyncStats | null>(null);
 const loading = ref(true);

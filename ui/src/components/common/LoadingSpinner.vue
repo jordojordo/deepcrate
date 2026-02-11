@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import ProgressSpinner from 'primevue/progressspinner';
 import { computed } from 'vue';
+
+import ProgressSpinner from 'primevue/progressspinner';
 
 const props = defineProps<{
   size?: 'sm' | 'md' | 'lg';

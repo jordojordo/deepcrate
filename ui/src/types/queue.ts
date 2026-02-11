@@ -22,3 +22,20 @@ export interface QueueFilters {
   offset:           number;
   hide_in_library?: boolean;
 }
+
+export interface ApproveRequest {
+  mbids: string[];
+}
+
+export interface RejectRequest {
+  mbids: string[];
+}
+
+export interface QueueStats {
+  pending:        number;
+  approved:       number;
+  rejected:       number;
+  inLibrary:      number;
+  approvedToday:  number;
+  totalProcessed: number;
+}

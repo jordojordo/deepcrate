@@ -8,9 +8,10 @@ import type {
 } from '@/types';
 
 import { onMounted, onUnmounted } from 'vue';
+
 import { useJobsStore } from '@/stores/jobs';
 import { useLibraryStore } from '@/stores/library';
-import { useSocketConnection } from './useSocketConnection';
+import { useSocketConnection } from '@/composables/useSocketConnection';
 
 export function useJobsSocket() {
   const { connected, connect, disconnect } = useSocketConnection('/jobs');

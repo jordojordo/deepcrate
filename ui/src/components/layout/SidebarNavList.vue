@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SidebarItem } from '@/components/layout/AppShell.vue';
+import type { SidebarItem } from '@/types';
 
 import { RouterLink } from 'vue-router';
 

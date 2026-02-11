@@ -118,3 +118,25 @@ export interface ImportResponse {
   errors:  number;
   results: ImportResultItem[];
 }
+
+export interface WishlistResponse {
+  entries: WishlistEntry[];
+  total:   number;
+}
+
+export interface AddWishlistResponse {
+  success: boolean;
+  message: string;
+  entry:   WishlistEntry;
+}
+
+export interface UpdateWishlistResponse {
+  success: boolean;
+  message: string;
+  entry:   WishlistEntry;
+}
+
+export interface DeleteWishlistResponse {
+  success: boolean;
+  message: string;
+}

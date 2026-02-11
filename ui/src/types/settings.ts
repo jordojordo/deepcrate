@@ -263,13 +263,16 @@ export interface UpdateResponse {
   section: string;
 }
 
+export type ThemeMode = 'dark' | 'light' | 'system';
+export type ViewMode = 'grid' | 'list';
+
 /**
  * UI preferences (localStorage only, not server-persisted)
  */
 export interface UIPreferences {
-  theme:            'dark' | 'light' | 'system';
-  queueViewMode:    'grid' | 'list';
-  wishlistViewMode: 'grid' | 'list';
+  theme:            ThemeMode;
+  queueViewMode:    ViewMode;
+  wishlistViewMode: ViewMode;
   sidebarCollapsed: boolean;
   itemsPerPage:     number;
 }

@@ -9,7 +9,7 @@ import type {
 } from '@/types';
 
 import { onMounted, onUnmounted } from 'vue';
-import { useSocketConnection } from './useSocketConnection';
+import { useSocketConnection } from '@/composables/useSocketConnection';
 import { useDownloadsStore } from '@/stores/downloads';
 
 export function useDownloadsSocket() {

@@ -1,18 +1,11 @@
-import type { PreviewResponse, AlbumPreviewResponse } from '@/types';
+import type {
+  AlbumPreviewResponse,
+  GetPreviewParams,
+  GetAlbumPreviewParams,
+  PreviewResponse,
+} from '@/types';
 
 import client from './api';
-
-export interface GetPreviewParams {
-  artist: string;
-  track:  string;
-}
-
-export interface GetAlbumPreviewParams {
-  artist:       string;
-  album:        string;
-  mbid?:        string;
-  sourceTrack?: string;
-}
 
 export async function getPreview(params: GetPreviewParams): Promise<PreviewResponse> {
   const response = await client.get<PreviewResponse>('/preview', { params });

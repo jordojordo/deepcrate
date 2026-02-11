@@ -3,9 +3,10 @@ import type { WishlistEntryWithStatus } from '@/types';
 
 import { ref, watch } from 'vue';
 
-import WishlistItemCard from './WishlistItemCard.vue';
 import ProgressSpinner from 'primevue/progressspinner';
+
 import EmptyState from '@/components/common/EmptyState.vue';
+import WishlistItemCard from '@/components/wishlist/WishlistItemCard.vue';
 
 interface Props {
   items:        WishlistEntryWithStatus[];

@@ -2,11 +2,11 @@
 import type { WishlistEntryWithStatus, WishlistDownloadStatus } from '@/types';
 
 import { computed, ref, watch } from 'vue';
+import { getDefaultCoverUrl } from '@/utils/formatters';
 
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
 import Tag from 'primevue/tag';
-import { getDefaultCoverUrl } from '@/utils/formatters';
 
 interface Props {
   item:       WishlistEntryWithStatus;

@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import Button from 'primevue/button';
+import type { ActivityItem } from '@/types';
 
-export interface ActivityItem {
-  id:          string;
-  title:       string;
-  description: string;
-  timestamp:   string;
-  type:        'added' | 'approved' | 'downloaded' | 'queued' | 'system';
-  coverUrl?:   string;
-}
+import { getDefaultCoverUrl } from '@/utils/formatters';
+
+import Button from 'primevue/button';
 
 interface Props {
   activities: ActivityItem[];
@@ -56,16 +51,6 @@ const getActivityMeta = (type: ActivityItem['type']) => {
 
   return meta[type];
 };
-
-const getDefaultCover = () => {
-  return 'data:image/svg+xml,' + encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-      <rect width="48" height="48" fill="#282839"/>
-      <circle cx="24" cy="24" r="12" stroke="#6b6b8a" stroke-width="2" fill="none"/>
-      <circle cx="24" cy="24" r="4" fill="#6b6b8a"/>
-    </svg>
-  `);
-};
 </script>
 
 <template>
@@ -103,10 +88,10 @@ const getDefaultCover = () => {
         </div>
         <div v-else class="activity-feed__cover">
           <img
-            :src="activity.coverUrl || getDefaultCover()"
+            :src="activity.coverUrl || getDefaultCoverUrl()"
             :alt="activity.title"
             class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-            @error="($event.target as HTMLImageElement).src = getDefaultCover()"
+            @error="($event.target as HTMLImageElement).src = getDefaultCoverUrl()"
           />
         </div>
 

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { ThemeMode } from '@/types';
+
 import { computed } from 'vue';
-import { useThemeStore, type ThemeMode } from '@/stores/theme';
+import { useThemeStore } from '@/stores/theme';
 
 import Button from 'primevue/button';
 

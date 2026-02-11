@@ -5,16 +5,16 @@ import { ref } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { formatRelativeTime } from '@/utils/formatters';
 import { useBreakpoint } from '@/composables/useBreakpoint';
+import { useJobs } from '@/composables/useJobs';
 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Tag from 'primevue/tag';
 import Button from 'primevue/button';
 
-import DownloadProgress from './DownloadProgress.vue';
-import QualityBadge from './QualityBadge.vue';
+import DownloadProgress from '@/components/downloads/DownloadProgress.vue';
+import QualityBadge from '@/components/downloads/QualityBadge.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
-import { useJobs } from '@/composables/useJobs';
 
 interface Props {
   downloads: ActiveDownload[];
