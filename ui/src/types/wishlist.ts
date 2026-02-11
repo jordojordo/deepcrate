@@ -1,7 +1,3 @@
-// ============================================================================
-// Base Types
-// ============================================================================
-
 export type WishlistItemType = 'artist' | 'album' | 'track';
 export type WishlistItemSource = 'listenbrainz' | 'catalog' | 'manual';
 
@@ -18,11 +14,7 @@ export interface WishlistEntry {
   processedAt?: string | null;
 }
 
-// ============================================================================
-// Download Status
-// ============================================================================
-
-export type DownloadStatus =
+export type WishlistDownloadStatus =
   | 'none'               // No download task yet
   | 'pending'            // DownloadTask created, waiting
   | 'searching'          // Searching slskd
@@ -34,14 +26,10 @@ export type DownloadStatus =
   | 'failed';            // Download failed
 
 export interface WishlistEntryWithStatus extends WishlistEntry {
-  downloadStatus:  DownloadStatus;
+  downloadStatus:  WishlistDownloadStatus;
   downloadTaskId?: string | null;
   downloadError?:  string | null;
 }
-
-// ============================================================================
-// Request Types
-// ============================================================================
 
 export interface AddWishlistRequest {
   artist: string;
@@ -70,10 +58,6 @@ export interface BulkRequeueRequest {
   ids: string[];
 }
 
-// ============================================================================
-// Filters & Sorting
-// ============================================================================
-
 export type WishlistSort =
   | 'addedAt_asc' | 'addedAt_desc'
   | 'artist_asc' | 'artist_desc'
@@ -94,10 +78,6 @@ export interface WishlistFilters {
   offset?:    number;
 }
 
-// ============================================================================
-// Response Types
-// ============================================================================
-
 export interface PaginatedWishlistResponse {
   entries: WishlistEntryWithStatus[];
   total:   number;
@@ -110,10 +90,6 @@ export interface BulkOperationResponse {
   message:  string;
   affected: number;
 }
-
-// ============================================================================
-// Import/Export
-// ============================================================================
 
 export type ExportFormat = 'json';
 

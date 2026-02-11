@@ -4,7 +4,7 @@ import type {
   UpdateWishlistRequest,
   ImportItem,
   ExportFormat,
-  DownloadStatus,
+  WishlistDownloadStatus,
 } from '@/types/wishlist';
 
 import { defineStore, storeToRefs } from 'pinia';
@@ -285,7 +285,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
   }
 
   // Socket event handler
-  function updateItemDownloadStatus(taskId: string, status: DownloadStatus, errorMessage?: string) {
+  function updateItemDownloadStatus(taskId: string, status: WishlistDownloadStatus, errorMessage?: string) {
     const item = items.value.find((i) => i.downloadTaskId === taskId);
 
     if (item) {

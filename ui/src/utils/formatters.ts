@@ -70,9 +70,6 @@ export function formatBytes(bytes: number): string {
   return `${ parseFloat((bytes / Math.pow(k, i)).toFixed(2)) } ${ sizes[i] }`;
 }
 
-// Alias for formatBytes for file size display
-export const formatFileSize = formatBytes;
-
 export function formatSpeed(bytesPerSecond: number | null): string {
   if (!bytesPerSecond) {
     return 'N/A';

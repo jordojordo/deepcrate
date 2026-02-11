@@ -1,6 +1,6 @@
 import type { Socket } from 'socket.io-client';
 import type { DownloadTaskUpdatedEvent } from '@/types/socket';
-import type { DownloadStatus } from '@/types/wishlist';
+import type { WishlistDownloadStatus } from '@/types/wishlist';
 
 import { onMounted, onUnmounted } from 'vue';
 import { useSocketConnection } from './useSocketConnection';
@@ -13,7 +13,7 @@ export function useWishlistSocket() {
   let socket: Socket | null = null;
 
   function handleTaskUpdated(event: DownloadTaskUpdatedEvent) {
-    const status = event.status as DownloadStatus;
+    const status = event.status as WishlistDownloadStatus;
 
     store.updateItemDownloadStatus(event.id, status, event.errorMessage);
   }
