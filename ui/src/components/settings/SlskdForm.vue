@@ -3,7 +3,7 @@ import type {
   SlskdSettings,
   SlskdFormData,
   SlskdForm,
-} from '@/types/settings';
+} from '@/types';
 
 import { reactive, ref, watch, computed } from 'vue';
 import { useSettings } from '@/composables/useSettings';

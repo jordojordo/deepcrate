@@ -1,4 +1,4 @@
-import type { AuthConfig, AuthMode } from '@/types/auth';
+import type { AuthConfig, AuthMode } from '@/types';
 
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';

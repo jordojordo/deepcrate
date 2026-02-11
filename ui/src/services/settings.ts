@@ -3,7 +3,7 @@ import type {
   SectionResponse,
   UpdateResponse,
   SettingsSection,
-} from '@/types/settings';
+} from '@/types';
 
 import client from './api';
 

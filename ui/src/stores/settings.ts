@@ -2,13 +2,13 @@ import type {
   SettingsResponse,
   SettingsSection,
   UIPreferences,
-} from '@/types/settings';
+} from '@/types';
 
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 
 import * as settingsApi from '@/services/settings';
-import { DEFAULT_UI_PREFERENCES } from '@/types/settings';
+import { DEFAULT_UI_PREFERENCES } from '@/constants/settings';
 
 const UI_PREFS_KEY = 'deepcrate_ui_prefs';
 

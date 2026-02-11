@@ -1,4 +1,4 @@
-import type { JobStatus, TriggerResponse, CancelResponse } from '@/types/jobs';
+import type { JobStatus, TriggerResponse, CancelResponse } from '@/types';
 
 import client from './api';
 

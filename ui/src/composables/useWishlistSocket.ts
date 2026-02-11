@@ -1,6 +1,6 @@
 import type { Socket } from 'socket.io-client';
-import type { DownloadTaskUpdatedEvent } from '@/types/socket';
-import type { WishlistDownloadStatus } from '@/types/wishlist';
+import type { DownloadTaskUpdatedEvent } from '@/types';
+import type { WishlistDownloadStatus } from '@/types';
 
 import { onMounted, onUnmounted } from 'vue';
 import { useSocketConnection } from './useSocketConnection';

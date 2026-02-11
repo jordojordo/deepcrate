@@ -1,4 +1,4 @@
-import type { UIPreferences } from '@/types/settings'
+import type { UIPreferences } from '@/types';
 
 export const DEFAULT_UI_PREFERENCES: UIPreferences = {
   theme:            'dark',

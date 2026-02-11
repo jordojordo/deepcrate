@@ -1,4 +1,4 @@
-import type { ApiSearchResponse, ArtistApiResult, SearchResponse, SearchResult } from '@/types/search';
+import type { ApiSearchResponse, ArtistApiResult, SearchResponse, SearchResult } from '@/types';
 
 import client from './api';
 

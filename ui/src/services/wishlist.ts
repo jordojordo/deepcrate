@@ -8,7 +8,7 @@ import type {
   ImportItem,
   ImportResponse,
   ExportFormat,
-} from '@/types/wishlist';
+} from '@/types';
 
 import client from './api';
 

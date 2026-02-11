@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UISettings, AuthFormData } from '@/types/settings';
+import type { UISettings, AuthFormData } from '@/types';
 
 import { reactive, ref, watch, computed } from 'vue';
 

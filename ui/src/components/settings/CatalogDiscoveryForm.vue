@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CatalogDiscoverySettings, CatalogDiscoveryFormData, CatalogDiscoveryForm } from '@/types/settings';
+import type { CatalogDiscoverySettings, CatalogDiscoveryFormData, CatalogDiscoveryForm } from '@/types';
 
 import { reactive, ref, watch, computed } from 'vue';
 

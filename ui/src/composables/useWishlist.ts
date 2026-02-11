@@ -1,4 +1,4 @@
-import type { WishlistFilters, UpdateWishlistRequest, ImportItem, ExportFormat } from '@/types/wishlist';
+import type { WishlistFilters, UpdateWishlistRequest, ImportItem, ExportFormat } from '@/types';
 
 import { computed } from 'vue';
 

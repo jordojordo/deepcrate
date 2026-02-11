@@ -1,4 +1,4 @@
-import type { PreviewResponse, AlbumPreviewResponse } from '@/types/player';
+import type { PreviewResponse, AlbumPreviewResponse } from '@/types';
 
 import client from './api';
 

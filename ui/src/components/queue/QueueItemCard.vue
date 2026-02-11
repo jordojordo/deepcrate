@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { QueueItem } from '@/types/queue';
+import type { QueueItem } from '@/types';
 
 import { computed, ref, watch } from 'vue';
 

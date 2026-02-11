@@ -1,4 +1,4 @@
-import type { JobStatus } from '@/types/jobs';
+import type { JobStatus } from '@/types';
 
 import { defineStore } from 'pinia';
 import { ref } from 'vue';

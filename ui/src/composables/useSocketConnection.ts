@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import type { SocketNamespace } from '@/types/socket';
+import type { SocketNamespace } from '@/types';
 
 import { ref } from 'vue';
 import { io, Socket } from 'socket.io-client';

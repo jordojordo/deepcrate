@@ -5,7 +5,7 @@ import type {
   JobCompletedEvent,
   JobFailedEvent,
   JobCancelledEvent,
-} from '@/types/socket';
+} from '@/types';
 
 import { onMounted, onUnmounted } from 'vue';
 import { useJobsStore } from '@/stores/jobs';

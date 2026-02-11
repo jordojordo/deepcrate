@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type {
-  WishlistFilters, WishlistSort, ProcessedFilter, WishlistItemSource, WishlistItemType 
-} from '@/types/wishlist';
+  WishlistFilters, WishlistSort, ProcessedFilter, WishlistItemSource, WishlistItemType
+} from '@/types';
 
 import Select from 'primevue/select';
 import Button from 'primevue/button';

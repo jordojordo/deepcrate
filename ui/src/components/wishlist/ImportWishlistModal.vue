@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ImportItem, ImportResponse, ImportResultItem } from '@/types/wishlist';
+import type { ImportItem, ImportResponse, ImportResultItem } from '@/types';
 
 import { ref, computed } from 'vue';
 import { useBreakpoint } from '@/composables/useBreakpoint';

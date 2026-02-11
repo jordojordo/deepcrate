@@ -6,14 +6,14 @@ import type {
   PreviewFormData,
   AuthFormData,
   UIPreferences,
-} from '@/types/settings';
-import type { SettingsTab } from '@/types/tabs';
+} from '@/types';
+import type { SettingsTab } from '@/types';
 
 import { onMounted } from 'vue';
 
 import { useTabSync } from '@/composables/useTabSync';
 import { useSettings } from '@/composables/useSettings';
-import { SETTINGS_TABS } from '@/types/tabs';
+import { SETTINGS_TABS } from '@/types';
 
 import Tabs from 'primevue/tabs';
 import TabList from 'primevue/tablist';

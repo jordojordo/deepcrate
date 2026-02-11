@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UIPreferences } from '@/types/settings';
+import type { UIPreferences } from '@/types';
 
 import { reactive, watch } from 'vue';
 

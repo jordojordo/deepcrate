@@ -5,7 +5,7 @@ import type {
   ImportItem,
   ExportFormat,
   WishlistDownloadStatus,
-} from '@/types/wishlist';
+} from '@/types';
 
 import { defineStore, storeToRefs } from 'pinia';
 import { ref, computed, watch } from 'vue';

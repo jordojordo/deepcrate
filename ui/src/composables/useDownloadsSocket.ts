@@ -6,7 +6,7 @@ import type {
   DownloadStatsUpdatedEvent,
   DownloadPendingSelectionEvent,
   DownloadSelectionExpiredEvent,
-} from '@/types/socket';
+} from '@/types';
 
 import { onMounted, onUnmounted } from 'vue';
 import { useSocketConnection } from './useSocketConnection';

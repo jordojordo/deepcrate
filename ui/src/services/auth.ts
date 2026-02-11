@@ -1,4 +1,4 @@
-import type { AuthConfig, AuthUser } from '@/types/auth';
+import type { AuthConfig, AuthUser } from '@/types';
 
 import axios from 'axios';
 

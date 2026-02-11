@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { LibraryOrganizeConfig } from '@/types';
-import type { LibraryTab } from '@/types/tabs';
+import type { LibraryTab } from '@/types';
 
 import { computed, onMounted } from 'vue';
 
 import { useTabSync } from '@/composables/useTabSync';
-import { LIBRARY_TABS } from '@/types/tabs';
+import { LIBRARY_TABS } from '@/types';
 import { useLibrary } from '@/composables/useLibrary';
 import { useJobsSocket } from '@/composables/useJobsSocket';
 import { useJobsStore } from '@/stores/jobs';

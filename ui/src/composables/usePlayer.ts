@@ -2,7 +2,7 @@ import type { QueueItem, PreviewTrack } from '@/types';
 
 import { computed } from 'vue';
 import { usePlayerStore } from '@/stores/player';
-import { queueItemToPreviewTrack } from '@/types/player';
+import { queueItemToPreviewTrack } from '@/types';
 
 export function usePlayer() {
   const store = usePlayerStore();

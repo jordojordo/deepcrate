@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { ActiveDownload } from '@/types';
-import type { DownloadsTab } from '@/types/tabs';
+import type { DownloadsTab } from '@/types';
 
 import { onMounted } from 'vue';
 
 import { useTabSync } from '@/composables/useTabSync';
-import { DOWNLOADS_TABS } from '@/types/tabs';
+import { DOWNLOADS_TABS } from '@/types';
 import { useDownloads } from '@/composables/useDownloads';
 import { useDownloadsSocket } from '@/composables/useDownloadsSocket';
 import { useJobs } from '@/composables/useJobs';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PreviewSettings, PreviewFormData, PreviewForm } from '@/types/settings';
+import type { PreviewSettings, PreviewFormData, PreviewForm } from '@/types';
 
 import { reactive, ref, watch, computed } from 'vue';
 import { useSettings } from '@/composables/useSettings';

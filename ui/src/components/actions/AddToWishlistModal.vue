@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SearchResult } from '@/types/search';
+import type { SearchResult } from '@/types';
 
 import { ref, watch } from 'vue';
 import Dialog from 'primevue/dialog';

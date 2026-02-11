@@ -3,7 +3,7 @@ import type {
   QueueItemAddedEvent,
   QueueItemUpdatedEvent,
   QueueStatsUpdatedEvent,
-} from '@/types/socket';
+} from '@/types';
 
 import { onMounted, onUnmounted } from 'vue';
 import { useQueueStore } from '@/stores/queue';

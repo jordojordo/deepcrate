@@ -1,4 +1,4 @@
-import type { SettingsSection, UIPreferences } from '@/types/settings';
+import type { SettingsSection, UIPreferences } from '@/types';
 
 import { computed } from 'vue';
 import { useSettingsStore } from '@/stores/settings';

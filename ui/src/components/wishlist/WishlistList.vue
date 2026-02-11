@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WishlistEntryWithStatus, WishlistDownloadStatus } from '@/types/wishlist';
+import type { WishlistEntryWithStatus, WishlistDownloadStatus } from '@/types';
 import type { ComponentPublicInstance } from 'vue';
 
 import { ref, watch, computed } from 'vue';

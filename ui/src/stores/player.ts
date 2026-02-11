@@ -1,4 +1,4 @@
-import type { PreviewTrack, PlayerState } from '@/types/player';
+import type { PreviewTrack, PlayerState } from '@/types';
 
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';

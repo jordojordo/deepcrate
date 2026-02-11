@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ListenBrainzSettings, ListenBrainzFormData } from '@/types/settings';
+import type { ListenBrainzSettings, ListenBrainzFormData } from '@/types';
 
 import { reactive, ref, watch, computed } from 'vue';
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WishlistEntryWithStatus, UpdateWishlistRequest, WishlistItemType, WishlistItemSource } from '@/types/wishlist';
+import type { WishlistEntryWithStatus, UpdateWishlistRequest, WishlistItemType, WishlistItemSource } from '@/types';
 
 import { ref, watch } from 'vue';
 

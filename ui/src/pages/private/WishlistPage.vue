@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WishlistEntryWithStatus, UpdateWishlistRequest, ImportItem } from '@/types/wishlist';
+import type { WishlistEntryWithStatus, UpdateWishlistRequest, ImportItem } from '@/types';
 import type { ViewMode } from '@/components/wishlist/WishlistFilters.vue';
 
 import { onMounted, ref, watch } from 'vue';
