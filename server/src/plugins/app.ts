@@ -33,7 +33,7 @@ app.use(
 app.use(express.json());
 
 // Public routes (no auth required)
-app.use('/health', healthRoutes);
+app.use('/api/v1/health', healthRoutes);
 app.get('/api/v1/auth/info', AuthController.getInfo);
 
 // Apply auth middleware to all /api/* routes

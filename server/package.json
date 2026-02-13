@@ -1,6 +1,6 @@
 {
   "name": "@deepcrate/server",
-  "version": "0.1.0",
+  "version": "0.15.0",
   "description": "Self-hosted music discovery pipeline server",
   "main": "dist/server.js",
   "keywords": [

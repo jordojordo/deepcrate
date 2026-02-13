@@ -26,3 +26,9 @@ export interface ApiError {
   status?: number;
   code?:   ApiErrorCode;
 }
+
+export type HealthResponse = {
+  status:  string;
+  version: string;
+  service: string;
+};

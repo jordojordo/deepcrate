@@ -43,13 +43,9 @@ Health check endpoint (no auth required).
 **Response:**
 ```json
 {
-  "status": "healthy",
-  "version": "1.0.0",
-  "services": {
-    "lb_fetch": "running",
-    "catalog_discovery": "running",
-    "slskd_downloader": "running"
-  }
+  "service": "deepcrate"
+  "status": "ok",
+  "version": "0.15.0",
 }
 ```
 
