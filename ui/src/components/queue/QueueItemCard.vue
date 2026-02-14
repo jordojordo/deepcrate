@@ -7,6 +7,8 @@ import { getDefaultCoverUrl } from '@/utils/formatters';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
 
+import ResearchLinks from '@/components/queue/ResearchLinks.vue';
+
 interface Props {
   item:        QueueItem;
   processing?: boolean;
@@ -105,8 +107,8 @@ const handlePreview = () => {
 const handleCardClick = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
 
-  // Don't trigger preview if clicking on a button or inside the actions area
-  if (target.closest('button') || target.closest('.queue-card__actions')) {
+  // Don't trigger preview if clicking on a button, actions, or research links
+  if (target.closest('button, a, .queue-card__actions, .research-links')) {
     return;
   }
 
@@ -172,6 +174,13 @@ const handleCardClick = (event: MouseEvent) => {
           icon="pi pi-link"
         />
       </div>
+
+      <ResearchLinks
+        :artist="item.artist"
+        :album="item.album"
+        :track="item.title"
+        :mbid="item.mbid"
+      />
 
       <div class="queue-card__actions">
         <Button

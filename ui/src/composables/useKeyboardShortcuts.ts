@@ -7,6 +7,7 @@ export const QUEUE_SHORTCUTS: ShortcutDefinition[] = [
   { key: 'Space', description: 'Play/pause preview' },
   { key: 'a', description: 'Approve focused item' },
   { key: 'r', description: 'Reject focused item' },
+  { key: 'i', description: 'Open MusicBrainz for focused item' },
   { key: '?', description: 'Show keyboard shortcuts' },
   { key: 'Esc', description: 'Close help / clear focus' },
 ];
@@ -47,6 +48,11 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = {}) {
       case 'r':
         event.preventDefault();
         config.onReject?.();
+        break;
+
+      case 'i':
+        event.preventDefault();
+        config.onResearch?.();
         break;
 
       case '?':

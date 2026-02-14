@@ -123,6 +123,13 @@ const { isHelpOpen, closeHelp, shortcuts } = useKeyboardShortcuts({
   onNavigate:      handleNavigate,
   onTogglePreview: handleTogglePreview,
   onClearFocus:    handleClearFocus,
+  onResearch:      () => {
+    if (focusedItem.value) {
+      window.open(`https://musicbrainz.org/release-group/${ focusedItem.value.mbid }`, '_blank', 'noopener');
+    } else {
+      showWarning('No item focused', 'Use arrow keys to focus an item first');
+    }
+  },
 });
 
 let resizeObserver: ResizeObserver | null = null;

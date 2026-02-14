@@ -11,6 +11,7 @@ import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
 import ProgressSpinner from 'primevue/progressspinner';
+import ResearchLinks from '@/components/queue/ResearchLinks.vue';
 
 interface Props {
   items:       QueueItem[] | undefined;
@@ -208,6 +209,12 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
               v-tooltip.bottom="getSimilarTooltip(item.similar_to)"
               icon="pi pi-link"
             />
+            <ResearchLinks
+              :artist="item.artist"
+              :album="item.album"
+              :track="item.title"
+              :mbid="item.mbid"
+            />
           </div>
           <div class="queue-list-mobile__actions">
             <Button
@@ -306,6 +313,20 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
         <template #body="{ data }">
           <span v-if="data.score" class="text-sm">{{ data.score }}%</span>
           <span v-else class="text-sm">N/A</span>
+        </template>
+      </Column>
+
+      <Column header="Research" style="width: 80px">
+        <template #body="{ data }">
+          <div class="flex justify-content-center align-items-center">
+            <ResearchLinks
+              :artist="data.artist"
+              :album="data.album"
+              :track="data.title"
+              :mbid="data.mbid"
+              mode="dropdown"
+            />
+          </div>
         </template>
       </Column>
 

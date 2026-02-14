@@ -6,6 +6,7 @@ export interface KeyboardShortcutsConfig {
   onNavigate?:      (direction: NavigationDirection) => void;
   onTogglePreview?: () => void;
   onClearFocus?:    () => void;
+  onResearch?:      () => void;
 }
 
 export interface ShortcutDefinition {
