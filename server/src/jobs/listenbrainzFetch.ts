@@ -125,7 +125,15 @@ async function fetchWeeklyPlaylistRecordings(
   client: ListenBrainzClient,
   username: string
 ): Promise<ListenBrainzRecommendation[]> {
-  const weeklyPlaylist = await client.findWeeklyExplorationPlaylist(username);
+  let weeklyPlaylist;
+
+  try {
+    weeklyPlaylist = await client.findWeeklyExplorationPlaylist(username);
+  } catch(error) {
+    logger.error(`Could not reach ListenBrainz API after retries: ${ (error as Error).message }`);
+
+    return [];
+  }
 
   if (!weeklyPlaylist) {
     logger.warn(`No weekly exploration playlist found for ${ username }`);

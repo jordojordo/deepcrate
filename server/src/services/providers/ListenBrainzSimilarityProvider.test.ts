@@ -30,7 +30,7 @@ describe('ListenBrainzSimilarityProvider', () => {
       const artistMbid = 'radiohead-mbid-123';
 
       nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
         .reply(200, [
           {
             artist_mbid:     artistMbid,
@@ -75,7 +75,7 @@ describe('ListenBrainzSimilarityProvider', () => {
 
       // ListenBrainz similar artists
       nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
         .reply(200, [
           {
             artist_mbid:     artistMbid,
@@ -131,7 +131,7 @@ describe('ListenBrainzSimilarityProvider', () => {
 
       // Two ListenBrainz calls
       nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
         .times(2)
         .reply(200, [{ artist_mbid: artistMbid, similar_artists: [] }]);
 
