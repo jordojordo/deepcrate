@@ -25,7 +25,9 @@ const mockGetConfig = vi.hoisted(() => vi.fn().mockReturnValue({
 
 vi.mock('@server/services/WishlistService', () => {
   class MockWishlistService {
-    constructor() { return mockService; }
+    constructor() {
+      return mockService; 
+    }
   }
 
   return { WishlistService: MockWishlistService, default: MockWishlistService };
@@ -134,7 +136,9 @@ describe('WishlistController', () => {
       const res = await request(app)
         .post('/api/v1/wishlist')
         .set('Authorization', AUTH_HEADER)
-        .send({ artist: 'Radiohead', title: 'OK Computer', type: 'album', year: 1997 });
+        .send({
+          artist: 'Radiohead', title: 'OK Computer', type: 'album', year: 1997 
+        });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -165,7 +169,9 @@ describe('WishlistController', () => {
       const res = await request(app)
         .post('/api/v1/wishlist')
         .set('Authorization', AUTH_HEADER)
-        .send({ artist: 'Radiohead', title: '', type: 'album' });
+        .send({
+          artist: 'Radiohead', title: '', type: 'album' 
+        });
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe(true);
@@ -184,7 +190,9 @@ describe('WishlistController', () => {
 
       const res = await request(app)
         .get('/api/v1/wishlist/paginated')
-        .query({ source: 'manual', limit: 20, offset: 0 })
+        .query({
+          source: 'manual', limit: 20, offset: 0 
+        })
         .set('Authorization', AUTH_HEADER);
 
       expect(res.status).toBe(200);
@@ -193,7 +201,9 @@ describe('WishlistController', () => {
       expect(res.body.limit).toBe(20);
       expect(res.body.offset).toBe(0);
       expect(mockService.getPaginatedWithStatus).toHaveBeenCalledWith(
-        expect.objectContaining({ source: 'manual', limit: 20, offset: 0 }),
+        expect.objectContaining({
+          source: 'manual', limit: 20, offset: 0 
+        }),
       );
     });
 
@@ -239,6 +249,7 @@ describe('WishlistController', () => {
   describe('PUT /api/v1/wishlist/:id', () => {
     it('updates item and returns success', async() => {
       const updated = { ...wishlistItem, artist: 'Thom Yorke' };
+
       mockService.updateById.mockResolvedValue(updated);
 
       const res = await request(app)
@@ -337,6 +348,7 @@ describe('WishlistController', () => {
   describe('GET /api/v1/wishlist/export', () => {
     it('exports wishlist as JSON', async() => {
       const exportContent = JSON.stringify([{ artist: 'Radiohead', title: 'OK Computer' }]);
+
       mockService.exportItems.mockResolvedValue(exportContent);
 
       const res = await request(app)
@@ -370,14 +382,18 @@ describe('WishlistController', () => {
         added:   1,
         skipped: 0,
         errors:  0,
-        results: [{ artist: 'Radiohead', title: 'OK Computer', status: 'added' }],
+        results: [{
+          artist: 'Radiohead', title: 'OK Computer', status: 'added' 
+        }],
       });
 
       const res = await request(app)
         .post('/api/v1/wishlist/import')
         .set('Authorization', AUTH_HEADER)
         .send({
-          items: [{ artist: 'Radiohead', title: 'OK Computer', type: 'album' }],
+          items: [{
+            artist: 'Radiohead', title: 'OK Computer', type: 'album' 
+          }] 
         });
 
       expect(res.status).toBe(200);
@@ -386,7 +402,9 @@ describe('WishlistController', () => {
       expect(res.body.errors).toBe(0);
       expect(mockService.importItems).toHaveBeenCalledWith(
         expect.arrayContaining([
-          expect.objectContaining({ artist: 'Radiohead', title: 'OK Computer', type: 'album' }),
+          expect.objectContaining({
+            artist: 'Radiohead', title: 'OK Computer', type: 'album' 
+          }),
         ]),
       );
     });

@@ -8,13 +8,15 @@ import { sequelize } from '@server/config/db/sequelize';
  * Caches artists from the user's music library (Subsonic-compatible server).
  */
 export interface CatalogArtistAttributes {
-  id:           number;
-  navidromeId:  string;  // Subsonic artist ID (column name preserved for DB compatibility)
-  name:         string;
-  nameLower:    string;  // Lowercase name for case-insensitive lookups
-  lastSyncedAt: Date;
-  createdAt?:   Date;
-  updatedAt?:   Date;
+  id:                    number;
+  navidromeId:           string;  // Subsonic artist ID (column name preserved for DB compatibility)
+  name:                  string;
+  nameLower:             string;  // Lowercase name for case-insensitive lookups
+  mbid?:                 string | null; // MusicBrainz artist ID
+  lastSyncedAt:          Date;
+  lastSimilarFetchedAt?: Date | null; // When similarity data was last fetched
+  createdAt?:            Date;
+  updatedAt?:            Date;
 }
 
 export type CatalogArtistCreationAttributes = PartialBy<CatalogArtistAttributes, 'id' | 'lastSyncedAt'>;
@@ -24,13 +26,15 @@ export type CatalogArtistCreationAttributes = PartialBy<CatalogArtistAttributes,
  * Stores artists from the user's library for catalog-based discovery.
  */
 class CatalogArtist extends Model<CatalogArtistAttributes, CatalogArtistCreationAttributes> implements CatalogArtistAttributes {
-  declare id:           number;
-  declare navidromeId:  string;
-  declare name:         string;
-  declare nameLower:    string;
-  declare lastSyncedAt: Date;
-  declare createdAt?:   Date;
-  declare updatedAt?:   Date;
+  declare id:                   number;
+  declare navidromeId:          string;
+  declare name:                 string;
+  declare nameLower:            string;
+  declare mbid:                 string | null;
+  declare lastSyncedAt:         Date;
+  declare lastSimilarFetchedAt: Date | null;
+  declare createdAt?:           Date;
+  declare updatedAt?:           Date;
 }
 
 CatalogArtist.init(
@@ -43,6 +47,7 @@ CatalogArtist.init(
     navidromeId: {
       type:       DataTypes.STRING(255),
       allowNull:  false,
+      unique:     true,
       columnName: 'navidrome_id', // Column name preserved for DB compatibility
       comment:    'Subsonic server artist ID',
     },
@@ -56,11 +61,21 @@ CatalogArtist.init(
       columnName: 'name_lower',
       comment:    'Lowercase name for case-insensitive lookups',
     },
+    mbid: {
+      type:      DataTypes.STRING(255),
+      allowNull: true,
+      comment:   'MusicBrainz artist ID',
+    },
     lastSyncedAt: {
       type:         DataTypes.DATE,
       allowNull:    false,
       defaultValue: DataTypes.NOW,
       columnName:   'last_synced_at',
+    },
+    lastSimilarFetchedAt: {
+      type:       DataTypes.DATE,
+      allowNull:  true,
+      columnName: 'last_similar_fetched_at',
     },
   },
   {
@@ -69,7 +84,6 @@ CatalogArtist.init(
     underscored: true,
     indexes:     [
       { fields: ['name_lower'] },
-      { fields: ['navidrome_id'] },
     ],
   },
 );

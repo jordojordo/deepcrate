@@ -10,7 +10,7 @@ DeepCrate is a music discovery and download pipeline built as a Node.js/TypeScri
 flowchart TD
     subgraph container["DEEPCRATE CONTAINER"]
         subgraph process["Node.js Process"]
-            express["<b>Express Server</b><br/>HTTP :8080<br/>/api/v1/*<br/>static files"]
+            express["<b>Express Server</b><br/>HTTP :8080<br/>/api/v1/*<br/>/health<br/>static files"]
             socketio["<b>Socket.io</b><br/>WebSocket<br/>/queue<br/>/downloads<br/>/jobs"]
             cron["<b>node-cron</b><br/>Job Scheduler<br/>lb-fetch<br/>catalog-disc<br/>slskd-dl<br/>library-sync<br/>library-org"]
         end
@@ -50,7 +50,7 @@ Graceful shutdown handles `SIGTERM`/`SIGINT`: closes Socket.io, HTTP server, sto
 Request
   -> CORS
   -> JSON body parser
-  -> Public routes (/api/v1/health, /api/v1/auth/info)
+  -> Public routes (/health, /api/v1/auth/info)
   -> Auth middleware (all /api/* routes)
   -> API routes (/api/v1/{auth,queue,jobs,search,wishlist,downloads,library,preview,settings})
   -> Static file serving (production only, SPA fallback to index.html)

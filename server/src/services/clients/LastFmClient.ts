@@ -1,5 +1,8 @@
+import type { LastFmSimilarArtistsResponse, RetryConfig } from '@server/types';
+
 import axios from 'axios';
 import logger from '@server/config/logger';
+import { BaseClient } from '@server/services/BaseClient';
 import { LASTFM_BASE_URL } from '@server/constants/clients';
 
 export interface SimilarArtist {
@@ -12,19 +15,20 @@ export interface SimilarArtist {
  * LastFmClient provides access to Last.fm API for similar artist discovery.
  * https://www.last.fm/api
  */
-export class LastFmClient {
+export class LastFmClient extends BaseClient {
   private apiKey: string;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, retryConfig?: Partial<RetryConfig>) {
+    super(retryConfig);
     this.apiKey = apiKey;
   }
 
   /**
    * Get similar artists from Last.fm
    */
-  async getSimilarArtists(artistName: string, limit: number = 10): Promise<SimilarArtist[]> {
+  async getSimilarArtists(artistName: string, limit: number = 10, signal?: AbortSignal): Promise<SimilarArtist[]> {
     try {
-      const response = await axios.get(LASTFM_BASE_URL, {
+      const response = await this.requestWithRetry<LastFmSimilarArtistsResponse>('get', LASTFM_BASE_URL, {
         params: {
           method:  'artist.getsimilar',
           artist:  artistName,
@@ -33,6 +37,7 @@ export class LastFmClient {
           format:  'json',
         },
         timeout: 15000,
+        signal,
       });
 
       const data = response.data;

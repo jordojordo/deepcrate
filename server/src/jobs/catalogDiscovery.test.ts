@@ -4,7 +4,7 @@ import {
   describe, it, expect, vi, beforeEach, afterEach
 } from 'vitest';
 
-import { fetchSimilarFromAllProviders } from './catalogDiscovery';
+import { fetchSimilarFromAllProviders, partitionByCacheStatus, aggregateSimilarFromCache } from './catalogDiscovery';
 
 /**
  * Mock provider for testing
@@ -32,9 +32,32 @@ class MockProvider implements SimilarityProvider {
     return true;
   }
 
-  async getSimilarArtists(): Promise<SimilarArtistResult[]> {
+  async getSimilarArtists(
+    _artistName: string,
+    _artistMbid?: string,
+    _limit?: number,
+    signal?: AbortSignal
+  ): Promise<SimilarArtistResult[]> {
     if (this.delayMs > 0) {
-      await new Promise((resolve) => setTimeout(resolve, this.delayMs));
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(resolve, this.delayMs);
+
+        if (signal) {
+          const onAbort = () => {
+            clearTimeout(timer);
+            reject(new Error('aborted'));
+          };
+
+          if (signal.aborted) {
+            clearTimeout(timer);
+            reject(new Error('aborted'));
+
+            return;
+          }
+
+          signal.addEventListener('abort', onAbort, { once: true });
+        }
+      });
     }
 
     if (this.shouldThrow) {
@@ -325,6 +348,108 @@ describe('catalogDiscovery', () => {
       const score3 = calculateWeightedScore(1.7, 2, 2, 10);
 
       expect(score3).toBeCloseTo(20.4); // 85 * 2 * 1.2 / 10 = 20.4
+    });
+  });
+
+  describe('partitionByCacheStatus', () => {
+    function makeArtist(id: number, lastSimilarFetchedAt: Date | null) {
+      return { id, lastSimilarFetchedAt } as { id: number; lastSimilarFetchedAt: Date | null };
+    }
+
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+    it('treats null lastSimilarFetchedAt as stale', () => {
+      const artists = [makeArtist(1, null)];
+      const { stale, cached } = partitionByCacheStatus(artists as any[], ONE_DAY_MS);
+
+      expect(stale).toHaveLength(1);
+      expect(cached).toHaveLength(0);
+    });
+
+    it('treats within-TTL as cached', () => {
+      const recent = new Date(Date.now() - ONE_DAY_MS / 2); // 12 hours ago
+      const artists = [makeArtist(1, recent)];
+      const { stale, cached } = partitionByCacheStatus(artists as any[], ONE_DAY_MS);
+
+      expect(stale).toHaveLength(0);
+      expect(cached).toHaveLength(1);
+    });
+
+    it('treats beyond-TTL as stale', () => {
+      const old = new Date(Date.now() - ONE_DAY_MS * 2); // 2 days ago
+      const artists = [makeArtist(1, old)];
+      const { stale, cached } = partitionByCacheStatus(artists as any[], ONE_DAY_MS);
+
+      expect(stale).toHaveLength(1);
+      expect(cached).toHaveLength(0);
+    });
+
+    it('TTL=0 makes all artists stale (bypass cache)', () => {
+      const recent = new Date(Date.now() - 1000); // 1 second ago
+      const artists = [makeArtist(1, recent), makeArtist(2, recent)];
+      const { stale, cached } = partitionByCacheStatus(artists as any[], 0);
+
+      expect(stale).toHaveLength(2);
+      expect(cached).toHaveLength(0);
+    });
+  });
+
+  describe('aggregateSimilarFromCache', () => {
+    it('produces correct aggregation from DB rows', () => {
+      const libraryArtistNames = new Set(['library artist']);
+      const catalogNameById = new Map([[1, 'Lib A'], [2, 'Lib B']]);
+
+      const rows = [
+        {
+          catalogArtistId: 1, name: 'Artist X', nameLower: 'artist x', score: 0.9, provider: 'lastfm', mbid: null, fetchedAt: new Date() 
+        },
+        {
+          catalogArtistId: 2, name: 'Artist X', nameLower: 'artist x', score: 0.7, provider: 'lastfm', mbid: null, fetchedAt: new Date() 
+        },
+        {
+          catalogArtistId: 1, name: 'Artist X', nameLower: 'artist x', score: 0.8, provider: 'listenbrainz', mbid: null, fetchedAt: new Date() 
+        },
+        {
+          catalogArtistId: 1, name: 'Artist Y', nameLower: 'artist y', score: 0.6, provider: 'lastfm', mbid: null, fetchedAt: new Date() 
+        },
+      ] as any[];
+
+      const map = aggregateSimilarFromCache(rows, libraryArtistNames, catalogNameById);
+
+      expect(map.size).toBe(2);
+
+      const artistX = map.get('artist x')!;
+
+      expect(artistX.score).toBeCloseTo(2.4); // 0.9 + 0.7 + 0.8
+      expect(artistX.sourceCount).toBe(3);
+      expect(artistX.similarTo).toEqual(new Set(['Lib A', 'Lib B']));
+      expect(artistX.providers).toEqual(new Set(['lastfm', 'listenbrainz']));
+
+      const artistY = map.get('artist y')!;
+
+      expect(artistY.score).toBeCloseTo(0.6);
+      expect(artistY.sourceCount).toBe(1);
+      expect(artistY.providers).toEqual(new Set(['lastfm']));
+    });
+
+    it('filters out library artists', () => {
+      const libraryArtistNames = new Set(['known artist']);
+      const catalogNameById = new Map([[1, 'Lib A']]);
+
+      const rows = [
+        {
+          catalogArtistId: 1, name: 'Known Artist', nameLower: 'known artist', score: 0.9, provider: 'lastfm', mbid: null, fetchedAt: new Date() 
+        },
+        {
+          catalogArtistId: 1, name: 'New Artist', nameLower: 'new artist', score: 0.8, provider: 'lastfm', mbid: null, fetchedAt: new Date() 
+        },
+      ] as any[];
+
+      const map = aggregateSimilarFromCache(rows, libraryArtistNames, catalogNameById);
+
+      expect(map.size).toBe(1);
+      expect(map.has('known artist')).toBe(false);
+      expect(map.has('new artist')).toBe(true);
     });
   });
 });

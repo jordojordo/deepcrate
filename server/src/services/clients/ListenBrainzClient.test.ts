@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import nock from 'nock';
 
 import { ListenBrainzClient } from './ListenBrainzClient';
+import { isTransientError } from '@server/utils/errorHandler';
 
 describe('ListenBrainzClient', () => {
   const client = new ListenBrainzClient();
@@ -241,16 +242,16 @@ describe('ListenBrainzClient', () => {
       const artistMbid = 'abc-123-def-456';
 
       nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
         .reply(200, [
           {
             artist_mbid:     artistMbid,
             similar_artists: [
               {
-                artist_mbid: 'sim-1', name: 'Similar Artist 1', score: 0.85 
+                artist_mbid: 'sim-1', name: 'Similar Artist 1', score: 0.85
               },
               {
-                artist_mbid: 'sim-2', name: 'Similar Artist 2', score: 0.75 
+                artist_mbid: 'sim-2', name: 'Similar Artist 2', score: 0.75
               },
             ],
           },
@@ -275,19 +276,19 @@ describe('ListenBrainzClient', () => {
       const artistMbid = 'abc-123-def-456';
 
       nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
         .reply(200, [
           {
             artist_mbid:     artistMbid,
             similar_artists: [
               {
-                artist_mbid: 'sim-1', name: 'Artist 1', score: 0.9 
+                artist_mbid: 'sim-1', name: 'Artist 1', score: 0.9
               },
               {
-                artist_mbid: 'sim-2', name: 'Artist 2', score: 0.8 
+                artist_mbid: 'sim-2', name: 'Artist 2', score: 0.8
               },
               {
-                artist_mbid: 'sim-3', name: 'Artist 3', score: 0.7 
+                artist_mbid: 'sim-3', name: 'Artist 3', score: 0.7
               },
             ],
           },
@@ -302,7 +303,7 @@ describe('ListenBrainzClient', () => {
       const artistMbid = 'abc-123-def-456';
 
       nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
         .reply(200, [{ artist_mbid: artistMbid, similar_artists: [] }]);
 
       const result = await client.getSimilarArtists(artistMbid, 10);
@@ -314,7 +315,7 @@ describe('ListenBrainzClient', () => {
       const artistMbid = 'abc-123-def-456';
 
       nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
         .reply(200, [{ artist_mbid: artistMbid, error: 'Artist not found' }]);
 
       const result = await client.getSimilarArtists(artistMbid, 10);
@@ -326,12 +327,131 @@ describe('ListenBrainzClient', () => {
       const artistMbid = 'abc-123-def-456';
 
       nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbid: artistMbid }])
+        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
         .reply(500);
 
       const result = await client.getSimilarArtists(artistMbid, 10);
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('isTransientError', () => {
+    it('identifies ECONNRESET as transient', () => {
+      const error = Object.assign(new Error('socket hang up'), {
+        isAxiosError: true,
+        code:         'ECONNRESET',
+        response:     undefined,
+        config:       {},
+        toJSON:       () => ({}),
+      });
+
+      expect(isTransientError(error)).toBe(true);
+    });
+
+    it('identifies TLS errors as transient', () => {
+      const error = Object.assign(new Error('TLS connection failed'), {
+        isAxiosError: true,
+        code:         'ERR_TLS_CERT_ALTNAME_INVALID',
+        response:     undefined,
+        config:       {},
+        toJSON:       () => ({}),
+      });
+
+      expect(isTransientError(error)).toBe(true);
+    });
+
+    it('does not treat HTTP 500 as transient', () => {
+      const error = Object.assign(new Error('Request failed'), {
+        isAxiosError: true,
+        code:         'ERR_BAD_RESPONSE',
+        response:     { status: 500, data: {} },
+        config:       {},
+        toJSON:       () => ({}),
+      });
+
+      expect(isTransientError(error)).toBe(false);
+    });
+  });
+
+  describe('retry behavior', () => {
+    const retryClient = new ListenBrainzClient({ baseDelayMs: 0 });
+
+    function networkError(code: string, message: string): Error {
+      const err = new Error(message);
+
+      (err as Error & { code: string }).code = code;
+
+      return err;
+    }
+
+    it('retries on transient error then succeeds', async() => {
+      nock('https://api.listenbrainz.org')
+        .get('/1/user/testuser/playlists/createdfor')
+        .query({ count: 25 })
+        .replyWithError(networkError('ECONNRESET', 'socket hang up'));
+
+      nock('https://api.listenbrainz.org')
+        .get('/1/user/testuser/playlists/createdfor')
+        .query({ count: 25 })
+        .reply(200, {
+          count:     1,
+          offset:    0,
+          playlists: [
+            {
+              playlist: {
+                identifier: 'https://listenbrainz.org/playlist/abc-123',
+                title:      'Weekly Exploration for testuser',
+                creator:    'listenbrainz',
+                date:       '2024-01-15',
+                extension:  {},
+              },
+            },
+          ],
+        });
+
+      const result = await retryClient.fetchPlaylistsCreatedFor('testuser');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].title).toBe('Weekly Exploration for testuser');
+    });
+
+    it('throws after exhausting retries on persistent network error', async() => {
+      for (let i = 0; i < 3; i++) {
+        nock('https://api.listenbrainz.org')
+          .get('/1/user/testuser/playlists/createdfor')
+          .query({ count: 25 })
+          .replyWithError(networkError('ECONNRESET', 'socket hang up'));
+      }
+
+      await expect(retryClient.fetchPlaylistsCreatedFor('testuser')).rejects.toThrow('socket hang up');
+    });
+
+    it('does not retry on HTTP 4xx/5xx errors', async() => {
+      nock('https://api.listenbrainz.org')
+        .get('/1/user/testuser/playlists/createdfor')
+        .query({ count: 25 })
+        .reply(404);
+
+      const result = await retryClient.fetchPlaylistsCreatedFor('testuser');
+
+      expect(result).toEqual([]);
+    });
+
+    it('retries fetchRecommendations on transient error', async() => {
+      nock('https://api.listenbrainz.org')
+        .get('/1/cf/recommendation/user/testuser/recording')
+        .query({ count: 100 })
+        .replyWithError(networkError('ECONNRESET', 'socket hang up'));
+
+      nock('https://api.listenbrainz.org')
+        .get('/1/cf/recommendation/user/testuser/recording')
+        .query({ count: 100 })
+        .reply(200, { payload: { mbids: [{ recording_mbid: 'rec-1', score: 0.9 }] } });
+
+      const result = await retryClient.fetchRecommendations('testuser', 'token', 100);
+
+      expect(result).toEqual([{ recording_mbid: 'rec-1', score: 0.9 }]);
     });
   });
 

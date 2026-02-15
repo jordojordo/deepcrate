@@ -76,6 +76,12 @@ export interface ListenBrainzRecommendation {
   score?:         number;
 }
 
+export interface ListenBrainzRecommendationsResponse {
+  payload: {
+    mbids: ListenBrainzRecommendation[];
+  };
+}
+
 /**
  * Similar artist from ListenBrainz Labs API
  * https://labs.api.listenbrainz.org/similar-artists/json

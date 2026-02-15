@@ -24,7 +24,11 @@ const mockService = vi.hoisted(() => ({
 }));
 
 vi.mock('@server/services/DownloadService', () => ({
-  DownloadService: class { constructor() { return mockService; } },
+  DownloadService: class {
+    constructor() {
+      return mockService; 
+    } 
+  } 
 }));
 
 vi.mock('@server/config/jobs', () => ({
@@ -53,14 +57,14 @@ const TEST_UUID_2 = '550e8400-e29b-41d4-a716-446655440001';
 
 function makeActiveDownload(overrides: Record<string, unknown> = {}) {
   return {
-    id:             TEST_UUID,
-    artist:         'Test Artist',
-    album:          'Test Album',
-    status:         'downloading',
-    progress:       45,
-    totalBytes:     1024000,
+    id:              TEST_UUID,
+    artist:          'Test Artist',
+    album:           'Test Album',
+    status:          'downloading',
+    progress:        45,
+    totalBytes:      1024000,
     downloadedBytes: 460800,
-    speed:          512,
+    speed:           512,
     ...overrides,
   };
 }
@@ -228,7 +232,9 @@ describe('DownloadsController', () => {
 
   describe('POST /api/v1/downloads/retry', () => {
     it('retries downloads by IDs', async() => {
-      mockService.retry.mockResolvedValue({ success: 2, failed: 0, failures: [] });
+      mockService.retry.mockResolvedValue({
+        success: 2, failed: 0, failures: [] 
+      });
 
       const response = await request(app)
         .post('/api/v1/downloads/retry')
@@ -274,7 +280,9 @@ describe('DownloadsController', () => {
 
   describe('DELETE /api/v1/downloads', () => {
     it('deletes downloads by IDs', async() => {
-      mockService.delete.mockResolvedValue({ success: 1, failed: 0, failures: [] });
+      mockService.delete.mockResolvedValue({
+        success: 1, failed: 0, failures: [] 
+      });
 
       const response = await request(app)
         .delete('/api/v1/downloads')

@@ -229,17 +229,18 @@ const LibraryOrganizeSettingsSchema = z.object({
 });
 
 const CatalogDiscoverySettingsSchema = z.object({
-  enabled:              z.boolean(),
-  subsonic:             SubsonicSettingsSchema.optional(),
-  navidrome:            NavidromeSettingsSchema.optional(), // deprecated, use subsonic
-  lastfm:               LastFmSettingsSchema.optional(),
-  listenbrainz:         CatalogListenBrainzSettingsSchema.optional(),
-  provider_timeout_ms:  z.number().int().positive().optional(),
-  max_artists_per_run:  z.number().int().positive(),
-  min_similarity:       z.number().min(0).max(1),
-  similar_artist_limit: z.number().int().positive().optional(),
-  albums_per_artist:    z.number().int().positive().optional(),
-  mode:                 z.enum(['auto', 'manual']),
+  enabled:                   z.boolean(),
+  subsonic:                  SubsonicSettingsSchema.optional(),
+  navidrome:                 NavidromeSettingsSchema.optional(), // deprecated, use subsonic
+  lastfm:                    LastFmSettingsSchema.optional(),
+  listenbrainz:              CatalogListenBrainzSettingsSchema.optional(),
+  provider_timeout_ms:       z.number().int().positive().optional(),
+  max_artists_per_run:       z.number().int().positive(),
+  min_similarity:            z.number().min(0).max(1),
+  similar_artist_limit:      z.number().int().positive().optional(),
+  albums_per_artist:         z.number().int().positive().optional(),
+  similarity_cache_ttl_days: z.number().int().min(0).default(30),
+  mode:                      z.enum(['auto', 'manual']),
 }).transform((data) => {
   // Migrate deprecated navidrome to subsonic (run first so validation sees subsonic)
   if (data.navidrome && !data.subsonic) {
@@ -336,10 +337,11 @@ export const DEFAULT_CONFIG: Config = {
   fetch_count:       100,
   min_score:         0,
   catalog_discovery: {
-    enabled:             false,
-    max_artists_per_run: 10,
-    min_similarity:      0.3,
-    mode:                'manual',
+    enabled:                   false,
+    max_artists_per_run:       10,
+    min_similarity:            0.3,
+    mode:                      'manual',
+    similarity_cache_ttl_days: 30
   },
   ui: { auth: { enabled: false, type: 'basic' } },
 };

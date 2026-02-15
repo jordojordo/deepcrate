@@ -43,9 +43,9 @@ describe('HealthController', () => {
     vi.resetAllMocks();
   });
 
-  describe('GET /api/v1/health', () => {
+  describe('GET /health', () => {
     it('returns 200 with full health response (no auth required)', async() => {
-      const response = await request(app).get('/api/v1/health');
+      const response = await request(app).get('/health');
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({

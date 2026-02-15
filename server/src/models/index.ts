@@ -29,6 +29,12 @@ export type {
   DiscoveredArtistCreationAttributes,
 } from './DiscoveredArtist';
 
+export { default as SimilarArtist } from './SimilarArtist';
+export type {
+  SimilarArtistAttributes,
+  SimilarArtistCreationAttributes,
+} from './SimilarArtist';
+
 export { default as DownloadedItem } from './DownloadedItem';
 export type {
   DownloadedItemAttributes,

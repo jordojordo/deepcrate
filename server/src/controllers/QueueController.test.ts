@@ -29,7 +29,11 @@ const { mockService, mockTriggerJob } = vi.hoisted(() => ({
 }));
 
 vi.mock('@server/services/QueueService', () => ({
-  QueueService: class { constructor() { return mockService; } },
+  QueueService: class {
+    constructor() {
+      return mockService; 
+    } 
+  } 
 }));
 
 vi.mock('@server/config/jobs', () => ({

@@ -18,8 +18,8 @@ export class ListenBrainzSimilarityProvider implements SimilarityProvider {
   private mbidCache: Map<string, string | null>;
 
   constructor() {
-    this.lbClient = new ListenBrainzClient();
-    this.mbClient = new MusicBrainzClient();
+    this.lbClient = new ListenBrainzClient({ maxRetries: 2 });
+    this.mbClient = new MusicBrainzClient({ maxRetries: 2 });
     this.mbidCache = new Map();
   }
 
@@ -30,13 +30,14 @@ export class ListenBrainzSimilarityProvider implements SimilarityProvider {
   async getSimilarArtists(
     artistName: string,
     artistMbid?: string,
-    limit: number = 10
+    limit: number = 10,
+    signal?: AbortSignal
   ): Promise<SimilarArtistResult[]> {
     // Resolve MBID if not provided
     let mbid: string | undefined = artistMbid;
 
     if (!mbid) {
-      const resolved = await this.resolveMbid(artistName);
+      const resolved = await this.resolveMbid(artistName, signal);
 
       if (!resolved) {
         logger.debug(`ListenBrainz: Could not resolve MBID for "${ artistName }", skipping`);
@@ -47,7 +48,7 @@ export class ListenBrainzSimilarityProvider implements SimilarityProvider {
       mbid = resolved;
     }
 
-    const results = await this.lbClient.getSimilarArtists(mbid, limit);
+    const results = await this.lbClient.getSimilarArtists(mbid, limit, signal);
 
     return results.map((artist) => ({
       name:     artist.name,
@@ -61,7 +62,7 @@ export class ListenBrainzSimilarityProvider implements SimilarityProvider {
    * Resolve artist name to MBID using MusicBrainz search.
    * Results are cached to reduce API calls.
    */
-  private async resolveMbid(artistName: string): Promise<string | null> {
+  private async resolveMbid(artistName: string, signal?: AbortSignal): Promise<string | null> {
     const cacheKey = artistName.toLowerCase();
 
     if (this.mbidCache.has(cacheKey)) {
@@ -69,7 +70,7 @@ export class ListenBrainzSimilarityProvider implements SimilarityProvider {
     }
 
     try {
-      const searchResults = await this.mbClient.searchArtists(artistName, 1);
+      const searchResults = await this.mbClient.searchArtists(artistName, 1, signal);
 
       if (searchResults.results.length > 0) {
         const mbid = searchResults.results[0].mbid;

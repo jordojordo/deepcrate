@@ -11,7 +11,7 @@ export class LastFmSimilarityProvider implements SimilarityProvider {
   private client: LastFmClient;
 
   constructor(apiKey: string) {
-    this.client = new LastFmClient(apiKey);
+    this.client = new LastFmClient(apiKey, { maxRetries: 2 });
   }
 
   isConfigured(): boolean {
@@ -21,9 +21,10 @@ export class LastFmSimilarityProvider implements SimilarityProvider {
   async getSimilarArtists(
     artistName: string,
     _artistMbid?: string,
-    limit: number = 10
+    limit: number = 10,
+    signal?: AbortSignal
   ): Promise<SimilarArtistResult[]> {
-    const results = await this.client.getSimilarArtists(artistName, limit);
+    const results = await this.client.getSimilarArtists(artistName, limit, signal);
 
     return results.map((artist) => ({
       name:     artist.name,
