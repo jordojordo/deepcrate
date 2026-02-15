@@ -32,9 +32,32 @@ class MockProvider implements SimilarityProvider {
     return true;
   }
 
-  async getSimilarArtists(): Promise<SimilarArtistResult[]> {
+  async getSimilarArtists(
+    _artistName: string,
+    _artistMbid?: string,
+    _limit?: number,
+    signal?: AbortSignal
+  ): Promise<SimilarArtistResult[]> {
     if (this.delayMs > 0) {
-      await new Promise((resolve) => setTimeout(resolve, this.delayMs));
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(resolve, this.delayMs);
+
+        if (signal) {
+          const onAbort = () => {
+            clearTimeout(timer);
+            reject(new Error('aborted'));
+          };
+
+          if (signal.aborted) {
+            clearTimeout(timer);
+            reject(new Error('aborted'));
+
+            return;
+          }
+
+          signal.addEventListener('abort', onAbort, { once: true });
+        }
+      });
     }
 
     if (this.shouldThrow) {

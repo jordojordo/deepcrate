@@ -133,8 +133,6 @@ function wrapJobHandler(job: JobDefinition): () => Promise<void> {
  * Start all background jobs
  */
 export function startJobs(): void {
-  logger.info('Starting background jobs');
-
   for (const job of jobs) {
     if (job.cron === 'manual' || job.cron.trim() === '') {
       logger.info(`Job ${ job.name } is manual-only and will not be scheduled`);

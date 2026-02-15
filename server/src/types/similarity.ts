@@ -10,7 +10,8 @@ export interface SimilarityProvider {
   getSimilarArtists: (
     _artistName: string,
     _artistMbid?: string,
-    _limit?: number
+    _limit?: number,
+    _signal?: AbortSignal
   ) => Promise<SimilarArtistResult[]>;
   isConfigured: () => boolean;
 }

@@ -86,6 +86,13 @@ export async function catalogDiscoveryJob(): Promise<void> {
   const queueService = new QueueService();
 
   try {
+    // Defer if listenbrainz-fetch is running — both jobs share MusicBrainz API
+    if (isJobRunning(JOB_NAMES.LB_FETCH)) {
+      logger.info('Deferring catalog discovery: listenbrainz-fetch is currently running');
+
+      return;
+    }
+
     // Check for cancellation before starting
     if (isJobCancelled(JOB_NAMES.CATALOGD)) {
       logger.info('Job cancelled before syncing library');
@@ -112,36 +119,32 @@ export async function catalogDiscoveryJob(): Promise<void> {
     logger.info(`Synced ${ libraryArtistNames.size } library artists`);
 
     // Step 1.5: Resolve missing artist MBIDs (scoped to current library artists only)
-    if (isJobRunning(JOB_NAMES.LB_FETCH)) {
-      logger.info('Skipping MBID resolution, listenbrainz-fetch is running (avoiding MusicBrainz rate limit)');
-    } else {
-      const unresolvedArtists = await CatalogArtist.findAll({
-        where: {
-          mbid:      null,
-          nameLower: { [Op.in]: Array.from(libraryArtistNames) },
-        },
-      });
+    const unresolvedArtists = await CatalogArtist.findAll({
+      where: {
+        mbid:      null,
+        nameLower: { [Op.in]: Array.from(libraryArtistNames) },
+      },
+    });
 
-      if (unresolvedArtists.length > 0) {
-        logger.info(`Resolving MBIDs for ${ unresolvedArtists.length } artists...`);
+    if (unresolvedArtists.length > 0) {
+      logger.info(`Resolving MBIDs for ${ unresolvedArtists.length } artists...`);
 
-        for (const artist of unresolvedArtists) {
-          if (isJobCancelled(JOB_NAMES.CATALOGD)) {
-            logger.info('Job cancelled while resolving MBIDs');
-            throw new Error('Job cancelled');
-          }
-
-          await sleep(1000); // MusicBrainz rate limit: 1 req/sec
-          const { results } = await mbClient.searchArtists(artist.name, 1);
-
-          if (results.length > 0) {
-            await withDbWrite(() => artist.update({ mbid: results[0].mbid }));
-            logger.debug(`Resolved MBID for "${ artist.name }": ${ results[0].mbid }`);
-          }
+      for (const artist of unresolvedArtists) {
+        if (isJobCancelled(JOB_NAMES.CATALOGD)) {
+          logger.info('Job cancelled while resolving MBIDs');
+          throw new Error('Job cancelled');
         }
 
-        logger.info('MBID resolution complete');
+        await sleep(1000); // MusicBrainz rate limit: 1 req/sec
+        const { results } = await mbClient.searchArtists(artist.name, 1);
+
+        if (results.length > 0) {
+          await withDbWrite(() => artist.update({ mbid: results[0].mbid }));
+          logger.debug(`Resolved MBID for "${ artist.name }": ${ results[0].mbid }`);
+        }
       }
+
+      logger.info('MBID resolution complete');
     }
 
     // Build MBID lookup from database
@@ -157,7 +160,9 @@ export async function catalogDiscoveryJob(): Promise<void> {
     const similarArtistMap = new Map<string, SimilarArtistScore>();
     const similarArtistLimit = catalogConfig.similar_artist_limit || 10;
     const providerTimeout = catalogConfig.provider_timeout_ms || 30000;
+    const MAX_CONSECUTIVE_FAILURES = 5;
     let processedCount = 0;
+    let consecutiveFailures = 0;
 
     for (const [_nameLower, artist] of Object.entries(libraryArtists)) {
       // Check for cancellation
@@ -184,6 +189,17 @@ export async function catalogDiscoveryJob(): Promise<void> {
         similarArtistLimit,
         providerTimeout
       );
+
+      if (results.length === 0) {
+        consecutiveFailures++;
+
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+          logger.warn(`Aborting: ${ MAX_CONSECUTIVE_FAILURES } consecutive artists returned no results (providers may be unreachable)`);
+          break;
+        }
+      } else {
+        consecutiveFailures = 0;
+      }
 
       for (const sim of results) {
         const nameLower = sim.name.toLowerCase();
@@ -363,13 +379,19 @@ export async function fetchSimilarFromAllProviders(
   const results: SimilarArtistResult[] = [];
 
   const fetchWithTimeout = async(provider: SimilarityProvider): Promise<SimilarArtistResult[]> => {
-    return Promise.race([
-      provider.getSimilarArtists(artistName, artistMbid, limit),
-      new Promise<SimilarArtistResult[]>((resolve) => setTimeout(() => {
-        logger.debug(`Provider ${ provider.name } timed out for "${ artistName }"`);
-        resolve([]);
-      }, timeoutMs)),
-    ]);
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      logger.debug(`Provider ${ provider.name } timed out for "${ artistName }"`);
+      controller.abort();
+    }, timeoutMs);
+
+    try {
+      return await provider.getSimilarArtists(artistName, artistMbid, limit, controller.signal);
+    } catch {
+      return [];
+    } finally {
+      clearTimeout(timer);
+    }
   };
 
   const allResults = await Promise.allSettled(providers.map(fetchWithTimeout));

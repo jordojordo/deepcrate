@@ -4,7 +4,8 @@ import type {
   ListenBrainzPlaylistResponse,
   ListenBrainzRecommendation,
   ListenBrainzRecommendationsResponse,
-  ListenBrainzSimilarArtist
+  ListenBrainzSimilarArtist,
+  RetryConfig
 } from '@server/types';
 
 import axios from 'axios';
@@ -20,6 +21,10 @@ import { LB_BASE_URL } from '@server/constants/clients';
  * https://api.listenbrainz.org/
  */
 export class ListenBrainzClient extends BaseClient {
+  constructor(retryConfig?: Partial<RetryConfig>) {
+    super(retryConfig);
+  }
+
   /**
    * Fetch recording recommendations for a user
    */
@@ -130,7 +135,8 @@ export class ListenBrainzClient extends BaseClient {
    */
   async getSimilarArtists(
     artistMbid: string,
-    limit: number = 10
+    limit: number = 10,
+    signal?: AbortSignal
   ): Promise<ListenBrainzSimilarArtist[]> {
     const url = 'https://labs.api.listenbrainz.org/similar-artists/json';
 
@@ -143,6 +149,7 @@ export class ListenBrainzClient extends BaseClient {
       const response = await this.requestWithRetry('post', url, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 30000,
+        signal,
       }, [{ artist_mbids: [artistMbid], algorithm }]);
 
       // Response is an array where each element corresponds to an input artist

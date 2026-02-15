@@ -1,11 +1,14 @@
-import type { AlbumSearchResult, ArtistSearchResult, RecordingSearchResult } from '@server/types/search';
 import type {
   AlbumInfo,
+  AlbumSearchResult,
+  ArtistSearchResult,
   RecordingInfo,
+  RecordingSearchResult,
   ReleaseGroup,
   ReleaseGroupTrack,
+  RetryConfig,
   SearchResults,
-} from '@server/types/musicbrainz';
+} from '@server/types';
 
 import axios from 'axios';
 import logger from '@server/config/logger';
@@ -18,6 +21,10 @@ import { MB_BASE_URL, MB_USER_AGENT } from '@server/constants/clients';
  * https://musicbrainz.org/doc/MusicBrainz_API/Search#Recording
  */
 export class MusicBrainzClient extends BaseClient {
+  constructor(retryConfig?: Partial<RetryConfig>) {
+    super(retryConfig);
+  }
+
   /**
    * Resolve a recording MBID to artist + title + release-group MBID
    */
@@ -338,7 +345,8 @@ export class MusicBrainzClient extends BaseClient {
    */
   async searchArtists(
     query: string,
-    limit: number = 20
+    limit: number = 20,
+    signal?: AbortSignal
   ): Promise<SearchResults<ArtistSearchResult>> {
     const url = `${ MB_BASE_URL }/artist`;
 
@@ -351,6 +359,7 @@ export class MusicBrainzClient extends BaseClient {
           fmt: 'json',
         },
         timeout: 15000,
+        signal,
       });
 
       const artists = response.data.artists || [];
