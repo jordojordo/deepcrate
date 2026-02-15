@@ -3,18 +3,23 @@ import type {
   ListenBrainzPlaylistMetadata,
   ListenBrainzPlaylistResponse,
   ListenBrainzRecommendation,
-  ListenBrainzSimilarArtist,
-} from '@server/types/listenbrainz';
+  ListenBrainzRecommendationsResponse,
+  ListenBrainzSimilarArtist
+} from '@server/types';
 
 import axios from 'axios';
+
+import { BaseClient } from '@server/services/BaseClient';
+import { isTransientError } from '@server/utils/errorHandler';
 import logger from '@server/config/logger';
+
 import { LB_BASE_URL } from '@server/constants/clients';
 
 /**
  * ListenBrainzClient provides access to ListenBrainz recommendation API.
  * https://api.listenbrainz.org/
  */
-export class ListenBrainzClient {
+export class ListenBrainzClient extends BaseClient {
   /**
    * Fetch recording recommendations for a user
    */
@@ -26,19 +31,19 @@ export class ListenBrainzClient {
     const url = `${ LB_BASE_URL }/cf/recommendation/user/${ username }/recording`;
 
     try {
-      const response = await axios.get(url, {
+      const response = await this.requestWithRetry<ListenBrainzRecommendationsResponse>('get', url, {
         headers: { Authorization: `Token ${ token }` },
         params:  { count },
         timeout: 30000,
       });
 
-      if (response.status === 204) {
+      if (response?.status === 204) {
         logger.warn('No recommendations yet - need more listening history');
 
         return [];
       }
 
-      const mbids = response.data?.payload?.mbids || [];
+      const mbids = response?.data?.payload?.mbids || [];
 
       return mbids;
     } catch(error) {
@@ -64,13 +69,17 @@ export class ListenBrainzClient {
     const url = `${ LB_BASE_URL }/user/${ username }/playlists/createdfor`;
 
     try {
-      const response = await axios.get<ListenBrainzPlaylistsCreatedForResponse>(url, {
+      const response = await this.requestWithRetry<ListenBrainzPlaylistsCreatedForResponse>('get', url, {
         params:  { count },
         timeout: 30000,
       });
 
       return response.data.playlists.map((p) => p.playlist);
     } catch(error) {
+      if (isTransientError(error)) {
+        throw error;
+      }
+
       if (axios.isAxiosError(error)) {
         logger.error(`Failed to fetch playlists created for ${ username }: ${ error.message }`);
       } else {
@@ -89,7 +98,7 @@ export class ListenBrainzClient {
     const url = `${ LB_BASE_URL }/playlist/${ playlistMbid }`;
 
     try {
-      const response = await axios.get<ListenBrainzPlaylistResponse>(url, { timeout: 30000 });
+      const response = await this.requestWithRetry<ListenBrainzPlaylistResponse>('get', url, { timeout: 30000 });
 
       return response.data;
     } catch(error) {
@@ -125,11 +134,16 @@ export class ListenBrainzClient {
   ): Promise<ListenBrainzSimilarArtist[]> {
     const url = 'https://labs.api.listenbrainz.org/similar-artists/json';
 
+    // TODO: Make algorithm configurable — the API accepts a fixed set of enum values
+    // See: https://labs.api.listenbrainz.org/similar-artists
+    const algorithm = 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30';
+
+
     try {
-      const response = await axios.post(url, [{ artist_mbid: artistMbid }], {
+      const response = await this.requestWithRetry('post', url, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 30000,
-      });
+      }, [{ artist_mbids: [artistMbid], algorithm }]);
 
       // Response is an array where each element corresponds to an input artist
       const data = response.data;
