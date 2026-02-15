@@ -1,4 +1,5 @@
 import type { SimilarArtistResult, SimilarityProvider } from '@server/types/similarity';
+import type { SimilarArtistAttributes } from '@server/models/SimilarArtist';
 
 import { Op } from '@sequelize/core';
 
@@ -13,6 +14,7 @@ import { QueueService } from '@server/services/QueueService';
 import { LastFmSimilarityProvider, ListenBrainzSimilarityProvider } from '@server/services/providers';
 import CatalogArtist from '@server/models/CatalogArtist';
 import DiscoveredArtist from '@server/models/DiscoveredArtist';
+import SimilarArtist from '@server/models/SimilarArtist';
 import { isJobCancelled, isJobRunning } from '@server/plugins/jobs';
 
 interface SimilarArtistScore {
@@ -155,80 +157,82 @@ export async function catalogDiscoveryJob(): Promise<void> {
       mbidByNameLower.set(ca.nameLower, ca.mbid);
     }
 
-    // Step 2: Fetch similar artists from all providers
-    logger.info('Fetching similar artists from providers...');
-    const similarArtistMap = new Map<string, SimilarArtistScore>();
+    // Step 2: Fetch similar artists (with caching)
     const similarArtistLimit = catalogConfig.similar_artist_limit || 10;
     const providerTimeout = catalogConfig.provider_timeout_ms || 30000;
-    const MAX_CONSECUTIVE_FAILURES = 5;
-    let processedCount = 0;
-    let consecutiveFailures = 0;
+    const cacheTtlMs = (catalogConfig.similarity_cache_ttl_days ?? 30) * 24 * 60 * 60 * 1000;
 
-    for (const [_nameLower, artist] of Object.entries(libraryArtists)) {
-      // Check for cancellation
-      if (isJobCancelled(JOB_NAMES.CATALOGD)) {
-        logger.info('Job cancelled while fetching similar artists');
-        throw new Error('Job cancelled');
-      }
+    const catalogNameById = new Map<number, string>();
 
-      processedCount++;
-
-      // Rate limiting (1 request/second to be safe across providers)
-      if (processedCount > 1) {
-        await sleep(1000);
-      }
-
-      // Use cached MBID from database
-      const cachedMbid = mbidByNameLower.get(_nameLower) ?? undefined;
-
-      // Fetch from all providers in parallel with timeout
-      const results = await fetchSimilarFromAllProviders(
-        providers,
-        artist.name,
-        cachedMbid,
-        similarArtistLimit,
-        providerTimeout
-      );
-
-      if (results.length === 0) {
-        consecutiveFailures++;
-
-        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-          logger.warn(`Aborting: ${ MAX_CONSECUTIVE_FAILURES } consecutive artists returned no results (providers may be unreachable)`);
-          break;
-        }
-      } else {
-        consecutiveFailures = 0;
-      }
-
-      for (const sim of results) {
-        const nameLower = sim.name.toLowerCase();
-
-        // Skip library artists
-        if (libraryArtistNames.has(nameLower)) {
-          continue;
-        }
-
-        // Aggregate scores
-        if (similarArtistMap.has(nameLower)) {
-          const existing = similarArtistMap.get(nameLower)!;
-
-          existing.score += sim.match;
-          existing.sourceCount++;
-          existing.similarTo.add(artist.name);
-          existing.providers.add(sim.provider);
-        } else {
-          similarArtistMap.set(nameLower, {
-            name:        sim.name,
-            nameLower,
-            score:       sim.match,
-            sourceCount: 1,
-            similarTo:   new Set([artist.name]),
-            providers:   new Set([sim.provider]),
-          });
-        }
-      }
+    for (const ca of allCatalogArtists) {
+      catalogNameById.set(ca.id, ca.name);
     }
+
+    // Partition into stale vs cached
+    const currentLibraryArtists = allCatalogArtists.filter((ca) => libraryArtistNames.has(ca.nameLower));
+    const { stale, cached } = partitionByCacheStatus(currentLibraryArtists, cacheTtlMs);
+
+    logger.info(`Similarity cache: ${ cached.length } cached, ${ stale.length } need fetch`);
+
+    // Fetch from providers only for stale artists
+    if (stale.length > 0) {
+      const MAX_CONSECUTIVE_FAILURES = 5;
+      let processedCount = 0;
+      let consecutiveFailures = 0;
+
+      for (const artist of stale) {
+        if (isJobCancelled(JOB_NAMES.CATALOGD)) {
+          logger.info('Job cancelled while fetching similar artists');
+          throw new Error('Job cancelled');
+        }
+
+        processedCount++;
+
+        if (processedCount > 1) {
+          await sleep(1000);
+        }
+
+        const cachedMbid = artist.mbid ?? undefined;
+        const results = await fetchSimilarFromAllProviders(
+          providers, artist.name, cachedMbid, similarArtistLimit, providerTimeout
+        );
+
+        if (results.length === 0) {
+          consecutiveFailures++;
+
+          if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+            logger.warn(`Aborting: ${ MAX_CONSECUTIVE_FAILURES } consecutive artists returned no results (providers may be unreachable)`);
+            break;
+          }
+        } else {
+          consecutiveFailures = 0;
+        }
+
+        // Write results to cache
+        const now = new Date();
+
+        for (const sim of results) {
+          await withDbWrite(() => SimilarArtist.upsert({
+            catalogArtistId: artist.id,
+            name:            sim.name,
+            nameLower:       sim.name.toLowerCase(),
+            mbid:            sim.mbid ?? null,
+            score:           sim.match,
+            provider:        sim.provider,
+            fetchedAt:       now,
+          }));
+        }
+
+        await withDbWrite(() => artist.update({ lastSimilarFetchedAt: now }));
+      }
+
+      logger.info(`Fetched similarity data for ${ processedCount } artists`);
+    }
+
+    const currentArtistIds = currentLibraryArtists.map((ca) => ca.id);
+    const cachedRows = await SimilarArtist.findAll({ where: { catalogArtistId: { [Op.in]: currentArtistIds } } });
+
+    const similarArtistMap = aggregateSimilarFromCache(cachedRows, libraryArtistNames, catalogNameById);
 
     logger.info(`Found ${ similarArtistMap.size } similar artists`);
 
@@ -456,4 +460,71 @@ function calculateWeightedCatalogScoreToPercent(
   const clamped = Math.min(100, Math.max(0, weighted));
 
   return Math.round(clamped * 100) / 100;
+}
+
+/**
+ * Partition catalog artists into stale (need fetch) vs cached (within TTL).
+ * TTL of 0 means all artists are stale (bypass cache).
+ */
+export function partitionByCacheStatus(
+  artists: CatalogArtist[],
+  cacheTtlMs: number,
+): { stale: CatalogArtist[]; cached: CatalogArtist[] } {
+  const now = Date.now();
+  const stale: CatalogArtist[] = [];
+  const cached: CatalogArtist[] = [];
+
+  for (const artist of artists) {
+    if (
+      cacheTtlMs === 0
+      || !artist.lastSimilarFetchedAt
+      || (now - artist.lastSimilarFetchedAt.getTime()) > cacheTtlMs
+    ) {
+      stale.push(artist);
+    } else {
+      cached.push(artist);
+    }
+  }
+
+  return { stale, cached };
+}
+
+/**
+ * Aggregate cached similar artist rows into the same Map structure used for ranking.
+ */
+export function aggregateSimilarFromCache(
+  rows: SimilarArtistAttributes[],
+  libraryArtistNames: Set<string>,
+  catalogNameById: Map<number, string>,
+): Map<string, SimilarArtistScore> {
+  const map = new Map<string, SimilarArtistScore>();
+
+  for (const row of rows) {
+    // Skip library artists
+    if (libraryArtistNames.has(row.nameLower)) {
+      continue;
+    }
+
+    const sourceName = catalogNameById.get(row.catalogArtistId) ?? 'unknown';
+
+    if (map.has(row.nameLower)) {
+      const existing = map.get(row.nameLower)!;
+
+      existing.score += row.score;
+      existing.sourceCount++;
+      existing.similarTo.add(sourceName);
+      existing.providers.add(row.provider);
+    } else {
+      map.set(row.nameLower, {
+        name:        row.name,
+        nameLower:   row.nameLower,
+        score:       row.score,
+        sourceCount: 1,
+        similarTo:   new Set([sourceName]),
+        providers:   new Set([row.provider]),
+      });
+    }
+  }
+
+  return map;
 }

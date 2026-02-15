@@ -143,6 +143,15 @@ const COLUMN_MIGRATIONS: ColumnMigration[] = [
       allowNull: true,
     },
   },
+  // Similarity cache: track when similar artists were last fetched
+  {
+    table:      'catalog_artists',
+    column:     'last_similar_fetched_at',
+    definition: {
+      type:      DataTypes.DATE,
+      allowNull: true,
+    },
+  },
   // Track count infrastructure for completeness scoring.
   // No manual backfill is needed for existing tasks: slskdDownloader checks
   // `expectedTrackCount == null` on each processing cycle and resolves track

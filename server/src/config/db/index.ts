@@ -6,6 +6,7 @@ import ProcessedRecording from '@server/models/ProcessedRecording';
 import CatalogArtist from '@server/models/CatalogArtist';
 import DiscoveredArtist from '@server/models/DiscoveredArtist';
 import DownloadedItem from '@server/models/DownloadedItem';
+import SimilarArtist from '@server/models/SimilarArtist';
 import WishlistItem from '@server/models/WishlistItem';
 
 // Export models for use in services
@@ -15,6 +16,7 @@ export {
   CatalogArtist,
   DiscoveredArtist,
   DownloadedItem,
+  SimilarArtist,
   WishlistItem,
 };
 
