@@ -86,8 +86,8 @@ const logger = createLogger({
     format.splat(),
     format.json()
   ),
-  defaultMeta: { service: 'deepcrate' },
-  transports:  [],
+  // defaultMeta: { service: 'deepcrate' },
+  transports: [],
 });
 
 if (enableFile && fs.existsSync(logDir)) {
