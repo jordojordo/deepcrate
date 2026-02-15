@@ -12,6 +12,7 @@ export interface CatalogArtistAttributes {
   navidromeId:  string;  // Subsonic artist ID (column name preserved for DB compatibility)
   name:         string;
   nameLower:    string;  // Lowercase name for case-insensitive lookups
+  mbid?:        string | null; // MusicBrainz artist ID
   lastSyncedAt: Date;
   createdAt?:   Date;
   updatedAt?:   Date;
@@ -28,6 +29,7 @@ class CatalogArtist extends Model<CatalogArtistAttributes, CatalogArtistCreation
   declare navidromeId:  string;
   declare name:         string;
   declare nameLower:    string;
+  declare mbid:         string | null;
   declare lastSyncedAt: Date;
   declare createdAt?:   Date;
   declare updatedAt?:   Date;
@@ -43,6 +45,7 @@ CatalogArtist.init(
     navidromeId: {
       type:       DataTypes.STRING(255),
       allowNull:  false,
+      unique:     true,
       columnName: 'navidrome_id', // Column name preserved for DB compatibility
       comment:    'Subsonic server artist ID',
     },
@@ -55,6 +58,11 @@ CatalogArtist.init(
       allowNull:  false,
       columnName: 'name_lower',
       comment:    'Lowercase name for case-insensitive lookups',
+    },
+    mbid: {
+      type:      DataTypes.STRING(255),
+      allowNull: true,
+      comment:   'MusicBrainz artist ID',
     },
     lastSyncedAt: {
       type:         DataTypes.DATE,
@@ -69,7 +77,6 @@ CatalogArtist.init(
     underscored: true,
     indexes:     [
       { fields: ['name_lower'] },
-      { fields: ['navidrome_id'] },
     ],
   },
 );

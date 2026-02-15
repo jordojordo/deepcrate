@@ -134,6 +134,15 @@ const COLUMN_MIGRATIONS: ColumnMigration[] = [
       allowNull: true,
     },
   },
+  // Cached MusicBrainz artist ID for catalog artists
+  {
+    table:      'catalog_artists',
+    column:     'mbid',
+    definition: {
+      type:      DataTypes.STRING(255),
+      allowNull: true,
+    },
+  },
   // Track count infrastructure for completeness scoring.
   // No manual backfill is needed for existing tasks: slskdDownloader checks
   // `expectedTrackCount == null` on each processing cycle and resolves track
@@ -153,6 +162,30 @@ const COLUMN_MIGRATIONS: ColumnMigration[] = [
       type:      DataTypes.INTEGER,
       allowNull: true,
     },
+  },
+];
+
+interface IndexMigration {
+  table:          string;
+  name:           string;
+  columns:        string[];
+  unique:         boolean;
+  /** Raw SQL to run BEFORE creating the index (e.g. dedup). Each statement runs separately. */
+  preStatements?: string[];
+}
+
+const INDEX_MIGRATIONS: IndexMigration[] = [
+  {
+    table:         'catalog_artists',
+    name:          'catalog_artists_navidrome_id_unique',
+    columns:       ['navidrome_id'],
+    unique:        true,
+    preStatements: [
+      // Delete duplicate rows, keeping the one with the highest id (most recent upsert) per navidrome_id
+      `DELETE FROM catalog_artists WHERE id NOT IN (
+        SELECT MAX(id) FROM catalog_artists GROUP BY navidrome_id
+      )`,
+    ],
   },
 ];
 
@@ -180,6 +213,22 @@ async function columnExists(tableName: string, columnName: string): Promise<bool
     const [results] = await sequelize.query(`PRAGMA table_info(${ tableName })`);
 
     return (results as { name: string }[]).some((col) => col.name === columnName);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if an index exists on a table.
+ */
+async function indexExists(tableName: string, indexName: string): Promise<boolean> {
+  try {
+    const [results] = await sequelize.query(
+      `SELECT name FROM sqlite_master WHERE type='index' AND tbl_name=? AND name=?`,
+      { replacements: [tableName, indexName] },
+    );
+
+    return (results as { name: string }[]).length > 0;
   } catch {
     return false;
   }
@@ -221,6 +270,30 @@ export async function runSchemaMigrations(): Promise<number> {
       logger.error(`[migrations] Failed to add column ${ table }.${ column }`, { error: (error as Error)?.message ?? String(error) });
       throw error;
     }
+  }
+
+  for (const migration of INDEX_MIGRATIONS) {
+    if (!(await tableExists(migration.table))) {
+      continue;
+    }
+    if (await indexExists(migration.table, migration.name)) {
+      continue;
+    }
+
+    // dedup
+    for (const sql of migration.preStatements ?? []) {
+      await sequelize.query(sql);
+      logger.info(`[migrations] Executed pre-index statement on ${ migration.table }`);
+    }
+
+    // Create the index
+    await queryInterface.addIndex(migration.table, {
+      fields: migration.columns,
+      name:   migration.name,
+      unique: migration.unique,
+    });
+    logger.info(`[migrations] Created index ${ migration.name }`);
+    appliedCount++;
   }
 
   if (appliedCount > 0) {

@@ -313,3 +313,14 @@ export function isJobCancelled(name: string): boolean {
 
   return job?.aborted ?? false;
 }
+
+/**
+ * Check if a job is currently running
+ * @param name - The name of the job to check
+ * @returns true if the job is currently running
+ */
+export function isJobRunning(name: string): boolean {
+  const job = jobs.find((j) => j.name === name);
+
+  return job?.running ?? false;
+}
