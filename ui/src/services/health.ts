@@ -1,10 +1,10 @@
 import type { HealthResponse } from '@/types/api';
 
-import client from './api';
+import axios from 'axios';
 
 export async function fetchHealth(): Promise<HealthResponse | undefined> {
   try {
-    const { data } = await client.get('/health');
+    const { data } = await axios.get('/health');
 
     return data;
   } catch {
