@@ -1,4 +1,4 @@
-import type { RetryConfig } from '@server/types';
+import type { LastFmSimilarArtistsResponse, RetryConfig } from '@server/types';
 
 import axios from 'axios';
 import logger from '@server/config/logger';
@@ -28,7 +28,7 @@ export class LastFmClient extends BaseClient {
    */
   async getSimilarArtists(artistName: string, limit: number = 10, signal?: AbortSignal): Promise<SimilarArtist[]> {
     try {
-      const response = await this.requestWithRetry('get', LASTFM_BASE_URL, {
+      const response = await this.requestWithRetry<LastFmSimilarArtistsResponse>('get', LASTFM_BASE_URL, {
         params: {
           method:  'artist.getsimilar',
           artist:  artistName,

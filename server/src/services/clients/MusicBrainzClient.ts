@@ -2,6 +2,12 @@ import type {
   AlbumInfo,
   AlbumSearchResult,
   ArtistSearchResult,
+  MBArtistSearchResponse,
+  MBRecordingLookupResponse,
+  MBRecordingSearchResponse,
+  MBReleaseBrowseResponse,
+  MBReleaseLookupResponse,
+  MBReleaseGroupSearchResponse,
   RecordingInfo,
   RecordingSearchResult,
   ReleaseGroup,
@@ -32,7 +38,7 @@ export class MusicBrainzClient extends BaseClient {
     const url = `${ MB_BASE_URL }/recording/${ mbid }`;
 
     try {
-      const response = await this.requestWithRetry('get', url, {
+      const response = await this.requestWithRetry<MBRecordingLookupResponse>('get', url, {
         headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           inc: 'artists+releases+release-groups',
@@ -64,10 +70,7 @@ export class MusicBrainzClient extends BaseClient {
         let bestRelease = null;
 
         for (const release of releases) {
-          const rg = release['release-group'] || {};
-          const primaryType = rg['primary-type'] || '';
-
-          if (primaryType === 'Album') {
+          if (release['release-group']?.['primary-type'] === 'Album') {
             bestRelease = release;
             break;
           }
@@ -78,9 +81,7 @@ export class MusicBrainzClient extends BaseClient {
           bestRelease = releases[0];
         }
 
-        const rg = bestRelease['release-group'] || {};
-
-        releaseGroupMbid = rg.id;
+        releaseGroupMbid = bestRelease['release-group']?.id;
       }
 
       if (artist && title) {
@@ -109,7 +110,7 @@ export class MusicBrainzClient extends BaseClient {
     const url = `${ MB_BASE_URL }/recording/${ mbid }`;
 
     try {
-      const response = await this.requestWithRetry('get', url, {
+      const response = await this.requestWithRetry<MBRecordingLookupResponse>('get', url, {
         headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           inc: 'artists+releases+release-groups',
@@ -150,10 +151,7 @@ export class MusicBrainzClient extends BaseClient {
       let albumRelease = null;
 
       for (const release of releases) {
-        const rg = release['release-group'] || {};
-        const primaryType = rg['primary-type'] || '';
-
-        if (primaryType === 'Album') {
+        if (release['release-group']?.['primary-type'] === 'Album') {
           albumRelease = release;
           break;
         }
@@ -164,13 +162,13 @@ export class MusicBrainzClient extends BaseClient {
         albumRelease = releases[0];
       }
 
-      const rg = albumRelease['release-group'] || {};
-      const rgMbid = rg.id;
-      const albumTitle = rg.title || albumRelease.title;
+      const rg = albumRelease['release-group'];
+      const rgMbid = rg?.id;
+      const albumTitle = rg?.title || albumRelease.title;
 
       // Extract year from first-release-date
       let year: number | undefined;
-      const releaseDate = rg['first-release-date'] || albumRelease.date || '';
+      const releaseDate = rg?.['first-release-date'] || albumRelease.date || '';
 
       if (releaseDate && releaseDate.length >= 4) {
         const parsedYear = parseInt(releaseDate.substring(0, 4), 10);
@@ -212,7 +210,7 @@ export class MusicBrainzClient extends BaseClient {
     const url = `${ MB_BASE_URL }/release-group`;
 
     try {
-      const response = await this.requestWithRetry('get', url, {
+      const response = await this.requestWithRetry<MBReleaseGroupSearchResponse>('get', url, {
         headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query:  `artist:"${ artist }" AND type:${ type }`,
@@ -244,7 +242,7 @@ export class MusicBrainzClient extends BaseClient {
     const url = `${ MB_BASE_URL }/release-group`;
 
     try {
-      const response = await this.requestWithRetry('get', url, {
+      const response = await this.requestWithRetry<MBReleaseGroupSearchResponse>('get', url, {
         headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query,
@@ -294,7 +292,7 @@ export class MusicBrainzClient extends BaseClient {
     const url = `${ MB_BASE_URL }/recording`;
 
     try {
-      const response = await this.requestWithRetry('get', url, {
+      const response = await this.requestWithRetry<MBRecordingSearchResponse>('get', url, {
         headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query,
@@ -351,7 +349,7 @@ export class MusicBrainzClient extends BaseClient {
     const url = `${ MB_BASE_URL }/artist`;
 
     try {
-      const response = await this.requestWithRetry('get', url, {
+      const response = await this.requestWithRetry<MBArtistSearchResponse>('get', url, {
         headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query,
@@ -401,7 +399,7 @@ export class MusicBrainzClient extends BaseClient {
     const url = `${ MB_BASE_URL }/release`;
 
     try {
-      const response = await this.requestWithRetry('get', url, {
+      const response = await this.requestWithRetry<MBReleaseBrowseResponse>('get', url, {
         headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           'release-group': mbid,
@@ -460,7 +458,7 @@ export class MusicBrainzClient extends BaseClient {
     const releasesUrl = `${ MB_BASE_URL }/release`;
 
     try {
-      const releasesResponse = await this.requestWithRetry('get', releasesUrl, {
+      const releasesResponse = await this.requestWithRetry<MBReleaseBrowseResponse>('get', releasesUrl, {
         headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           'release-group': mbid,
@@ -483,7 +481,7 @@ export class MusicBrainzClient extends BaseClient {
 
       // Now get the full release with recordings
       const releaseUrl = `${ MB_BASE_URL }/release/${ releaseId }`;
-      const releaseResponse = await this.requestWithRetry('get', releaseUrl, {
+      const releaseResponse = await this.requestWithRetry<MBReleaseLookupResponse>('get', releaseUrl, {
         headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           inc: 'recordings',
