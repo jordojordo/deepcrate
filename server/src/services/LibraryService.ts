@@ -155,8 +155,16 @@ export class LibraryService {
       nameLower:   normalizeString(item.album),
     }));
 
-    // Query library albums matching any of the conditions
-    const matches = await LibraryAlbum.findAll({ where: { [Op.or]: lookupConditions } });
+    // Query in chunks to avoid sqlite depth limit
+    const chunkSize = 50;
+    const matches: LibraryAlbum[] = [];
+
+    for (let i = 0; i < lookupConditions.length; i += chunkSize) {
+      const chunk = lookupConditions.slice(i, i + chunkSize);
+      const chunkMatches = await LibraryAlbum.findAll({ where: { [Op.or]: chunk } });
+
+      matches.push(...chunkMatches);
+    }
 
     // Mark matches as true
     for (const match of matches) {
