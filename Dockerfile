@@ -1,57 +1,34 @@
-# =============================================================================
-# DeepCrate Dockerfile (Node.js Migration)
-# Multi-stage build: UI → Server → Production Runtime
-# =============================================================================
-
-# =============================================================================
-# Stage 1: Build UI
-# =============================================================================
 FROM node:24-alpine AS ui-builder
 
 WORKDIR /build
-
-# Make pnpm non-interactive
 ENV CI=true
 
-# Enable pnpm
 RUN corepack enable
 
-# Copy workspace config and lockfile for layer caching
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY ui/package.json ./ui/
 COPY server/package.json ./server/
 
-# Install UI dependencies using workspace filter
 RUN pnpm --filter @deepcrate/ui install --frozen-lockfile
 
-# Copy UI source files
 COPY ui/ ./ui/
 
-# Build production bundle
 RUN pnpm --filter @deepcrate/ui run build
 
-# =============================================================================
-# Stage 2: Build Server
-# =============================================================================
 FROM node:24-alpine AS server-builder
 
 WORKDIR /build
-
-# Make pnpm non-interactive
 ENV CI=true
 
-# Enable pnpm
 RUN corepack enable
 
-# Build tools for native modules (Sequelize SQLite)
+# Build tools for Sequelize SQLite
 RUN apk add --no-cache python3 make g++ sqlite-dev
 
-# Copy workspace config and lockfile for layer caching
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY server/package.json ./server/
 COPY ui/package.json ./ui/
 
-# Install server dependencies (including devDependencies for build)
 RUN pnpm --filter @deepcrate/server install --frozen-lockfile
 
 # Navigate into sqlite3's actual directory and build it manually
@@ -60,55 +37,35 @@ RUN cd /build/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3 && \
     ls -la build/ && \
     echo "SQLite3 build complete"
 
-# Copy server source
 COPY server/src ./server/src
 COPY server/tsconfig.json server/tsconfig.build.json ./server/
 
-# Build TypeScript to JavaScript
 RUN pnpm --filter @deepcrate/server run build
 
-# =============================================================================
-# Stage 3: Production Runtime
-# =============================================================================
 FROM node:24-alpine AS production
 
 ARG APP_VERSION=dev
-
 WORKDIR /app
-
-# Make pnpm non-interactive
 ENV CI=true
 
-# Enable pnpm
 RUN corepack enable
-
-# Install runtime dependencies (curl for healthcheck, su-exec for entrypoint, build tools for native modules)
 RUN apk add --no-cache curl su-exec python3 make g++ sqlite-dev
 
-# Copy workspace config and lockfile
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY server/package.json ./server/
 COPY ui/package.json ./ui/
 
-# Install production dependencies (this will rebuild native modules for runtime image)
 RUN pnpm --filter @deepcrate/server install --prod --frozen-lockfile
 
-# Navigate into sqlite3's actual directory and build it manually for production
 RUN cd /app/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3 && \
     npm run install && \
     ls -la build/ && \
     echo "SQLite3 production build complete"
 
-# Copy built server from builder
 COPY --from=server-builder /build/server/dist ./server/dist
-
-# Copy built ui to static directory
 COPY --from=ui-builder /build/ui/dist ./static
-
-# Clean up build tools to reduce image size
 RUN apk del python3 make g++
 
-# Environment variables
 ENV APP_VERSION=$APP_VERSION \
     NODE_ENV=production \
     CONFIG_PATH=/config/config.yaml \
@@ -121,22 +78,15 @@ ENV APP_VERSION=$APP_VERSION \
     SLSKD_INTERVAL=3600 \
     RUN_JOBS_ON_STARTUP=true
 
-# Create non-root user (use GID/UID 1001 to avoid conflict with node user at 1000)
-RUN addgroup -g 1001 deepcrate \
-    && adduser -D -u 1001 -G deepcrate deepcrate \
-    && mkdir -p /data /config \
-    && chown -R deepcrate:deepcrate /app /data /config
+RUN mkdir -p /data /config && chown node:node /data /config
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# Expose web UI port
 EXPOSE 8080
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# Entrypoint handles permissions and drops to deepcrate user
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["node", "server/dist/server.js"]
