@@ -1,23 +1,21 @@
 #!/bin/sh
 set -e
 
-# Ensure data and config directories exist and are writable
-# This handles the case where bind mounts override the image's directory permissions
-
-# If running as root, fix permissions and re-exec as deepcrate user
-if [ "$(id -u)" = "0" ]; then
-    # Ensure directories exist
-    mkdir -p /data /config
-
-    # Fix ownership for data directory (needs write access)
-    chown -R deepcrate:deepcrate /data
-
-    # Config directory may be read-only mounted, only chown if writable
-    chown -R deepcrate:deepcrate /config 2>/dev/null || true
-
-    # Re-exec this script as deepcrate user
-    exec su-exec deepcrate "$0" "$@"
+# Cannot chown without root. Check writability and exec directly.
+if [ "$(id -u)" != "0" ]; then
+    if [ ! -w /data ]; then
+        echo "WARNING: /data is not writable by UID $(id -u). SQLite will fail." >&2
+        echo "Remove 'user:' from compose, or chown /data to UID $(id -u) on the host." >&2
+    fi
+    exec "$@"
 fi
 
-# Now running as deepcrate user - start the application
-exec node server/dist/server.js
+# Fix permissions, then drop to the built-in node user (UID 1000).
+mkdir -p /data /config
+chown -R node:node /data
+chown -R node:node /config 2>/dev/null || {
+    echo "WARNING: Could not chown /config. Config updates via the UI will fail." >&2
+    echo "Either mount config.yaml as :rw or chown it to UID 1000 on the host." >&2
+}
+
+exec su-exec node "$@"
