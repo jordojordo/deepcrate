@@ -6,7 +6,7 @@ import LibraryService from '@server/services/LibraryService';
 import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
 import logger from '@server/config/logger';
-import { queueNs } from '@server/plugins/io/namespaces';
+import { queueNs, activityNs } from '@server/plugins/io/namespaces';
 
 /**
  * QueueService manages the pending approval queue.
@@ -132,6 +132,17 @@ export class QueueService {
         status: 'approved',
         processedAt,
       });
+
+      activityNs.emitActivityNew({
+        item: {
+          id:          `queue-${ item.id }`,
+          title:       `${ item.artist } - ${ item.album || item.title || 'Unknown' }`,
+          description: 'Approved',
+          timestamp:   processedAt.toISOString(),
+          type:        'approved',
+          coverUrl:    item.coverUrl,
+        },
+      });
     }
 
     const stats = await this.getStats();
@@ -185,12 +196,24 @@ export class QueueService {
 
     logger.info(`Rejected ${ affectedCount } items`);
 
-    // Emit socket events for each rejected item
-    for (const mbid of mbids) {
+    const rejectedItems = await QueueItem.findAll({ where: { mbid: { [Op.in]: mbids }, status: 'rejected' } });
+
+    for (const item of rejectedItems) {
       queueNs.emitQueueItemUpdated({
-        mbid,
+        mbid:   item.mbid,
         status: 'rejected',
         processedAt,
+      });
+
+      activityNs.emitActivityNew({
+        item: {
+          id:          `queue-${ item.id }`,
+          title:       `${ item.artist } - ${ item.album || item.title || 'Unknown' }`,
+          description: 'Rejected',
+          timestamp:   processedAt.toISOString(),
+          type:        'rejected',
+          coverUrl:    item.coverUrl,
+        },
       });
     }
 
@@ -278,6 +301,17 @@ export class QueueService {
     logger.info(`Added to pending queue: ${ item.artist } - ${ item.album || item.title }${ inLibrary ? ' (in library)' : '' }`);
 
     queueNs.emitQueueItemAdded({ item: queueItem });
+
+    activityNs.emitActivityNew({
+      item: {
+        id:          `queue-${ queueItem.id }`,
+        title:       `${ item.artist } - ${ item.album || item.title || 'Unknown' }`,
+        description: 'Queued for approval',
+        timestamp:   queueItem.addedAt.toISOString(),
+        type:        'queued',
+        coverUrl:    item.coverUrl,
+      },
+    });
 
     const stats = await this.getStats();
 

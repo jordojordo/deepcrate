@@ -1,5 +1,6 @@
 import type QueueItem from '@server/models/QueueItem';
 import type { ActiveDownload, DownloadProgress, DownloadStats } from '@server/types/downloads';
+import type { ActivityItem } from '@server/types/activity';
 
 /**
  * Queue namespace event payloads
@@ -112,8 +113,20 @@ export interface JobsServerToClientEvents {
 }
 
 /**
+ * Activity namespace event payloads
+ */
+export interface ActivityNewEvent {
+  item: ActivityItem;
+}
+
+export interface ActivityServerToClientEvents {
+  'activity:new': (_event: ActivityNewEvent) => void;
+}
+
+/**
  * Client-to-server events (currently none)
  */
 export interface QueueClientToServerEvents {}
 export interface DownloadsClientToServerEvents {}
 export interface JobsClientToServerEvents {}
+export interface ActivityClientToServerEvents {}

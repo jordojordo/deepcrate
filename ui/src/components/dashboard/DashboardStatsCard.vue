@@ -109,7 +109,7 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
   >
     <div class="relative z-10">
       <div class="flex align-items-center justify-content-between mb-4">
-        <p class="text-white/60 text-sm font-medium">{{ title }}</p>
+        <p class="text-sm font-medium">{{ title }}</p>
         <div class="flex align-items-center gap-2">
           <span v-if="speed" class="text-primary text-xs font-mono">{{ formatSpeed(speed) }}</span>
           <span
@@ -126,12 +126,12 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
           <Skeleton width="2rem" height="2rem" class="mb-2"></Skeleton>
         </div>
         <div v-else>
-          <p class="text-4xl font-bold text-white leading-none">{{ value }}</p>
-          <span v-if="unit" class="text-2xl text-white/50 mb-0.5">{{ unit }}</span>
+          <p class="text-4xl font-bold leading-none">{{ value }}</p>
+          <span v-if="unit" class="text-2xl mb-0.5">{{ unit }}</span>
         </div>
       </div>
 
-      <p v-if="subtitle" class="text-white/40 text-sm mb-4">{{ subtitle }}</p>
+      <p v-if="subtitle" class="text-sm mb-4">{{ subtitle }}</p>
 
       <div v-if="trend" class="mb-4">
         <span
@@ -157,7 +157,7 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
 
       <div v-if="downloads && downloads.length > 0" class="space-y-3 mb-4">
         <div v-for="download in downloads" :key="download.id">
-          <div class="flex justify-content-between text-xs text-white/70 mb-1">
+          <div class="flex justify-content-between text-xs mb-1">
             <span class="truncate max-w-[180px]">{{ download.artist }} - {{ download.album }}</span>
             <span>{{ activeDownloadProgress(download) }}%</span>
           </div>
@@ -173,8 +173,8 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
 
       <div v-if="progress" class="relative pt-2">
         <div class="flex align-items-center justify-content-between text-xs mb-2">
-          <span class="text-white/70">{{ progress.label || `${progress.value}%` }}</span>
-          <span v-if="progress.label" class="text-white/40">{{ 100 - progress.value }}% Free</span>
+          <span>{{ progress.label || `${progress.value}%` }}</span>
+          <span v-if="progress.label">{{ 100 - progress.value }}% Free</span>
         </div>
         <div class="h-2 w-full bg-white/10 rounded-full overflow-hidden">
           <div

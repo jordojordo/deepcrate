@@ -1,14 +1,14 @@
 <script setup lang="ts">
-// import type { ActivityItem } from '@/types';
-
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 
 import { useStats } from '@/composables/useStats';
 import { useDownloads } from '@/composables/useDownloads';
+import { useActivity } from '@/composables/useActivity';
 import { useQueueSocket } from '@/composables/useQueueSocket';
 import { useDownloadsSocket } from '@/composables/useDownloadsSocket';
 import { useJobsSocket } from '@/composables/useJobsSocket';
+import { useActivitySocket } from '@/composables/useActivitySocket';
 import { ROUTE_PATHS } from '@/constants/routes';
 
 import Button from 'primevue/button';
@@ -16,34 +16,31 @@ import Button from 'primevue/button';
 import DashboardStatsCard from '@/components/dashboard/DashboardStatsCard.vue';
 import ErrorMessage from '@/components/common/ErrorMessage.vue';
 // import DiscoverySourcesChart from '@/components/dashboard/DiscoverySourcesChart.vue';
-// import RecentActivityFeed '@/components/dashboard/RecentActivityFeed.vue';
+import RecentActivityFeed from '@/components/dashboard/RecentActivityFeed.vue';
 import ActionsPanel from '@/components/actions/ActionsPanel.vue';
+import ActivityModal from '@/components/dashboard/ActivityModal.vue';
 
 const {
   stats, loading, error, fetchStats
 } = useStats();
 const { stats: downloadStats, activeDownloads, fetchActive } = useDownloads();
+const { recentItems: recentActivity, fetchRecent } = useActivity();
 
 useQueueSocket();
 useDownloadsSocket();
 useJobsSocket();
+useActivitySocket();
 
-// Fetch active downloads on mount so progress bars can be displayed
-// WebSocket will handle real-time updates after initial load
 onMounted(() => {
   fetchActive();
+  fetchRecent();
 });
 
-// TODO: Discovery sources data - API not yet implemented
-// const discoverySources = computed(() => []);
+const activityModalVisible = ref(false);
 
-// // TODO: Recent activity - API not yet implemented
-// const recentActivity = computed<ActivityItem[]>(() => []);
-
-// const handleViewAllActivity = () => {
-//   // TODO: Navigate to activity log page when implemented
-//   console.log('View all activity clicked');
-// };
+const handleViewActivity = () => {
+  activityModalVisible.value = true;
+};
 </script>
 
 <template>
@@ -124,19 +121,22 @@ onMounted(() => {
       /> -->
     </div>
 
-    <!-- TODO: Hide until implemented -->
-    <!-- <div class="dashboard__content-row">
-      <div class="dashboard__chart-section">
+    <div class="dashboard__content-row">
+      <!-- TODO: Discovery sources chart - API not yet implemented -->
+      <!-- <div class="dashboard__chart-section">
         <DiscoverySourcesChart :sources="discoverySources" />
-      </div>
+      </div> -->
 
       <div class="dashboard__activity-section">
-        <RecentActivityFeed
-          :activities="recentActivity"
-          @view-all="handleViewAllActivity"
-        />
+        <RecentActivityFeed :activities="recentActivity" @viewAll="handleViewActivity" />
       </div>
-    </div> -->
+    </div>
+
+    <ActivityModal
+      v-if="activityModalVisible"
+      :visible="activityModalVisible"
+      @close="activityModalVisible = false"
+    />
   </div>
 </template>
 
@@ -182,6 +182,7 @@ onMounted(() => {
   &__chart-section,
   &__activity-section {
     min-height: 400px;
+    min-width: 0;
   }
 }
 

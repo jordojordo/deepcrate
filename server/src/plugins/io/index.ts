@@ -6,6 +6,7 @@ import logger from '@server/config/logger';
 import { setupQueueNamespace } from './namespaces/queueNamespace';
 import { setupDownloadsNamespace } from './namespaces/downloadsNamespace';
 import { setupJobsNamespace } from './namespaces/jobsNamespace';
+import { setupActivityNamespace } from './namespaces/activityNamespace';
 
 let io: Server | null = null;
 
@@ -28,6 +29,7 @@ export function initIo(httpServer: http.Server): Server {
   setupQueueNamespace(io);
   setupDownloadsNamespace(io);
   setupJobsNamespace(io);
+  setupActivityNamespace(io);
 
   logger.info('Socket.io initialized');
 

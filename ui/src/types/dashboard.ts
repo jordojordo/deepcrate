@@ -3,6 +3,6 @@ export interface ActivityItem {
   title:       string;
   description: string;
   timestamp:   string;
-  type:        'added' | 'approved' | 'downloaded' | 'queued' | 'system';
+  type:        'added' | 'approved' | 'rejected' | 'downloaded' | 'queued';
   coverUrl?:   string;
 }
