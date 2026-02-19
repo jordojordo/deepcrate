@@ -22,7 +22,7 @@ import {
 import { scoreSearchResponses } from '@server/services/downloads/searchResultScorer';
 import DownloadTask, { DownloadTaskType, DownloadTaskStatus } from '@server/models/DownloadTask';
 import WishlistItem from '@server/models/WishlistItem';
-import { downloadsNs } from '@server/plugins/io/namespaces';
+import { downloadsNs, activityNs } from '@server/plugins/io/namespaces';
 import { normalizeSlskdPath } from '@server/utils/slskdPaths';
 import { getDominantQualityInfo } from '@server/utils/audioQuality';
 import { JOB_INTERVALS } from '@server/config/jobs';
@@ -605,6 +605,16 @@ export class DownloadService {
       const task = await DownloadTask.findByPk(id);
 
       if (task) {
+        activityNs.emitActivityNew({
+          item: {
+            id:          `download-${ task.id }`,
+            title:       `${ task.artist } - ${ task.album }`,
+            description: 'Download finished',
+            timestamp:   new Date().toISOString(),
+            type:        'downloaded',
+          },
+        });
+
         // Auto-trigger library organize if enabled and not manual-only
         const config = getConfig();
 

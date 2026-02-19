@@ -89,6 +89,13 @@ export interface JobCancelledEvent {
 }
 
 /**
+ * Activity namespace event payloads
+ */
+export interface ActivityNewEvent {
+  item: import('./dashboard').ActivityItem;
+}
+
+/**
  * Socket namespaces
  */
-export type SocketNamespace = '/queue' | '/downloads' | '/jobs';
+export type SocketNamespace = '/queue' | '/downloads' | '/jobs' | '/activity';
