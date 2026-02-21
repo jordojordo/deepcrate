@@ -95,7 +95,7 @@ importers:
         version: 14.0.11
       nodemon:
         specifier: ^3.1.11
-        version: 3.1.13
+        version: 3.1.14
       supertest:
         specifier: ^7.2.2
         version: 7.2.2
@@ -1700,8 +1700,8 @@ packages:
     engines: {node: '>= 10.12.0'}
     hasBin: true
 
-  nodemon@3.1.13:
-    resolution: {integrity: sha512-nPN6L7A9cTA3BnJ3zZIibH5FiDh3GbmibeS17bl5YEU1IRO2mcfvR0ZJXH3ndoeKItjUcaX81FSKc/Kq/IiG6g==}
+  nodemon@3.1.14:
+    resolution: {integrity: sha512-jakjZi93UtB3jHMWsXL68FXSAosbLfY0In5gtKq3niLSkrWznrVBzXFNOEMJUfc9+Ke7SHWoAZsiMkNP3vq6Jw==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -3940,7 +3940,7 @@ snapshots:
       - supports-color
     optional: true
 
-  nodemon@3.1.13:
+  nodemon@3.1.14:
     dependencies:
       chokidar: 3.6.0
       debug: 4.4.3(supports-color@5.5.0)
