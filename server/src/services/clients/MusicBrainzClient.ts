@@ -8,6 +8,7 @@ import type {
   MBReleaseBrowseResponse,
   MBReleaseLookupResponse,
   MBReleaseGroupSearchResponse,
+  MBReleaseGroupTagsResponse,
   RecordingInfo,
   RecordingSearchResult,
   ReleaseGroup,
@@ -457,7 +458,7 @@ export class MusicBrainzClient extends BaseClient {
     const url = `${ MB_BASE_URL }/release-group/${ mbid }`;
 
     try {
-      const response = await axios.get(url, {
+      const response = await this.requestWithRetry<MBReleaseGroupTagsResponse>('get', url, {
         headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           inc: 'tags',

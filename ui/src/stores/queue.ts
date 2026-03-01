@@ -113,7 +113,9 @@ export const useQueueStore = defineStore('queue', () => {
   async function fetchGenres() {
     try {
       availableGenres.value = await queueApi.getGenres();
-    } catch {}
+    } catch(e) {
+      console.warn('Failed to fetch genres:', e);
+    }
   }
 
   function setFilters(newFilters: Partial<QueueFilters>) {

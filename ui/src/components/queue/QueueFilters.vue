@@ -163,7 +163,7 @@ function setViewMode(mode: ViewMode) {
     gap: 0.5rem;
     margin-left: auto;
 
-    @media screen {
+    @media (max-width: 640px) {
       margin-left: 0;
       justify-content: space-around;
     }

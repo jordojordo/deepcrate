@@ -123,3 +123,8 @@ export interface MBReleaseBrowseResponse {
 export interface MBReleaseLookupResponse {
   media?: MBMedia[];
 }
+
+/** GET /release-group/{mbid}?inc=tags */
+export interface MBReleaseGroupTagsResponse {
+  tags?: Array<{ name: string; count: number }>;
+}

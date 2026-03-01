@@ -55,9 +55,15 @@ export class QueueService {
     }
 
     // genres is stored as a JSON string, so LIKE-match the raw column text.
-    if (genres?.length) {
-      const genreConditions = genres.map(g => `genres LIKE '%"${ g }"%'`).join(' OR ');
+    // Use named replacements to avoid SQL injection from user-supplied genre strings.
+    const replacements: Record<string, string> = {};
 
+    if (genres?.length) {
+      const genreConditions = genres.map((_, i) => `genres LIKE :genre${ i }`).join(' OR ');
+
+      genres.forEach((g, i) => {
+        replacements[`genre${ i }`] = `%"${ g }"%`; 
+      });
       where[Op.and as unknown as string] = [literal(`(${ genreConditions })`)];
     }
 
@@ -68,6 +74,7 @@ export class QueueService {
       order: [[sortField, order.toUpperCase()]],
       limit,
       offset,
+      replacements,
     });
 
     return {
