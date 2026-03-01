@@ -42,6 +42,7 @@ class QueueController extends BaseController {
       source_track: item.sourceTrack,
       cover_url:    item.coverUrl,
       year:         item.year,
+      genres:       item.genres,
       in_library:   item.inLibrary,
     };
   }
@@ -60,8 +61,11 @@ class QueueController extends BaseController {
       }
 
       const {
-        source, sort, order, limit, offset, hide_in_library
+        source, sort, order, limit, offset, hide_in_library, genres
       } = parseResult.data;
+
+      // Parse comma-separated genres into array
+      const genreFilter = genres ? genres.split(',').map(g => g.trim()).filter(Boolean) : undefined;
 
       // Get items from queue service
       const { items: dbItems, total } = await this.queueService.getPending({
@@ -71,6 +75,7 @@ class QueueController extends BaseController {
         limit,
         offset,
         hideInLibrary: hide_in_library,
+        genres:        genreFilter,
       });
 
       // Convert Sequelize models to plain objects
@@ -165,6 +170,20 @@ class QueueController extends BaseController {
       return res.json(response);
     } catch(error) {
       return this.handleError(res, error as Error, 'Failed to reject items');
+    }
+  };
+
+  /**
+   * Get distinct genres from pending queue items
+   * GET /api/v1/queue/genres
+   */
+  getGenres = async(_req: Request, res: Response): Promise<Response> => {
+    try {
+      const genres = await this.queueService.getDistinctGenres();
+
+      return res.json({ genres });
+    } catch(error) {
+      return this.handleError(res, error as Error, 'Failed to fetch genres');
     }
   };
 

@@ -333,6 +333,9 @@ async function processAlbumMode(
 
   const coverUrl = ctx.coverClient.getCoverUrl(albumMbid);
 
+  await sleep(1000);
+  const genres = await ctx.mbClient.getReleaseGroupTags(albumMbid);
+
   if (ctx.approvalMode === 'manual') {
     await ctx.queueService.addPending({
       artist:      albumInfo.artist,
@@ -344,6 +347,7 @@ async function processAlbumMode(
       sourceTrack: albumInfo.trackTitle,
       coverUrl:    coverUrl || undefined,
       year:        albumInfo.year,
+      genres:      genres.length > 0 ? genres : undefined,
     });
 
     logger.info(`  ? ${ albumInfo.artist } - ${ albumInfo.title } (pending approval)`);

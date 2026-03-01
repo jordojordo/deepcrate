@@ -12,9 +12,14 @@ export function useQueue() {
   const error = computed(() => store.error);
   const filters = computed(() => store.filters);
   const hasMore = computed(() => store.hasMore);
+  const availableGenres = computed(() => store.availableGenres);
 
   async function fetchPending(append = false) {
     return store.fetchPending(append);
+  }
+
+  async function fetchGenres() {
+    return store.fetchGenres();
   }
 
   async function approveItems(mbids: string[]) {
@@ -48,8 +53,10 @@ export function useQueue() {
     error,
     filters,
     hasMore,
+    availableGenres,
     isProcessing,
     fetchPending,
+    fetchGenres,
     approveItems,
     rejectItems,
     updateFilters,

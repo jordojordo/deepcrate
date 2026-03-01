@@ -332,6 +332,10 @@ export async function catalogDiscoveryJob(): Promise<void> {
           }
         }
 
+        // Fetch genre tags
+        await sleep(1000);
+        const genres = await mbClient.getReleaseGroupTags(albumMbid);
+
         // Add to queue
         if (approvalMode === 'manual') {
           await queueService.addPending({
@@ -344,6 +348,7 @@ export async function catalogDiscoveryJob(): Promise<void> {
             similarTo: Array.from(artist.similarTo).sort((a, b) => a.localeCompare(b)),
             coverUrl:  coverUrl || undefined,
             year,
+            genres:    genres.length > 0 ? genres : undefined,
           });
 
           logger.info(`    ? ${ artist.name } - ${ album.title } (pending approval)`);

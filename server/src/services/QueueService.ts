@@ -1,4 +1,4 @@
-import { Op } from '@sequelize/core';
+import { Op, literal } from '@sequelize/core';
 
 import QueueItem, { QueueItemSource } from '@server/models/QueueItem';
 import WishlistService from '@server/services/WishlistService';
@@ -31,6 +31,7 @@ export class QueueService {
     limit?:         number;
     offset?:        number;
     hideInLibrary?: boolean;
+    genres?:        string[];
   }): Promise<{ items: QueueItem[]; total: number }> {
     const {
       source = 'all',
@@ -39,9 +40,9 @@ export class QueueService {
       limit = 50,
       offset = 0,
       hideInLibrary = false,
+      genres,
     } = params;
 
-    // Build where clause
     const where: Record<string, unknown> = { status: 'pending' };
 
     if (source !== 'all') {
@@ -53,10 +54,15 @@ export class QueueService {
       where.inLibrary = { [Op.or]: [{ [Op.eq]: false }, { [Op.eq]: null }] };
     }
 
-    // Map sort field to column name
+    // genres is stored as a JSON string, so LIKE-match the raw column text.
+    if (genres?.length) {
+      const genreConditions = genres.map(g => `genres LIKE '%"${ g }"%'`).join(' OR ');
+
+      where[Op.and as unknown as string] = [literal(`(${ genreConditions })`)];
+    }
+
     const sortField = sort === 'added_at' ? 'addedAt' : sort;
 
-    // Query database
     const { rows, count } = await QueueItem.findAndCountAll({
       where,
       order: [[sortField, order.toUpperCase()]],
@@ -264,6 +270,7 @@ export class QueueService {
     coverUrl?:    string;
     year?:        number;
     inLibrary?:   boolean;
+    genres?:      string[];
   }): Promise<QueueItem> {
     const config = getConfig();
     const libraryDuplicateEnabled = config.library_duplicate?.enabled ?? false;
@@ -318,6 +325,30 @@ export class QueueService {
     queueNs.emitQueueStatsUpdated(stats);
 
     return queueItem;
+  }
+
+  /**
+   * Get distinct genres from all pending queue items
+   */
+  async getDistinctGenres(): Promise<string[]> {
+    // Sequelize accepts { [Op.ne]: null }, but the TS types are overly strict for JSON columns.
+    const where: Record<string, unknown> = {
+      status: 'pending',
+      genres: { [Op.ne]: null },
+    };
+
+    const items = await QueueItem.findAll({
+      where,
+      attributes: ['genres'],
+    });
+
+    const genreSet = new Set<string>();
+
+    for (const item of items) {
+      item.genres?.forEach((genre) => genreSet.add(genre));
+    }
+
+    return Array.from(genreSet).sort();
   }
 
   /**

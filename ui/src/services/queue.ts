@@ -25,6 +25,10 @@ export async function getPending(filters: QueueFilters): Promise<PaginatedRespon
     params.hide_in_library = true;
   }
 
+  if (filters.genres?.length) {
+    params.genres = filters.genres.join(',');
+  }
+
   const response = await client.get<PaginatedResponse<QueueItem>>('/queue/pending', { params });
 
   return response.data;
@@ -36,6 +40,12 @@ export async function approve(request: ApproveRequest): Promise<void> {
 
 export async function reject(request: RejectRequest): Promise<void> {
   await client.post('/queue/reject', request);
+}
+
+export async function getGenres(): Promise<string[]> {
+  const response = await client.get<{ genres: string[] }>('/queue/genres');
+
+  return response.data.genres;
 }
 
 export async function getStats(): Promise<QueueStats> {

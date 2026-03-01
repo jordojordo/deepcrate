@@ -19,11 +19,12 @@ vi.mock('@server/config/settings', async(importOriginal) => {
 
 const { mockService, mockTriggerJob } = vi.hoisted(() => ({
   mockService: {
-    getPending:  vi.fn(),
-    approve:     vi.fn(),
-    approveAll:  vi.fn(),
-    reject:      vi.fn(),
-    getStats:    vi.fn(),
+    getPending:        vi.fn(),
+    approve:           vi.fn(),
+    approveAll:        vi.fn(),
+    reject:            vi.fn(),
+    getStats:          vi.fn(),
+    getDistinctGenres: vi.fn(),
   },
   mockTriggerJob: vi.fn(),
 }));
@@ -140,6 +141,7 @@ describe('QueueController', () => {
         limit:         50,
         offset:        0,
         hideInLibrary: false,
+        genres:        undefined,
       });
     });
 
@@ -166,6 +168,7 @@ describe('QueueController', () => {
         limit:         10,
         offset:        20,
         hideInLibrary: true,
+        genres:        undefined,
       });
     });
 
@@ -304,6 +307,63 @@ describe('QueueController', () => {
       expect(response.body).toMatchObject({
         error: true,
         code:  'validation_error',
+      });
+    });
+  });
+
+  describe('GET /api/v1/queue/pending with genres filter', () => {
+    it('passes parsed genres to the service', async() => {
+      mockService.getPending.mockResolvedValue({ items: [], total: 0 });
+
+      const response = await request(app)
+        .get('/api/v1/queue/pending')
+        .query({ genres: 'rock,jazz' })
+        .set('Authorization', AUTH_HEADER);
+
+      expect(response.status).toBe(200);
+      expect(mockService.getPending).toHaveBeenCalledWith(
+        expect.objectContaining({ genres: ['rock', 'jazz'] })
+      );
+    });
+
+    it('includes genres in response items', async() => {
+      const items = [makeMockItem({ genres: ['electronic', 'ambient'] })];
+
+      mockService.getPending.mockResolvedValue({ items, total: 1 });
+
+      const response = await request(app)
+        .get('/api/v1/queue/pending')
+        .set('Authorization', AUTH_HEADER);
+
+      expect(response.status).toBe(200);
+      expect(response.body.items[0].genres).toEqual(['electronic', 'ambient']);
+    });
+  });
+
+  describe('GET /api/v1/queue/genres', () => {
+    it('returns genres array', async() => {
+      mockService.getDistinctGenres.mockResolvedValue(['ambient', 'electronic', 'jazz']);
+
+      const response = await request(app)
+        .get('/api/v1/queue/genres')
+        .set('Authorization', AUTH_HEADER);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ genres: ['ambient', 'electronic', 'jazz'] });
+    });
+
+    it('returns 500 on service error', async() => {
+      mockService.getDistinctGenres.mockRejectedValue(new Error('DB failure'));
+
+      const response = await request(app)
+        .get('/api/v1/queue/genres')
+        .set('Authorization', AUTH_HEADER);
+
+      expect(response.status).toBe(500);
+      expect(response.body).toMatchObject({
+        error:   true,
+        code:    'internal_error',
+        message: 'Failed to fetch genres',
       });
     });
   });

@@ -4,14 +4,17 @@ import type { QueueFilters, ViewMode } from '@/types';
 import { SORT_OPTIONS } from '@/constants/queue';
 
 import Select from 'primevue/select';
+import MultiSelect from 'primevue/multiselect';
 import Button from 'primevue/button';
 import ToggleSwitch from 'primevue/toggleswitch';
 
 const sortOptions = [...SORT_OPTIONS];
 
 const props = defineProps<{
-  modelValue: QueueFilters;
-  viewMode?:  ViewMode;
+  modelValue:      QueueFilters;
+  loading:         boolean;
+  viewMode?:       ViewMode;
+  availableGenres: string[];
 }>();
 
 const emit = defineEmits<{
@@ -68,6 +71,19 @@ function setViewMode(mode: ViewMode) {
             <span>Sort: {{ sortOptions.find(o => o.value === value)?.label }}</span>
           </template>
         </Select>
+
+        <MultiSelect
+          v-if="availableGenres.length > 0"
+          :model-value="modelValue.genres || []"
+          :loading="loading"
+          :max-selected-labels="2"
+          :options="availableGenres"
+          :virtual-scroller-options="{ itemSize: 44 }"
+          filter
+          class="queue-filters__select"
+          placeholder="Genres"
+          @update:model-value="updateFilter('genres', $event.length ? $event : undefined)"
+        />
       </div>
 
       <!-- Right: Sort direction, hide owned, and view toggle -->
@@ -113,103 +129,105 @@ function setViewMode(mode: ViewMode) {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .queue-filters {
   padding: 0.75rem 0;
-}
 
-.queue-filters__row {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+  &__row {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 
-@media (min-width: 640px) {
-  .queue-filters__row {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+    @media (min-width: 640px) {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
   }
-}
 
-.queue-filters__left {
-  display: flex;
-  gap: 0.75rem;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
-}
+  &__left {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
 
-.queue-filters__right {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-left: auto;
-}
+    @media (max-width: 768px) {
+      flex-direction: column;
+    }
+  }
 
-.queue-filters__divider {
-  width: 1px;
-  height: 1rem;
-  background: var(--r-border-default);
-  margin: 0 0.5rem;
-}
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
 
-/* Filter select styling */
-:deep(.queue-filters__select) {
-  height: 2.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  white-space: nowrap;
-  background: var(--surface-card);
-  border-color: var(--r-border-default);
-  color: var(--r-text-primary);
-}
+    @media screen {
+      margin-left: 0;
+      justify-content: space-around;
+    }
+  }
 
-:deep(.queue-filters__select:hover) {
-  background: var(--r-hover-bg);
-  border-color: var(--r-border-emphasis);
-}
+  &__divider {
+    width: 1px;
+    height: 1rem;
+    background: var(--r-border-default);
+    margin: 0 0.5rem;
+  }
 
-:deep(.queue-filters__select .p-select-label) {
-  padding: 0 0.75rem;
-  display: flex;
-  align-items: center;
-}
+  &__toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
 
-/* View toggle buttons */
-:deep(.queue-filters__view-btn) {
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-  color: var(--r-text-muted);
-  border-radius: 0.5rem;
-}
+    &:hover &-label {
+      color: var(--r-text-primary);
+    }
+  }
 
-:deep(.queue-filters__view-btn:hover) {
-  background: var(--r-hover-bg);
-  color: var(--r-text-primary);
-}
+  &__toggle-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--r-text-muted);
+    white-space: nowrap;
+  }
 
-:deep(.queue-filters__view-btn--active) {
-  background: var(--r-active-bg);
-  color: var(--r-text-primary);
-}
+  &__select {
+    &:hover {
+      background: var(--r-hover-bg);
+      border-color: var(--r-border-emphasis);
+    }
 
-/* Hide owned toggle */
-.queue-filters__toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
+    .p-select-label {
+      padding: 0 0.75rem;
+      display: flex;
+      align-items: center;
+    }
 
-.queue-filters__toggle-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--r-text-muted);
-  white-space: nowrap;
-}
 
-.queue-filters__toggle:hover .queue-filters__toggle-label {
-  color: var(--r-text-primary);
+    :deep(.p-multiselect-label.p-placeholder) {
+      color: var(--p-select-color);
+    }
+  }
+
+  &__view-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    color: var(--r-text-muted);
+    border-radius: 0.5rem;
+
+    &:hover {
+      background: var(--r-hover-bg);
+      color: var(--r-text-primary);
+    }
+
+    &--active {
+      background: var(--r-active-bg);
+      color: var(--r-text-primary);
+    }
+  }
 }
 </style>

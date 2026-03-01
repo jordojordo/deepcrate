@@ -134,7 +134,6 @@ const COLUMN_MIGRATIONS: ColumnMigration[] = [
       allowNull: true,
     },
   },
-  // Cached MusicBrainz artist ID for catalog artists
   {
     table:      'catalog_artists',
     column:     'mbid',
@@ -149,6 +148,15 @@ const COLUMN_MIGRATIONS: ColumnMigration[] = [
     column:     'last_similar_fetched_at',
     definition: {
       type:      DataTypes.DATE,
+      allowNull: true,
+    },
+  },
+  // Genre tags from MusicBrainz for queue filtering
+  {
+    table:      'queue_items',
+    column:     'genres',
+    definition: {
+      type:      DataTypes.JSON,
       allowNull: true,
     },
   },
