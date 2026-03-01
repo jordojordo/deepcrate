@@ -17,6 +17,7 @@ export const useQueueStore = defineStore('queue', () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const processingIds = ref<Set<string>>(new Set());
+  const availableGenres = ref<string[]>([]);
   const filters = ref<QueueFilters>({
     source: 'all',
     sort:   'added_at',
@@ -109,6 +110,14 @@ export const useQueueStore = defineStore('queue', () => {
     }
   }
 
+  async function fetchGenres() {
+    try {
+      availableGenres.value = await queueApi.getGenres();
+    } catch(e) {
+      console.warn('Failed to fetch genres:', e);
+    }
+  }
+
   function setFilters(newFilters: Partial<QueueFilters>) {
     filters.value = {
       ...filters.value, ...newFilters, offset: 0
@@ -134,8 +143,10 @@ export const useQueueStore = defineStore('queue', () => {
     error,
     filters,
     hasMore,
+    availableGenres,
     isProcessing,
     fetchPending,
+    fetchGenres,
     approve,
     approveAll,
     reject,

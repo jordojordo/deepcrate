@@ -12,6 +12,7 @@ export interface QueueItem {
   cover_url?:    string;
   year?:         number;
   in_library?:   boolean;
+  genres?:       string[];
 }
 
 export interface QueueFilters {
@@ -21,6 +22,7 @@ export interface QueueFilters {
   limit:            number;
   offset:           number;
   hide_in_library?: boolean;
+  genres?:          string[];
 }
 
 export interface ApproveRequest {

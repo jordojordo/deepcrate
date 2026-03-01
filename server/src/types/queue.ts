@@ -16,6 +16,7 @@ export const queueItemSchema = z.object({
   source_track: z.string().nullable().optional(),
   cover_url:    z.string().nullable().optional(),
   year:         z.number().int().nullable().optional(),
+  genres:       z.array(z.string()).nullable().optional(),
 });
 
 export type QueueItem = z.infer<typeof queueItemSchema>;
@@ -47,6 +48,7 @@ export const getPendingQuerySchema = z.object({
   limit:           z.coerce.number().int().positive().default(50),
   offset:          z.coerce.number().int().nonnegative().default(0),
   hide_in_library: z.coerce.boolean().default(false),
+  genres:          z.string().optional(),
 });
 
 export type GetPendingQuery = z.infer<typeof getPendingQuerySchema>;

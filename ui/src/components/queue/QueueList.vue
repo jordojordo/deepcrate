@@ -5,6 +5,7 @@ import type { ComponentPublicInstance } from 'vue';
 import { ref, watch } from 'vue';
 import { getDefaultCoverUrl } from '@/utils/formatters';
 import { useBreakpoint } from '@/composables/useBreakpoint';
+import { getCollapsedList } from '@/composables/useCollapsedList';
 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -93,29 +94,20 @@ function getSourceSeverity(source: string) {
 }
 
 function getSimilarTag(similarTo: string[] | undefined): string | null {
-  if (similarTo && similarTo.length > 0) {
-    const first = similarTo[0];
-    const remaining = similarTo.length - 1;
-
-    if (remaining > 0) {
-      return `Similar to ${ first } (+${ remaining })`;
-    }
-
-    return `Similar to ${ first }`;
-  }
-
-  return null;
+  return getCollapsedList(similarTo, { prefix: 'Similar to' }).displayTag;
 }
 
 function getSimilarTooltip(similarTo: string[] | undefined): string | null {
-  if (similarTo && similarTo.length > 1) {
-    return `Similar to ${ similarTo.join(', ') }`;
-  }
-
-  return null;
+  return getCollapsedList(similarTo, { prefix: 'Similar to' }).tooltip;
 }
 
+function getGenreTag(genres: string[] | undefined): string | null {
+  return getCollapsedList(genres).displayTag;
+}
 
+function getGenreTooltip(genres: string[] | undefined): string | null {
+  return getCollapsedList(genres).tooltip;
+}
 </script>
 
 <template>
@@ -180,7 +172,13 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
             <div class="text-sm text-muted">{{ item.artist }}</div>
           </div>
           <div class="queue-list-mobile__tags">
-            <div>
+            <div class="queue-list-mobile__tags-top">
+              <Tag
+                v-if="getGenreTag(item.genres)"
+                :value="getGenreTag(item.genres)!"
+                v-tooltip.bottom="getGenreTooltip(item.genres)"
+                severity="secondary"
+              />
               <Tag
                 :value="item.source === 'listenbrainz' ? 'ListenBrainz' : 'Catalog'"
                 :severity="getSourceSeverity(item.source)"
@@ -291,6 +289,13 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
               v-if="data.in_library"
               value="In Library"
               severity="success"
+              class="w-fit"
+            />
+            <Tag
+              v-if="getGenreTag(data.genres)"
+              :value="getGenreTag(data.genres)!"
+              v-tooltip.bottom="getGenreTooltip(data.genres)"
+              severity="secondary"
               class="w-fit"
             />
           </div>
@@ -433,6 +438,19 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
     align-items: flex-end;
     gap: 0.375rem;
     flex-shrink: 0;
+
+    &-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 0.375rem;
+    }
+
+    @media (max-width: 768px) {
+      &-top {
+        flex-direction: column;
+      }
+    }
   }
 
   &__footer {

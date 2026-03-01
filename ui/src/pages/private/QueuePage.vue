@@ -26,8 +26,10 @@ const {
   error,
   filters,
   hasMore,
+  availableGenres,
   isProcessing,
   fetchPending,
+  fetchGenres,
   approveItems,
   rejectItems,
   updateFilters,
@@ -175,6 +177,7 @@ function setGridContainerRef(el: HTMLElement | null) {
 
 onMounted(() => {
   fetchPending();
+  fetchGenres();
 });
 
 onUnmounted(() => {
@@ -185,7 +188,7 @@ onUnmounted(() => {
 });
 
 watch(
-  () => [filters.value.source, filters.value.sort, filters.value.order],
+  () => [filters.value.source, filters.value.sort, filters.value.order, filters.value.genres],
   () => {
     reset();
     fetchPending();
@@ -250,7 +253,9 @@ function handlePreview(item: QueueItem) {
     <div class="queue-page__filters">
       <QueueFilters
         :model-value="filters"
+        :loading="loading"
         :view-mode="viewMode"
+        :available-genres="availableGenres"
         @update:model-value="updateFilters($event)"
         @update:view-mode="viewMode = $event"
       />

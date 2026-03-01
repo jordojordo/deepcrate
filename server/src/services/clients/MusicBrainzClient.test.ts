@@ -233,4 +233,71 @@ describe('MusicBrainzClient', () => {
       expect(result).toBe(15);
     });
   });
+
+  describe('getReleaseGroupTags', () => {
+    it('returns tags sorted by count descending', async() => {
+      const mbid = 'rg-tags';
+
+      nock('https://musicbrainz.org')
+        .get(`/ws/2/release-group/${ mbid }`)
+        .query({ inc: 'tags', fmt: 'json' })
+        .reply(200, {
+          id:   mbid,
+          tags: [
+            { name: 'jazz', count: 5 },
+            { name: 'electronic', count: 10 },
+            { name: 'ambient', count: 3 },
+          ],
+        });
+
+      const result = await client.getReleaseGroupTags(mbid);
+
+      expect(result).toEqual(['electronic', 'jazz', 'ambient']);
+    });
+
+    it('filters out tags with count < 1', async() => {
+      const mbid = 'rg-tags-filter';
+
+      nock('https://musicbrainz.org')
+        .get(`/ws/2/release-group/${ mbid }`)
+        .query({ inc: 'tags', fmt: 'json' })
+        .reply(200, {
+          id:   mbid,
+          tags: [
+            { name: 'rock', count: 3 },
+            { name: 'noise', count: 0 },
+          ],
+        });
+
+      const result = await client.getReleaseGroupTags(mbid);
+
+      expect(result).toEqual(['rock']);
+    });
+
+    it('returns empty array when no tags exist', async() => {
+      const mbid = 'rg-no-tags';
+
+      nock('https://musicbrainz.org')
+        .get(`/ws/2/release-group/${ mbid }`)
+        .query({ inc: 'tags', fmt: 'json' })
+        .reply(200, { id: mbid });
+
+      const result = await client.getReleaseGroupTags(mbid);
+
+      expect(result).toEqual([]);
+    });
+
+    it('returns empty array on API error', async() => {
+      const mbid = 'rg-tags-error';
+
+      nock('https://musicbrainz.org')
+        .get(`/ws/2/release-group/${ mbid }`)
+        .query({ inc: 'tags', fmt: 'json' })
+        .reply(404);
+
+      const result = await client.getReleaseGroupTags(mbid);
+
+      expect(result).toEqual([]);
+    });
+  });
 });

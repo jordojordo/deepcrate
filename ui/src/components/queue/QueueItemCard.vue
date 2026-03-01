@@ -3,6 +3,7 @@ import type { QueueItem } from '@/types';
 
 import { computed, ref, watch } from 'vue';
 import { getDefaultCoverUrl } from '@/utils/formatters';
+import { useCollapsedList } from '@/composables/useCollapsedList';
 
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
@@ -56,39 +57,14 @@ const sourceTag = computed(() => {
   return tags[props.item.source];
 });
 
-const similarTag = computed(() => {
-  const similarTo = props.item.similar_to;
+const { displayTag: similarTag, tooltip: similarTooltip } = useCollapsedList(
+  () => props.item.similar_to,
+  { prefix: 'Similar to' },
+);
 
-  if (similarTo && similarTo.length > 0) {
-    const first = similarTo[0];
-    const remaining = similarTo.length - 1;
-
-    if (remaining > 0) {
-      return `Similar to ${ first } (+${ remaining })`;
-    }
-
-    return `Similar to ${ first }`;
-  }
-
-  return null;
-});
-
-const similarTooltip = computed(() => {
-  const similarTo = props.item.similar_to;
-
-  if (similarTo && similarTo.length > 0) {
-    const first = similarTo[0];
-    const remaining = similarTo.length - 1;
-
-    if (remaining > 0) {
-      return `Similar to ${ similarTo.join(', ') }`;
-    }
-
-    return `Similar to ${ first }`;
-  }
-
-  return null;
-});
+const { displayTag: genreTag, tooltip: genreTooltip } = useCollapsedList(
+  () => props.item.genres,
+);
 
 const isInLibrary = computed(() => props.item.in_library);
 
@@ -145,6 +121,13 @@ const handleCardClick = (event: MouseEvent) => {
         {{ item.score }}% Match
       </div>
     </div>
+
+    <Tag
+      v-if="genreTag"
+      :value="genreTag"
+      v-tooltip.bottom="genreTooltip"
+      severity="secondary"
+    />
 
     <div class="queue-card__content">
       <div class="queue-card__info">

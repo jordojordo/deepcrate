@@ -36,6 +36,7 @@ export interface QueueItemAttributes {
   sourceTrack?: string;        // For albums: the track that led to this recommendation
   coverUrl?:    string;         // Cover art URL
   year?:        number;         // Release year
+  genres?:      string[];       // Genre tags from MusicBrainz
   inLibrary?:   boolean;        // Whether this item already exists in the user's library
   addedAt:      Date;
   processedAt?: Date;          // When approved/rejected
@@ -63,6 +64,7 @@ class QueueItem extends Model<QueueItemAttributes, QueueItemCreationAttributes> 
   declare sourceTrack?: string;
   declare coverUrl?:    string;
   declare year?:        number;
+  declare genres?:      string[];
   declare inLibrary?:   boolean;
   declare addedAt:      Date;
   declare processedAt?: Date;
@@ -133,6 +135,10 @@ QueueItem.init(
     },
     year: {
       type:      DataTypes.INTEGER,
+      allowNull: true,
+    },
+    genres: {
+      type:      DataTypes.JSON,
       allowNull: true,
     },
     inLibrary: {
