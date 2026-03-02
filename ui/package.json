@@ -34,7 +34,7 @@
     "@vitest/eslint-plugin": "^1.6.9",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.7.0",
-    "@vue/tsconfig": "^0.8.1",
+    "@vue/tsconfig": "^0.9.0",
     "eslint": "^10.0.2",
     "eslint-plugin-cypress": "^6.1.0",
     "eslint-plugin-oxlint": "^1.50.0",
