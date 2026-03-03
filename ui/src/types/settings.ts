@@ -15,7 +15,8 @@ export type SettingsSection =
   | 'library_duplicate'
   | 'library_organize'
   | 'preview'
-  | 'ui';
+  | 'ui'
+  | 'scoring';
 
 /**
  * ListenBrainz settings
@@ -230,6 +231,17 @@ export interface LibraryOrganizeSettings {
 }
 
 /**
+ * Scoring settings
+ */
+export interface ScoringSettings {
+  musicbrainz_ratings: boolean;
+}
+
+export interface ScoringFormData {
+  musicbrainz_ratings: boolean;
+}
+
+/**
  * Full settings response
  */
 export interface SettingsResponse {
@@ -244,6 +256,7 @@ export interface SettingsResponse {
   library_organize?:  LibraryOrganizeSettings;
   preview?:           PreviewSettings;
   ui:                 UISettings;
+  scoring?:           ScoringSettings;
 }
 
 /**

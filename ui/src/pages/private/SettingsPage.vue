@@ -4,6 +4,7 @@ import type {
   CatalogDiscoveryFormData,
   SlskdFormData,
   PreviewFormData,
+  ScoringFormData,
   AuthFormData,
   SettingsTab,
   UIPreferences,
@@ -26,6 +27,7 @@ import ListenBrainzForm from '@/components/settings/ListenBrainzForm.vue';
 import CatalogDiscoveryForm from '@/components/settings/CatalogDiscoveryForm.vue';
 import SlskdForm from '@/components/settings/SlskdForm.vue';
 import PreviewForm from '@/components/settings/PreviewForm.vue';
+import ScoringForm from '@/components/settings/ScoringForm.vue';
 import AuthForm from '@/components/settings/AuthForm.vue';
 import UIPreferencesForm from '@/components/settings/UIPreferencesForm.vue';
 
@@ -43,6 +45,7 @@ const {
   slskd,
   catalogDiscovery,
   preview,
+  scoring,
   ui,
   uiPreferences,
   fetchSettings,
@@ -68,6 +71,10 @@ async function handleSlskdSave(data: SlskdFormData) {
 
 async function handlePreviewSave(data: PreviewFormData) {
   await updateSection('preview', data);
+}
+
+async function handleScoringSave(data: ScoringFormData) {
+  await updateSection('scoring', data);
 }
 
 async function handleAuthSave(data: { auth: AuthFormData }) {
@@ -99,6 +106,7 @@ function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
           <Tab value="catalog">Catalog Discovery</Tab>
           <Tab value="slskd">slskd</Tab>
           <Tab value="preview">Preview</Tab>
+          <Tab value="scoring">Scoring</Tab>
           <Tab value="auth">Authentication</Tab>
           <Tab value="ui">UI Preferences</Tab>
         </TabList>
@@ -159,6 +167,21 @@ function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
                 :loading="loading"
                 :saving="saving"
                 @save="handlePreviewSave"
+              />
+            </div>
+          </TabPanel>
+
+          <TabPanel value="scoring">
+            <div class="settings-page__panel">
+              <h2 class="settings-page__section-title">Scoring</h2>
+              <p class="settings-page__section-desc">
+                Configure how discovered albums are scored and ranked.
+              </p>
+              <ScoringForm
+                :settings="scoring"
+                :loading="loading"
+                :saving="saving"
+                @save="handleScoringSave"
               />
             </div>
           </TabPanel>

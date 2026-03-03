@@ -26,6 +26,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const libraryOrganize = computed(() => settings.value?.library_organize);
   const preview = computed(() => settings.value?.preview);
   const ui = computed(() => settings.value?.ui);
+  const scoring = computed(() => settings.value?.scoring);
 
   function loadUIPreferences(): UIPreferences {
     try {
@@ -115,6 +116,7 @@ export const useSettingsStore = defineStore('settings', () => {
     libraryOrganize,
     preview,
     ui,
+    scoring,
 
     fetchSettings,
     updateSection,

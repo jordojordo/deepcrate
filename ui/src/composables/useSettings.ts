@@ -22,6 +22,7 @@ export function useSettings() {
   const libraryOrganize = computed(() => store.libraryOrganize);
   const preview = computed(() => store.preview);
   const ui = computed(() => store.ui);
+  const scoring = computed(() => store.scoring);
 
   async function fetchSettings() {
     try {
@@ -72,6 +73,7 @@ export function useSettings() {
     libraryOrganize,
     preview,
     ui,
+    scoring,
 
     fetchSettings,
     updateSection,
