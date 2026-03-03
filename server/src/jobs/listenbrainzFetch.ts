@@ -7,6 +7,7 @@ import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
 import { ListenBrainzClient } from '@server/services/clients/ListenBrainzClient';
 import { MusicBrainzClient } from '@server/services/clients/MusicBrainzClient';
+import { LastFmClient } from '@server/services/clients/LastFmClient';
 import { CoverArtArchiveClient } from '@server/services/clients/CoverArtArchiveClient';
 import { QueueService } from '@server/services/QueueService';
 import ProcessedRecording from '@server/models/ProcessedRecording';
@@ -16,10 +17,12 @@ import { isJobCancelled } from '@server/plugins/jobs';
  * Context passed to processing helper functions
  */
 interface ProcessingContext {
-  mbClient:     MusicBrainzClient;
-  coverClient:  CoverArtArchiveClient;
-  queueService: QueueService;
-  approvalMode: string;
+  mbClient:         MusicBrainzClient;
+  coverClient:      CoverArtArchiveClient;
+  queueService:     QueueService;
+  approvalMode:     string;
+  lastFmClient?:    LastFmClient;
+  applyRatingBonus: boolean;
 }
 
 /**
@@ -72,6 +75,8 @@ export async function listenbrainzFetchJob(): Promise<void> {
   const mbClient = new MusicBrainzClient();
   const coverClient = new CoverArtArchiveClient();
   const queueService = new QueueService();
+  const lastFmClient = config.catalog_discovery?.lastfm?.api_key ? new LastFmClient(config.catalog_discovery.lastfm.api_key) : undefined;
+  const applyRatingBonus = config.scoring?.musicbrainz_ratings ?? true;
 
   // Check for cancellation before starting
   if (isJobCancelled(JOB_NAMES.LB_FETCH)) {
@@ -102,6 +107,8 @@ export async function listenbrainzFetchJob(): Promise<void> {
     coverClient,
     queueService,
     approvalMode,
+    lastFmClient,
+    applyRatingBonus,
   });
 
   logger.info(`Added ${ addedCount } new items from ListenBrainz`);
@@ -334,7 +341,29 @@ async function processAlbumMode(
   const coverUrl = ctx.coverClient.getCoverUrl(albumMbid);
 
   await sleep(1000);
-  const genres = await ctx.mbClient.getReleaseGroupTags(albumMbid);
+  const { tags: mbTags, rating } = await ctx.mbClient.getReleaseGroupTags(albumMbid);
+
+  // Fetch Last.fm artist tags and merge with MB tags
+  const mergedGenres: string[] = [...mbTags];
+
+  if (ctx.lastFmClient) {
+    const lastFmTags = await ctx.lastFmClient.getArtistTopTags(albumInfo.artist);
+    const lastFmTagNames = lastFmTags.map((t) => t.name);
+
+    for (const tag of lastFmTagNames) {
+      if (!mergedGenres.includes(tag)) {
+        mergedGenres.push(tag);
+      }
+    }
+  }
+
+  // Apply MusicBrainz rating bonus if enabled
+  let adjustedScore = scorePercent;
+
+  if (ctx.applyRatingBonus && rating !== null && adjustedScore !== undefined) {
+    adjustedScore = Math.min(100, adjustedScore * (1 + 0.15 * (rating / 5)));
+    adjustedScore = Math.round(adjustedScore * 100) / 100;
+  }
 
   if (ctx.approvalMode === 'manual') {
     await ctx.queueService.addPending({
@@ -342,12 +371,12 @@ async function processAlbumMode(
       album:       albumInfo.title,
       mbid:        albumMbid,
       type:        'album',
-      score:       scorePercent,
+      score:       adjustedScore,
       source:      'listenbrainz',
       sourceTrack: albumInfo.trackTitle,
       coverUrl:    coverUrl || undefined,
       year:        albumInfo.year,
-      genres:      genres.length > 0 ? genres : undefined,
+      genres:      mergedGenres.length > 0 ? mergedGenres : undefined,
     });
 
     logger.info(`  ? ${ albumInfo.artist } - ${ albumInfo.title } (pending approval)`);

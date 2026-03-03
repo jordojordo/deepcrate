@@ -10,3 +10,15 @@ export interface LastFmSimilarArtistsResponse {
     }>;
   };
 }
+
+/** GET artist.gettoptags response */
+export interface LastFmArtistTopTagsResponse {
+  error?:   number;
+  message?: string;
+  toptags?: {
+    tag: Array<{
+      name:  string;
+      count: number;
+    }>;
+  };
+}

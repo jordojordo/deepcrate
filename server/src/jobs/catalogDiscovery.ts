@@ -9,6 +9,7 @@ import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
 import { SubsonicClient } from '@server/services/clients/SubsonicClient';
 import { MusicBrainzClient } from '@server/services/clients/MusicBrainzClient';
+import { LastFmClient } from '@server/services/clients/LastFmClient';
 import { CoverArtArchiveClient } from '@server/services/clients/CoverArtArchiveClient';
 import { QueueService } from '@server/services/QueueService';
 import { LastFmSimilarityProvider, ListenBrainzSimilarityProvider } from '@server/services/providers';
@@ -86,6 +87,8 @@ export async function catalogDiscoveryJob(): Promise<void> {
   const mbClient = new MusicBrainzClient();
   const coverClient = new CoverArtArchiveClient();
   const queueService = new QueueService();
+  const lastFmClient = catalogConfig.lastfm?.api_key ? new LastFmClient(catalogConfig.lastfm.api_key) : null;
+  const scoringConfig = config.scoring;
 
   try {
     // Defer if listenbrainz-fetch is running — both jobs share MusicBrainz API
@@ -119,6 +122,15 @@ export async function catalogDiscoveryJob(): Promise<void> {
     }
 
     logger.info(`Synced ${ libraryArtistNames.size } library artists`);
+
+    // Build library tag profile for genre affinity scoring
+    let libraryTagProfile = new Map<string, number>();
+
+    if (lastFmClient) {
+      logger.info('Building library tag profile from Last.fm...');
+      libraryTagProfile = await buildLibraryTagProfile(lastFmClient, Array.from(libraryArtistNames));
+      logger.debug(`Library tag profile: ${ libraryTagProfile.size } unique tags`);
+    }
 
     // Step 1.5: Resolve missing artist MBIDs (scoped to current library artists only)
     const unresolvedArtists = await CatalogArtist.findAll({
@@ -332,9 +344,40 @@ export async function catalogDiscoveryJob(): Promise<void> {
           }
         }
 
-        // Fetch genre tags
+        // Fetch genre tags and community rating
         await sleep(1000);
-        const genres = await mbClient.getReleaseGroupTags(albumMbid);
+        const { tags: mbTags, rating } = await mbClient.getReleaseGroupTags(albumMbid);
+
+        // Fetch Last.fm artist tags and merge with MB tags
+        const mergedGenres: string[] = [...mbTags];
+
+        if (lastFmClient) {
+          const lastFmTags = await lastFmClient.getArtistTopTags(artist.name);
+          const lastFmTagNames = lastFmTags.map((t) => t.name);
+
+          for (const tag of lastFmTagNames) {
+            if (!mergedGenres.includes(tag)) {
+              mergedGenres.push(tag);
+            }
+          }
+        }
+
+        // Apply genre affinity bonus
+        let adjustedScore = weightedScore;
+
+        if (lastFmClient && libraryTagProfile.size > 0 && adjustedScore !== undefined) {
+          const candidateTags = mergedGenres;
+          const affinity = computeTagAffinity(candidateTags, libraryTagProfile);
+
+          adjustedScore = Math.min(100, adjustedScore * (1 + 0.25 * affinity));
+          adjustedScore = Math.round(adjustedScore * 100) / 100;
+        }
+
+        // Apply MusicBrainz rating bonus if enabled
+        if (scoringConfig?.musicbrainz_ratings && rating !== null && adjustedScore !== undefined) {
+          adjustedScore = Math.min(100, adjustedScore * (1 + 0.15 * (rating / 5)));
+          adjustedScore = Math.round(adjustedScore * 100) / 100;
+        }
 
         // Add to queue
         if (approvalMode === 'manual') {
@@ -343,12 +386,12 @@ export async function catalogDiscoveryJob(): Promise<void> {
             album:     album.title,
             mbid:      albumMbid,
             type:      'album',
-            score:     weightedScore,
+            score:     adjustedScore,
             source:    'catalog',
             similarTo: Array.from(artist.similarTo).sort((a, b) => a.localeCompare(b)),
             coverUrl:  coverUrl || undefined,
             year,
-            genres:    genres.length > 0 ? genres : undefined,
+            genres:    mergedGenres.length > 0 ? mergedGenres : undefined,
           });
 
           logger.info(`    ? ${ artist.name } - ${ album.title } (pending approval)`);
@@ -492,6 +535,58 @@ export function partitionByCacheStatus(
   }
 
   return { stale, cached };
+}
+
+/**
+ * Build a weighted tag profile for the library by fetching Last.fm top tags for each artist.
+ * Returns a Map of tag -> frequency count across all library artists.
+ */
+export async function buildLibraryTagProfile(
+  lastFmClient: LastFmClient,
+  artistNames: string[],
+): Promise<Map<string, number>> {
+  const profile = new Map<string, number>();
+
+  for (const name of artistNames) {
+    const tags = await lastFmClient.getArtistTopTags(name);
+
+    for (const tag of tags) {
+      profile.set(tag.name, (profile.get(tag.name) ?? 0) + tag.count);
+    }
+  }
+
+  return profile;
+}
+
+/**
+ * Compute a 0-1 genre affinity score between a candidate's tags and the library tag profile.
+ * Uses weighted overlap: sum of profile weights for matching tags, normalized by total profile weight.
+ */
+export function computeTagAffinity(
+  candidateTags: string[],
+  libraryProfile: Map<string, number>,
+): number {
+  if (candidateTags.length === 0 || libraryProfile.size === 0) {
+    return 0;
+  }
+
+  const totalWeight = Array.from(libraryProfile.values()).reduce((sum, w) => sum + w, 0);
+
+  if (totalWeight === 0) {
+    return 0;
+  }
+
+  let matchWeight = 0;
+
+  for (const tag of candidateTags) {
+    const weight = libraryProfile.get(tag.toLowerCase());
+
+    if (weight !== undefined) {
+      matchWeight += weight;
+    }
+  }
+
+  return Math.min(1, matchWeight / totalWeight);
 }
 
 /**

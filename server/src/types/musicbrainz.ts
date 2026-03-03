@@ -124,7 +124,8 @@ export interface MBReleaseLookupResponse {
   media?: MBMedia[];
 }
 
-/** GET /release-group/{mbid}?inc=tags */
+/** GET /release-group/{mbid}?inc=tags+ratings */
 export interface MBReleaseGroupTagsResponse {
-  tags?: Array<{ name: string; count: number }>;
+  tags?:   Array<{ name: string; count: number }>;
+  rating?: { 'votes-count': number; value: number | null };
 }

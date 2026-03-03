@@ -452,27 +452,30 @@ export class MusicBrainzClient extends BaseClient {
   }
 
   /**
-   * Get genre tags for a release group by MBID
+   * Get genre tags and community rating for a release group by MBID.
    */
-  async getReleaseGroupTags(mbid: string): Promise<string[]> {
+  async getReleaseGroupTags(mbid: string): Promise<{ tags: string[]; rating: number | null }> {
     const url = `${ MB_BASE_URL }/release-group/${ mbid }`;
 
     try {
       const response = await this.requestWithRetry<MBReleaseGroupTagsResponse>('get', url, {
         headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
-          inc: 'tags',
+          inc: 'tags+ratings',
           fmt: 'json',
         },
         timeout: 15000,
       });
 
-      const tags = response.data.tags || [];
-
-      return tags
+      const tags = (response.data.tags || [])
         .filter((tag: { name: string; count: number }) => tag.count >= 1)
         .sort((a: { count: number }, b: { count: number }) => b.count - a.count)
         .map((tag: { name: string }) => tag.name);
+
+      const ratingData = response.data.rating;
+      const rating = (ratingData && ratingData['votes-count'] > 0) ? ratingData.value : null;
+
+      return { tags, rating };
     } catch(error) {
       if (axios.isAxiosError(error)) {
         logger.error(`Failed to get tags for release-group ${ mbid }: ${ error.message }`);
@@ -480,7 +483,7 @@ export class MusicBrainzClient extends BaseClient {
         logger.error(`Failed to get tags for release-group ${ mbid }: ${ String(error) }`);
       }
 
-      return [];
+      return { tags: [], rating: null };
     }
   }
 
