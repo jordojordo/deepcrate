@@ -4,7 +4,13 @@ import {
   describe, it, expect, vi, beforeEach, afterEach
 } from 'vitest';
 
-import { fetchSimilarFromAllProviders, partitionByCacheStatus, aggregateSimilarFromCache } from './catalogDiscovery';
+import {
+  fetchSimilarFromAllProviders,
+  partitionByCacheStatus,
+  aggregateSimilarFromCache,
+  buildLibraryTagProfile,
+  computeTagAffinity
+} from './catalogDiscovery';
 
 /**
  * Mock provider for testing
@@ -401,16 +407,16 @@ describe('catalogDiscovery', () => {
 
       const rows = [
         {
-          catalogArtistId: 1, name: 'Artist X', nameLower: 'artist x', score: 0.9, provider: 'lastfm', mbid: null, fetchedAt: new Date() 
+          catalogArtistId: 1, name: 'Artist X', nameLower: 'artist x', score: 0.9, provider: 'lastfm', mbid: null, fetchedAt: new Date()
         },
         {
-          catalogArtistId: 2, name: 'Artist X', nameLower: 'artist x', score: 0.7, provider: 'lastfm', mbid: null, fetchedAt: new Date() 
+          catalogArtistId: 2, name: 'Artist X', nameLower: 'artist x', score: 0.7, provider: 'lastfm', mbid: null, fetchedAt: new Date()
         },
         {
-          catalogArtistId: 1, name: 'Artist X', nameLower: 'artist x', score: 0.8, provider: 'listenbrainz', mbid: null, fetchedAt: new Date() 
+          catalogArtistId: 1, name: 'Artist X', nameLower: 'artist x', score: 0.8, provider: 'listenbrainz', mbid: null, fetchedAt: new Date()
         },
         {
-          catalogArtistId: 1, name: 'Artist Y', nameLower: 'artist y', score: 0.6, provider: 'lastfm', mbid: null, fetchedAt: new Date() 
+          catalogArtistId: 1, name: 'Artist Y', nameLower: 'artist y', score: 0.6, provider: 'lastfm', mbid: null, fetchedAt: new Date()
         },
       ] as any[];
 
@@ -438,10 +444,10 @@ describe('catalogDiscovery', () => {
 
       const rows = [
         {
-          catalogArtistId: 1, name: 'Known Artist', nameLower: 'known artist', score: 0.9, provider: 'lastfm', mbid: null, fetchedAt: new Date() 
+          catalogArtistId: 1, name: 'Known Artist', nameLower: 'known artist', score: 0.9, provider: 'lastfm', mbid: null, fetchedAt: new Date()
         },
         {
-          catalogArtistId: 1, name: 'New Artist', nameLower: 'new artist', score: 0.8, provider: 'lastfm', mbid: null, fetchedAt: new Date() 
+          catalogArtistId: 1, name: 'New Artist', nameLower: 'new artist', score: 0.8, provider: 'lastfm', mbid: null, fetchedAt: new Date()
         },
       ] as any[];
 
@@ -450,6 +456,92 @@ describe('catalogDiscovery', () => {
       expect(map.size).toBe(1);
       expect(map.has('known artist')).toBe(false);
       expect(map.has('new artist')).toBe(true);
+    });
+  });
+
+  describe('buildLibraryTagProfile', () => {
+    it('aggregates tags across all library artists', async() => {
+      const mockLastFm = { getArtistTopTags: vi.fn() };
+
+      mockLastFm.getArtistTopTags
+        .mockResolvedValueOnce([
+          { name: 'jazz', count: 10 },
+          { name: 'electronic', count: 5 },
+        ])
+        .mockResolvedValueOnce([
+          { name: 'jazz', count: 8 },
+          { name: 'ambient', count: 6 },
+        ]);
+
+      const profile = await buildLibraryTagProfile(mockLastFm as any, ['artist a', 'artist b']);
+
+      expect(profile.get('jazz')).toBe(18);    // 10 + 8
+      expect(profile.get('electronic')).toBe(5);
+      expect(profile.get('ambient')).toBe(6);
+      expect(profile.size).toBe(3);
+    });
+
+    it('returns empty map when no artists provided', async() => {
+      const mockLastFm = { getArtistTopTags: vi.fn() };
+
+      const profile = await buildLibraryTagProfile(mockLastFm as any, []);
+
+      expect(profile.size).toBe(0);
+      expect(mockLastFm.getArtistTopTags).not.toHaveBeenCalled();
+    });
+
+    it('handles artists that return no tags', async() => {
+      const mockLastFm = { getArtistTopTags: vi.fn().mockResolvedValue([]) };
+
+      const profile = await buildLibraryTagProfile(mockLastFm as any, ['artist a', 'artist b']);
+
+      expect(profile.size).toBe(0);
+    });
+  });
+
+  describe('computeTagAffinity', () => {
+    it('returns 1 for perfect overlap', () => {
+      const profile = new Map([['jazz', 10], ['electronic', 5]]);
+      const affinity = computeTagAffinity(['jazz', 'electronic'], profile);
+
+      expect(affinity).toBe(1);
+    });
+
+    it('returns 0 for no overlap', () => {
+      const profile = new Map([['jazz', 10], ['electronic', 5]]);
+      const affinity = computeTagAffinity(['rock', 'metal'], profile);
+
+      expect(affinity).toBe(0);
+    });
+
+    it('returns 0 for empty candidate tags', () => {
+      const profile = new Map([['jazz', 10]]);
+      const affinity = computeTagAffinity([], profile);
+
+      expect(affinity).toBe(0);
+    });
+
+    it('returns 0 for empty library profile', () => {
+      const affinity = computeTagAffinity(['jazz'], new Map());
+
+      expect(affinity).toBe(0);
+    });
+
+    it('returns partial score for partial overlap', () => {
+      // Profile: jazz=10, electronic=10. Total weight=20.
+      // Candidate matches jazz (10). matchWeight=10. affinity = 10/20 = 0.5
+      const profile = new Map([['jazz', 10], ['electronic', 10]]);
+      const affinity = computeTagAffinity(['jazz', 'rock'], profile);
+
+      expect(affinity).toBeCloseTo(0.5);
+    });
+
+    it('is capped at 1 even when match weight exceeds total', () => {
+      // Should not exceed 1 regardless of weights
+      const profile = new Map([['jazz', 100]]);
+      const affinity = computeTagAffinity(['jazz', 'jazz'], profile);
+
+      expect(affinity).toBeLessThanOrEqual(1);
     });
   });
 });

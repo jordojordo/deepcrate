@@ -1,4 +1,4 @@
-import type { LastFmSimilarArtistsResponse, RetryConfig } from '@server/types';
+import type { LastFmArtistTopTagsResponse, LastFmSimilarArtistsResponse, RetryConfig } from '@server/types';
 
 import axios from 'axios';
 import logger from '@server/config/logger';
@@ -65,6 +65,43 @@ export class LastFmClient extends BaseClient {
         logger.debug(`Failed to get similar artists for '${ artistName }': ${ error.message }`);
       } else {
         logger.debug(`Failed to get similar artists for '${ artistName }': ${ String(error) }`);
+      }
+
+      return [];
+    }
+  }
+
+  /**
+   * Get top tags for an artist from Last.fm
+   */
+  async getArtistTopTags(artistName: string, limit: number = 10): Promise<{ name: string; count: number }[]> {
+    try {
+      const response = await this.requestWithRetry<LastFmArtistTopTagsResponse>('get', LASTFM_BASE_URL, {
+        params: {
+          method:  'artist.gettoptags',
+          artist:  artistName,
+          api_key: this.apiKey,
+          format:  'json',
+        },
+        timeout: 15000,
+      });
+
+      const data = response.data;
+
+      if (data.error) {
+        logger.debug(`Last.fm error fetching tags for '${ artistName }': ${ data.message || 'Unknown' }`);
+
+        return [];
+      }
+
+      return (data.toptags?.tag || [])
+        .slice(0, limit)
+        .map((tag) => ({ name: tag.name.toLowerCase(), count: tag.count }));
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.debug(`Failed to get top tags for '${ artistName }': ${ error.message }`);
+      } else {
+        logger.debug(`Failed to get top tags for '${ artistName }': ${ String(error) }`);
       }
 
       return [];

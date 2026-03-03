@@ -282,6 +282,8 @@ const PreviewSettingsSchema = z.object({
   spotify: SpotifySettingsSchema.optional(),
 });
 
+const ScoringSettingsSchema = z.object({ musicbrainz_ratings: z.boolean().default(true) });
+
 export const ConfigSchema = z.object({
   debug:             z.boolean(),
   mode:              z.enum(['album', 'track']),
@@ -293,6 +295,7 @@ export const ConfigSchema = z.object({
   library_duplicate: LibraryDuplicateSettingsSchema.optional(),
   library_organize:  LibraryOrganizeSettingsSchema.optional(),
   preview:           PreviewSettingsSchema.optional(),
+  scoring:           ScoringSettingsSchema.optional(),
   ui:                UISettingsSchema,
 }).superRefine((value, ctx) => {
   if (value.library_duplicate?.enabled && !value.catalog_discovery?.subsonic) {
@@ -327,6 +330,7 @@ export type LibraryDuplicateSettings = z.infer<typeof LibraryDuplicateSettingsSc
 export type LibraryOrganizeSettings = z.infer<typeof LibraryOrganizeSettingsSchema>;
 export type PreviewSettings = z.infer<typeof PreviewSettingsSchema>;
 export type SpotifySettings = z.infer<typeof SpotifySettingsSchema>;
+export type ScoringSettings = z.infer<typeof ScoringSettingsSchema>;
 
 /**
  * Default configuration values
@@ -356,5 +360,6 @@ export const SECTION_SCHEMAS: Record<string, z.ZodType<unknown>> = {
   library_duplicate: LibraryDuplicateSettingsSchema,
   library_organize:  LibraryOrganizeSettingsSchema,
   preview:           PreviewSettingsSchema,
+  scoring:           ScoringSettingsSchema,
   ui:                UISettingsSchema,
 };

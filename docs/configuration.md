@@ -245,6 +245,15 @@ preview:
     client_secret: "your_spotify_client_secret"
 
 # =============================================================================
+# Scoring (Optional)
+# Control how queue items are scored during discovery
+# =============================================================================
+scoring:
+  # Apply a score bonus to albums with high MusicBrainz community ratings
+  # Disable if you prefer scoring based purely on genre and source relevance
+  musicbrainz_ratings: true
+
+# =============================================================================
 # Web UI Settings
 # =============================================================================
 ui:
@@ -517,6 +526,14 @@ If `subsonic_rescan: true`, `catalog_discovery.subsonic` must be configured.
 The preview player uses Deezer by default (no API key required). Spotify can be enabled as a fallback for tracks not found on Deezer. Get Spotify credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
 
 **Note:** Preview clips are limited to 30 seconds by the streaming services (Deezer/Spotify). This is an industry-standard limitation to protect copyrighted content.
+
+### Scoring
+
+| Key | Type | Required | Default | Description |
+|-----|------|----------|---------|-------------|
+| `musicbrainz_ratings` | bool | No | `true` | Apply a score bonus to albums with high MusicBrainz community ratings |
+
+When enabled, albums that have a positive community rating in MusicBrainz receive a score bonus during discovery. Disable to base scoring purely on genre relevance and source signals.
 
 ### UI Authentication
 

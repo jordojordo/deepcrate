@@ -631,7 +631,8 @@ Get current configuration (sensitive values redacted).
     "max_artists_per_run": 10,
     "min_similarity": 0.3,
     "mode": "manual"
-  }
+  },
+  "scoring": { "musicbrainz_ratings": true }
 }
 ```
 

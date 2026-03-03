@@ -18,6 +18,7 @@ export const SETTINGS_SECTIONS = [
   'library_organize',
   'preview',
   'ui',
+  'scoring',
 ] as const;
 
 export type SettingsSection = typeof SETTINGS_SECTIONS[number];
@@ -88,6 +89,10 @@ export const SanitizedAuthSchema = z.object({
 
 export const SanitizedUISchema = z.object({ auth: SanitizedAuthSchema });
 
+export const SanitizedScoringSchema = z.object({
+  musicbrainz_ratings: z.boolean(),
+});
+
 /**
  * API response types
  */
@@ -104,6 +109,7 @@ export const GetSettingsResponseSchema = z.object({
   library_organize:  z.record(z.string(), z.unknown()).optional(),
   preview:           SanitizedPreviewSchema.optional(),
   ui:                SanitizedUISchema,
+  scoring:           SanitizedScoringSchema.optional(),
 });
 
 export type GetSettingsResponse = z.infer<typeof GetSettingsResponseSchema>;
@@ -198,6 +204,12 @@ export const UpdateUIRequestSchema = z.object({
 
 export type UpdateUIRequest = z.infer<typeof UpdateUIRequestSchema>;
 
+export const UpdateScoringRequestSchema = z.object({
+  musicbrainz_ratings: z.boolean().optional(),
+});
+
+export type UpdateScoringRequest = z.infer<typeof UpdateScoringRequestSchema>;
+
 export const ValidateConfigRequestSchema = z.object({
   section: SettingsSectionSchema,
   data:    z.record(z.string(), z.unknown()),
@@ -216,4 +228,5 @@ export const UPDATE_SCHEMAS: Record<SettingsSection, z.ZodType<unknown>> = {
   library_organize:  z.object({}).passthrough(),
   preview:           UpdatePreviewRequestSchema,
   ui:                UpdateUIRequestSchema,
+  scoring:           UpdateScoringRequestSchema,
 };
