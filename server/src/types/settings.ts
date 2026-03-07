@@ -89,9 +89,7 @@ export const SanitizedAuthSchema = z.object({
 
 export const SanitizedUISchema = z.object({ auth: SanitizedAuthSchema });
 
-export const SanitizedScoringSchema = z.object({
-  musicbrainz_ratings: z.boolean(),
-});
+export const SanitizedScoringSchema = z.object({ musicbrainz_ratings: z.boolean() });
 
 /**
  * API response types
@@ -204,9 +202,7 @@ export const UpdateUIRequestSchema = z.object({
 
 export type UpdateUIRequest = z.infer<typeof UpdateUIRequestSchema>;
 
-export const UpdateScoringRequestSchema = z.object({
-  musicbrainz_ratings: z.boolean().optional(),
-});
+export const UpdateScoringRequestSchema = z.object({ musicbrainz_ratings: z.boolean().optional() });
 
 export type UpdateScoringRequest = z.infer<typeof UpdateScoringRequestSchema>;
 
