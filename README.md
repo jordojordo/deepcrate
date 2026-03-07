@@ -1,10 +1,8 @@
 # DeepCrate
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![CI](https://github.com/jordojordo/deepcrate/actions/workflows/ci.yaml/badge.svg)](https://github.com/jordojordo/deepcrate/actions/workflows/ci.yaml)
 [![Test](https://github.com/jordojordo/deepcrate/actions/workflows/test.yaml/badge.svg?event=schedule)](https://github.com/jordojordo/deepcrate/actions/workflows/test.yaml)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io%2Fjordojordo%2Fdeepcrate-blue)](https://ghcr.io/jordojordo/deepcrate)
-[![AI Assisted](https://img.shields.io/badge/AI-Claude_Code-D97757?logo=claude&logoColor=fff)](https://claude.ai/code)
 
 **A digital record shop for your self-hosted library.** DeepCrate surfaces music through your listening history and existing collection, lets you preview and approve recommendations, then downloads via Soulseek.
 
@@ -106,7 +104,14 @@ Open `http://localhost:8080` and log in with your configured credentials.
 
 ## Documentation
 
-[Getting Started](docs/src/guide/getting-started.md) | [Configuration](docs/src/guide/configuration.md) | [Architecture](docs/src/reference/architecture.md) | [Comparison](docs/src/guide/comparison.md) | [Authelia Integration](docs/src/guide/authelia-integration.md)
+Full documentation is available at **[jordojordo.github.io/deepcrate](https://jordojordo.github.io/deepcrate/)**.
+
+- [Getting Started](https://jordojordo.github.io/deepcrate/guide/getting-started)
+- [Configuration](https://jordojordo.github.io/deepcrate/guide/configuration)
+- [Architecture](https://jordojordo.github.io/deepcrate/reference/architecture)
+- [API Reference](https://jordojordo.github.io/deepcrate/reference/api) --- available as a self-hosted [Scalar](https://scalar.com/) UI at `/api/v1/docs`
+- [Comparison](https://jordojordo.github.io/deepcrate/guide/comparison)
+- [Authelia Integration](https://jordojordo.github.io/deepcrate/guide/authelia-integration)
 
 ## Development
 
