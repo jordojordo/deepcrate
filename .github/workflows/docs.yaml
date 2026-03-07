@@ -1,0 +1,73 @@
+name: Docs
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/**'
+      - 'server/src/openapi/**'
+      - 'server/src/types/**'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'docs/**'
+      - 'server/src/openapi/**'
+      - 'server/src/types/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: '**/pnpm-lock.yaml'
+
+      - name: Install server dependencies
+        run: pnpm --filter @deepcrate/server install --frozen-lockfile
+
+      - name: Build server
+        run: pnpm --filter @deepcrate/server run build
+
+      - name: Generate OpenAPI spec
+        run: pnpm --filter @deepcrate/server run generate:spec
+
+      - name: Install docs dependencies
+        run: pnpm --filter @deepcrate/docs install --frozen-lockfile
+
+      - name: Build docs
+        run: pnpm --filter @deepcrate/docs run build
+
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
