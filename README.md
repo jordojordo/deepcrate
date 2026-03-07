@@ -106,7 +106,7 @@ Open `http://localhost:8080` and log in with your configured credentials.
 
 ## Documentation
 
-[Configuration](docs/configuration.md) | [API](docs/api.md) | [Architecture](docs/architecture.md) | [Comparison](docs/comparison.md) | [Authelia Integration](docs/authelia-integration.md)
+[Getting Started](docs/src/guide/getting-started.md) | [Configuration](docs/src/guide/configuration.md) | [Architecture](docs/src/reference/architecture.md) | [Comparison](docs/src/guide/comparison.md) | [Authelia Integration](docs/src/guide/authelia-integration.md)
 
 ## Development
 

@@ -1,3 +1,7 @@
+---
+title: Configuration
+---
+
 # Configuration Reference
 
 DeepCrate is configured via a YAML file mounted at `/config/config.yaml`.

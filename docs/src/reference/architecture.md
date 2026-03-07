@@ -1,3 +1,7 @@
+---
+title: Architecture
+---
+
 # DeepCrate Architecture
 
 ## Overview
@@ -6,25 +10,38 @@ DeepCrate is a music discovery and download pipeline built as a Node.js/TypeScri
 
 ## System Architecture
 
-```mermaid
-flowchart TD
-    subgraph container["DEEPCRATE CONTAINER"]
-        subgraph process["Node.js Process"]
-            express["<b>Express Server</b><br/>HTTP :8080<br/>/api/v1/*<br/>/health<br/>static files"]
-            socketio["<b>Socket.io</b><br/>WebSocket<br/>/queue<br/>/downloads<br/>/jobs"]
-            cron["<b>node-cron</b><br/>Job Scheduler<br/>lb-fetch<br/>catalog-disc<br/>slskd-dl<br/>library-sync<br/>library-org"]
-        end
-        db[("SQLite Database<br/>/data/deepcrate.sqlite")]
-        process --> db
-    end
-
-    external["<b>External APIs</b><br/>ListenBrainz<br/>MusicBrainz<br/>Last.fm<br/>CoverArtArchive"]
-    local["<b>Local Services</b><br/>slskd<br/>Subsonic server"]
-    preview["<b>Preview APIs</b><br/>Deezer<br/>Spotify (opt)"]
-
-    container --> external
-    container --> local
-    container --> preview
+```
+┌─────────────────────────────────────────────────────────────┐
+│  DEEPCRATE CONTAINER                                        │
+│                                                             │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │  Node.js Process                                       │ │
+│  │                                                        │ │
+│  │  ┌──────────────────┐  ┌────────────┐  ┌─────────────┐ │ │
+│  │  │ Express Server   │  │ Socket.io  │  │ node-cron   │ │ │
+│  │  │ HTTP :8080       │  │ WebSocket  │  │ Job Sched.  │ │ │
+│  │  │ /api/v1/*        │  │ /queue     │  │ lb-fetch    │ │ │
+│  │  │ /health          │  │ /downloads │  │ catalog-disc│ │ │
+│  │  │ static files     │  │ /jobs      │  │ slskd-dl    │ │ │
+│  │  │                  │  │            │  │ library-sync│ │ │
+│  │  │                  │  │            │  │ library-org │ │ │
+│  │  └──────────────────┘  └────────────┘  └─────────────┘ │ │
+│  └───────────────────────────┬────────────────────────────┘ │
+│                              │                              │
+│                  ┌───────────▼────────────┐                 │
+│                  │ SQLite Database        │                 │
+│                  │ /data/deepcrate.sqlite │                 │
+│                  └────────────────────────┘                 │
+└──────────┬───────────────────┬───────────────────┬──────────┘
+           │                   │                   │
+           ▼                   ▼                   ▼
+┌──────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ External APIs    │ │ Local Services  │ │ Preview APIs    │
+│ ListenBrainz     │ │ slskd           │ │ Deezer          │
+│ MusicBrainz      │ │ Subsonic server │ │ Spotify (opt)   │
+│ Last.fm          │ │                 │ │                 │
+│ CoverArtArchive  │ │                 │ │                 │
+└──────────────────┘ └─────────────────┘ └─────────────────┘
 ```
 
 ## Server (`/server/src`)
@@ -66,7 +83,7 @@ Request
 
 Config is validated with Zod schemas (`config/schemas.ts`). Invalid config causes a startup error with detailed messages.
 
-See [configuration.md](configuration.md) for the full reference.
+See [Configuration](../guide/configuration.md) for the full reference.
 
 ### Database
 
@@ -100,7 +117,7 @@ SQLite via [Sequelize 7](https://github.com/sequelize/sequelize). DB file at `$D
 
 All credential comparisons use `crypto.timingSafeEqual` to prevent timing attacks. When auth is disabled, all requests pass through.
 
-See [authelia-integration.md](authelia-integration.md) for proxy auth setup.
+See [Authelia Integration](../guide/authelia-integration.md) for proxy auth setup.
 
 ### Background Jobs
 
@@ -144,7 +161,7 @@ Business logic lives in `services/`:
 
 **External API clients** (`services/clients/`): `ListenBrainzClient`, `MusicBrainzClient`, `LastFmClient`, `CoverArtArchiveClient`, `SlskdClient`, `SubsonicClient`, `DeezerClient`, `SpotifyClient`.
 
-## Real-time Events (Socket.io)
+## Real-time Events (Socket.io) {#real-time-events-socketio}
 
 `plugins/io/` initializes Socket.io on the same HTTP server. Each namespace applies auth middleware that reuses the same credential validation as the REST API.
 
@@ -237,38 +254,72 @@ Custom PrimeVue Aura preset (`assets/styles/theme.ts`) with indigo primary color
 
 ## Data Flow
 
-```mermaid
-flowchart TD
-    lb[lb-fetch] --> queue["QueueItem<br/>(pending)"]
-    cat[catalog-discovery] --> queue
-    queue --> approve["User approves<br/>via Web UI"]
-    approve --> wishlist["WishlistItem<br/>(pending)"]
-    wishlist --> task["DownloadTask<br/>(pending)"]
-    task --> search[slskd search]
-    search --> auto[auto-select]
-    search --> manual[manual select]
-    search --> deferred[deferred]
-    auto --> download[slskd download]
-    manual --> download
-    download --> completed["DownloadTask<br/>(completed)"]
-    completed --> organize["library-organize<br/>(optional)"]
-    organize --> library[Music Library]
-    deferred --> retry[retry later]
+```
+lb-fetch ──────┐
+               ▼
+catalog-discovery ──> QueueItem (pending)
+                           │
+                           ▼
+                  User approves via Web UI
+                           │
+                           ▼
+                  WishlistItem (pending)
+                           │
+                           ▼
+                  DownloadTask (pending)
+                           │
+                           ▼
+                      slskd search
+                     ┌─────┼──────────┐
+                     ▼     ▼          ▼
+               auto-select manual  deferred
+                     │     select     │
+                     │     │          ▼
+                     ▼     ▼      retry later
+                  slskd download
+                       │
+                       ▼
+              DownloadTask (completed)
+                       │
+                       ▼
+              library-organize (optional)
+                       │
+                       ▼
+                  Music Library
 ```
 
 ### Download Task Status Lifecycle
 
-```mermaid
-stateDiagram-v2
-    pending --> searching
-    searching --> pending_selection: manual mode, awaiting user choice
-    searching --> deferred: skipped for now, retry later
-    searching --> queued: selected, waiting for slskd
-    queued --> downloading
-    downloading --> completed
-    downloading --> failed
-    searching --> completed
-    searching --> failed
+```
+                    ┌───────────┐
+                    │  pending  │
+                    └─────┬─────┘
+                          ▼
+                    ┌───────────┐
+                    │ searching │
+                    └──┬──┬──┬──┘
+           ┌───────────┤  │  ├───────────┬──────────────┐
+           ▼           │  │  ▼           ▼              ▼
+  ┌─────────────────┐  │  │ ┌────────┐ ┌───────────┐ ┌──────┐
+  │pending_selection│  │  │ │deferred│ │ completed │ │failed│
+  │(awaiting user   │  │  │ │(retry  │ └───────────┘ └──────┘
+  │ choice)         │  │  │ │ later) │
+  └─────────────────┘  │  │ └────────┘
+                       │  │
+                       ▼  │
+                ┌─────────┴┐
+                │ queued   │
+                │(waiting  │
+                │for slskd)│
+                └────┬─────┘
+                     ▼
+              ┌────────────┐
+              │downloading │
+              └───┬────┬───┘
+                  ▼    ▼
+          ┌──────────┐ ┌──────┐
+          │completed │ │failed│
+          └──────────┘ └──────┘
 ```
 
 ## Security Model
@@ -289,7 +340,7 @@ Socket.io connections use the same auth logic via a dedicated middleware (`plugi
 Client -> Reverse Proxy (Caddy/nginx/Traefik) -> Authelia (verify) -> DeepCrate
 ```
 
-See [authelia-integration.md](authelia-integration.md) for configuration examples.
+See [Authelia Integration](../guide/authelia-integration.md) for configuration examples.
 
 ## Deployment
 

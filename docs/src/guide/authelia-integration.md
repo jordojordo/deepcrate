@@ -1,3 +1,7 @@
+---
+title: Authelia Integration
+---
+
 # Authelia Integration
 
 This guide explains how to protect DeepCrate with [Authelia](https://www.authelia.com/) for advanced authentication features like:
@@ -13,16 +17,16 @@ This guide explains how to protect DeepCrate with [Authelia](https://www.autheli
 Authelia works as a forward authentication server with your reverse proxy (Caddy, nginx, Traefik, etc.):
 
 ```
-┌─────────┐     ┌──────────────┐     ┌──────────┐     ┌───────────┐
-│ Browser │────►│ Reverse Proxy│────►│ Authelia │────►│ DeepCrate │
-│         │     │ (Caddy/nginx)│     │          │     │           │
-└─────────┘     └──────────────┘     └──────────┘     └───────────┘
-                       │                   │
-                       │   Forward Auth    │
-                       │◄──────────────────┘
-                       │
-                       │   Verified? Pass through
-                       └──────────────────────────────►
++---------+     +--------------+     +----------+     +-----------+
+| Browser |---->| Reverse Proxy|---->| Authelia |---->| DeepCrate |
+|         |     | (Caddy/nginx)|     |          |     |           |
++---------+     +--------------+     +----------+     +-----------+
+                       |                   |
+                       |   Forward Auth    |
+                       |<------------------+
+                       |
+                       |   Verified? Pass through
+                       +------------------------------>
 ```
 
 ## Prerequisites
@@ -69,17 +73,17 @@ ui:
 
 deepcrate.example.com {
     # Automatic HTTPS with Let's Encrypt
-    
+
     # Forward auth to Authelia for all requests except health
     @notHealth {
         not path /health
     }
-    
+
     forward_auth @notHealth authelia:9091 {
         uri /api/verify?rd=https://auth.example.com
         copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
     }
-    
+
     # Proxy to DeepCrate
     reverse_proxy deepcrate:8080
 }
@@ -95,22 +99,22 @@ deepcrate.example.com {
     @authenticated {
         not path /health
     }
-    
+
     forward_auth @authenticated authelia:9091 {
         uri /api/verify?rd=https://auth.example.com
         copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
     }
-    
+
     # API endpoints - also protected
     handle /api/* {
         reverse_proxy deepcrate:8080
     }
-    
+
     # Health endpoint - no auth required
     handle /health {
         reverse_proxy deepcrate:8080
     }
-    
+
     # Everything else
     handle {
         reverse_proxy deepcrate:8080

@@ -4,9 +4,12 @@ import path from 'path';
 import fs from 'fs';
 
 import logger from '@server/config/logger';
+import docsConfig from '@server/config/docs';
 import { authMiddleware } from '@server/middleware/auth';
 import healthRoutes from '@server/routes/api/v1/health';
 import authRoutes from '@server/routes/api/v1/auth';
+
+import openApiRoutes from '@server/routes/api/v1/openapi';
 import queueRoutes from '@server/routes/api/v1/queue';
 import jobsRoutes from '@server/routes/api/v1/jobs';
 import searchRoutes from '@server/routes/api/v1/search';
@@ -36,6 +39,10 @@ app.use(express.json());
 // Public routes (no auth required)
 app.use('/health', healthRoutes);
 app.get('/api/v1/auth/info', AuthController.getInfo);
+
+// API documentation
+app.use('/api/v1/openapi.json', openApiRoutes);
+app.use('/api/v1/docs', docsConfig);
 
 // Apply auth middleware to all /api/* routes
 app.use('/api', authMiddleware);

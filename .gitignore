@@ -11,8 +11,10 @@ ENV/
 .mypy_cache/
 .ruff_cache/
 *.egg-info/
+
 dist/
 build/
+**/.eslintcache
 
 # Node
 node_modules/
@@ -56,3 +58,7 @@ htmlcov/
 .claude/
 workspace/
 .playwright-mcp/
+
+# Docs
+**/.vitepress/cache
+**/.vitepress/dist
