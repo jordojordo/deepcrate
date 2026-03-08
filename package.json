@@ -4,7 +4,8 @@
   "scripts": {
     "deps:check": "pnpm list -r",
     "deps:update": "pnpm -r up --latest --interactive",
-    "dev": "pnpm --filter server --filter ui dev"
+    "dev": "pnpm --filter server --filter ui dev",
+    "docs:dev": "pnpm --filter docs dev"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

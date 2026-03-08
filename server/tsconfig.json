@@ -10,6 +10,7 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noImplicitAny": true,
+    "resolveJsonModule": true,
     "skipLibCheck": true,
     "paths": {
       "@server/*": ["./src/*"]

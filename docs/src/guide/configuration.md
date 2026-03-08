@@ -1,3 +1,7 @@
+---
+title: Configuration
+---
+
 # Configuration Reference
 
 DeepCrate is configured via a YAML file mounted at `/config/config.yaml`.
@@ -617,7 +621,7 @@ For production, avoid putting secrets directly in config files:
 
 ```yaml
 listenbrainz:
-  username: "saybis"
+  username: "my-user-name"
   token: "${LISTENBRAINZ_TOKEN}"  # Populated from env
 ```
 

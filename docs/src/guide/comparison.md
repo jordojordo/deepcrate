@@ -1,3 +1,7 @@
+---
+title: Comparison
+---
+
 # DeepCrate vs Alternatives
 
 This document compares DeepCrate to similar self-hosted music discovery and automation tools. The goal is to help newcomers understand where DeepCrate fits in the ecosystem and what makes it distinct.
