@@ -7,12 +7,16 @@ on:
       - 'docs/**'
       - 'server/src/openapi/**'
       - 'server/src/types/**'
+      - '**/package.json'
+      - '**/pnpm-lock.yaml'
   pull_request:
     branches: [master]
     paths:
       - 'docs/**'
       - 'server/src/openapi/**'
       - 'server/src/types/**'
+      - '**/package.json'
+      - '**/pnpm-lock.yaml'
   workflow_dispatch:
 
 permissions:

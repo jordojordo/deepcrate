@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.3",
-    "@scalar/express-api-reference": "^0.9.0",
+    "@scalar/express-api-reference": "^0.9.1",
     "@sequelize/core": "7.0.0-alpha.48",
     "@sequelize/sqlite3": "7.0.0-alpha.48",
     "@sequelize/utils": "7.0.0-alpha.48",
@@ -48,12 +48,12 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^25.3.5",
+    "@types/node": "^25.4.0",
     "@types/node-cron": "^3.0.11",
     "@types/supertest": "^7.2.0",
     "@vitest/coverage-v8": "^4.0.18",
     "dotenv": "^17.3.1",
-    "eslint": "^10.0.2",
+    "eslint": "^10.0.3",
     "globals": "^17.4.0",
     "jiti": "^2.6.1",
     "nock": "^14.0.11",
@@ -62,7 +62,7 @@
     "tsc-alias": "^1.8.16",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.1",
+    "typescript-eslint": "^8.57.0",
     "vitest": "^4.0.18"
   }
 }
