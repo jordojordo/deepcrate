@@ -17,10 +17,10 @@ import logger from '@server/config/logger';
 export class SlskdError extends Error {
   constructor(
     message: string,
-    // eslint-disable-next-line no-unused-vars
-    public readonly statusCode?: number,
-    // eslint-disable-next-line no-unused-vars
-    public readonly isAuthError: boolean = false
+    public readonly statusCode?: number, // eslint-disable-line no-unused-vars
+    public readonly code?: string, // eslint-disable-line no-unused-vars
+    public readonly isAuthError: boolean = false // eslint-disable-line no-unused-vars
+
   ) {
     super(message);
     this.name = 'SlskdError';
@@ -28,10 +28,22 @@ export class SlskdError extends Error {
 
   static fromAxiosError(error: AxiosError, context: string): SlskdError {
     const status = error.response?.status;
+    const code = error.code;
     const isAuthError = status === 401 || status === 403;
-    const message = isAuthError ? `${ context }: Authentication failed (status ${ status }) - check slskd API key` : `${ context }: ${ error.message }`;
+    const detail = error.message
+      || (status ? `HTTP ${ status }` : null)
+      || (code ? `code ${ code }` : null)
+      || 'unknown error';
 
-    return new SlskdError(message, status, isAuthError);
+    let message;
+
+    if (isAuthError) {
+      message = `${ context }: Authentication failed (status ${ status }) - check slskd API key`;
+    } else {
+      message = `${ context }: ${ detail }`;
+    }
+
+    return new SlskdError(message, status, code, isAuthError);
   }
 }
 
