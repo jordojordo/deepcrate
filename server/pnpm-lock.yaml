@@ -12,8 +12,8 @@ importers:
         specifier: ^8.4.3
         version: 8.4.3(zod@4.3.6)
       '@scalar/express-api-reference':
-        specifier: ^0.9.1
-        version: 0.9.1
+        specifier: ^0.9.2
+        version: 0.9.2
       '@sequelize/core':
         specifier: 7.0.0-alpha.48
         version: 7.0.0-alpha.48
@@ -558,20 +558,20 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@scalar/core@0.4.1':
-    resolution: {integrity: sha512-I8bhVhqAyX5ddhBbzwEs0llfPOzwlvwBwNKFFdyUhcJFxnu7joQGMDqA54o8cdoYv95W4TX48i9zw5GUq8/XMg==}
+  '@scalar/core@0.4.2':
+    resolution: {integrity: sha512-Ff+/Oad4eRsqqAxswLGhdgxBWluQYCqp8y7jLl20+U7Y7BDSRq+pE1LVwFW5AIRK5i3/uSWXtLZEVm7N0aszPA==}
     engines: {node: '>=22'}
 
-  '@scalar/express-api-reference@0.9.1':
-    resolution: {integrity: sha512-YwT3IDukfZ5QMxX0RNdM54CLEo3bOhJdElQmQzACRgwMscjUFUF8d8vTQJ4HmhSLy67gEqoJPao5yNkWcYOUGw==}
+  '@scalar/express-api-reference@0.9.2':
+    resolution: {integrity: sha512-OYZdCwvTChBYyc2MthlxDLl1WOgPCEl9AyAyFrVZsreooijjoqrojR2qER+QBxJ38VfCs5yH34a0qK409ajMfA==}
     engines: {node: '>=22'}
 
-  '@scalar/helpers@0.3.0':
-    resolution: {integrity: sha512-lhQdehgighJC+PiSTJbbggM/SM3UydcRQil6Cfp/M4l539qklIh35pt4eh1+H+5Esa03gHnJwhTHF3TwglSOJw==}
+  '@scalar/helpers@0.4.0':
+    resolution: {integrity: sha512-1XOdy0jZp0Yu+lOmvDlPfG8+oLJK9MUhx7Q7OFggSS+zKG3n01xJKnTpgm9uhETgJrGy2yxG9y0cz4KPexXHng==}
     engines: {node: '>=22'}
 
-  '@scalar/types@0.7.1':
-    resolution: {integrity: sha512-yJ6FebyOQ+VCftXTUpJDrvJWMoMPaP1HSdBD2L3SsoQvmhXnJ6zbCd2IT7XNrfBIwsYvIYVUBVl9umPjKTNdMw==}
+  '@scalar/types@0.7.2':
+    resolution: {integrity: sha512-y2qesMS43aVA2QdhLP/r6/sD2LlTeGjryoF0s6q11jU/UQV22vXD4dNGoCynF3qIFp4VuLE3d04wcsyZ5BD6HA==}
     engines: {node: '>=22'}
 
   '@sequelize/core@7.0.0-alpha.48':
@@ -2661,19 +2661,19 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.57.1':
     optional: true
 
-  '@scalar/core@0.4.1':
+  '@scalar/core@0.4.2':
     dependencies:
-      '@scalar/types': 0.7.1
+      '@scalar/types': 0.7.2
 
-  '@scalar/express-api-reference@0.9.1':
+  '@scalar/express-api-reference@0.9.2':
     dependencies:
-      '@scalar/core': 0.4.1
+      '@scalar/core': 0.4.2
 
-  '@scalar/helpers@0.3.0': {}
+  '@scalar/helpers@0.4.0': {}
 
-  '@scalar/types@0.7.1':
+  '@scalar/types@0.7.2':
     dependencies:
-      '@scalar/helpers': 0.3.0
+      '@scalar/helpers': 0.4.0
       nanoid: 5.1.6
       type-fest: 5.4.4
       zod: 4.3.6
