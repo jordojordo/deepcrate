@@ -89,7 +89,7 @@ slskd:
 
     # Search timing
     search_timeout_ms: 15000      # Timeout for slskd search API call
-    max_wait_ms: 20000            # Max time to wait for search completion
+    max_wait_ms: 60000            # Max time to wait for search completion
 
     # Response filtering
     min_response_files: 3         # Minimum files to consider a valid result
@@ -140,7 +140,7 @@ slskd:
   # Interactive selection mode (optional)
   # Allows manual review and selection of search results before downloading
   selection:
-    mode: "auto"                  # "auto" (default behavior) or "manual" (user selects)
+    mode: "manual"                # "manual" (default) or "auto"
     timeout_hours: 24             # Hours before pending selection expires (0 = no timeout)
 
 # -----------------------------------------------------------------------------

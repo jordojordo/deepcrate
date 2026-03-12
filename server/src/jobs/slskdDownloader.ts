@@ -7,12 +7,12 @@ import type {
 } from '@server/types/slskd';
 import type { SlskdFile, SlskdSearchResponse } from '@server/types/slskd-client';
 import type { QueryContext } from '@server/types/search-query';
+import type { SlskdSearchSettings } from '@server/config/schemas';
 
 import path from 'path';
 import { Op } from '@sequelize/core';
 
 import logger from '@server/config/logger';
-import type { SlskdSearchSettings } from '@server/config/schemas';
 import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
 import DownloadTask from '@server/models/DownloadTask';
@@ -78,7 +78,7 @@ function buildSearchConfig(
     retryDelayMs:         s?.retry?.delay_between_retries_ms ?? 5000,
     qualityPreferences:   buildQualityPreferences(qp),
     selection:            {
-      mode:         selectionSettings?.mode ?? 'auto',
+      mode:         selectionSettings?.mode ?? 'manual',
       timeoutHours: selectionSettings?.timeout_hours ?? 24,
     },
   };
@@ -452,10 +452,18 @@ async function executeSearchWithRetry(params: {
     // Wait before retry
     await sleep(retryDelayMs);
 
+    const freshTask = await DownloadTask.findByPk(task.id);
+
+    if (!freshTask) {
+      logger.debug(`Task ${ task.id } no longer exists, aborting retry`);
+
+      return { status: 'failed' };
+    }
+
     const retryResult = await attemptSearch({
       query: fallbackQuery,
       wishlistKey,
-      task,
+      task:  freshTask,
       slskdClient,
       downloadService,
       searchConfig,
@@ -494,6 +502,20 @@ async function attemptSearch(params: {
 
   // Reuse existing search if task was deferred (timed out) or is still searching
   let searchId = (task.status === 'searching' || task.status === 'deferred') ? task.slskdSearchId || null : null;
+  let reusedSearchState: string | null = null;
+
+  if (searchId) {
+    const slskdSearchState = await slskdClient.getSearchState(searchId);
+
+    if (!slskdSearchState) {
+      logger.debug(`Reused search ${ searchId } for ${ wishlistKey } no longer exists, restarting search`);
+
+      await slskdClient.deleteSearch(searchId);
+      searchId = null;
+    } else {
+      reusedSearchState = slskdSearchState.state;
+    }
+  }
 
   if (!searchId) {
     logger.debug(`Starting slskd search for "${ query }"`);
@@ -511,7 +533,8 @@ async function attemptSearch(params: {
     errorMessage:  undefined,
   });
 
-  const searchState = await waitForSearchCompletion(slskdClient, searchId, maxWaitMs);
+  // if reused search already completed, skip polling
+  const searchState = reusedSearchState === 'Completed' ? reusedSearchState : await waitForSearchCompletion(slskdClient, searchId, maxWaitMs);
 
   logger.debug(`slskd search ${ searchId } for ${ wishlistKey } returned state ${ searchState }`);
 

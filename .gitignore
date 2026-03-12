@@ -38,6 +38,7 @@ Thumbs.db
 
 # Config and secrets (use examples/)
 config.yaml
+config.yaml.bak
 !examples/config.yaml
 *.env
 !.env.example

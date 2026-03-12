@@ -154,7 +154,7 @@ const SlskdSearchSchema = z.object({
 });
 
 const SlskdSelectionSchema = z.object({
-  mode:          z.enum(['auto', 'manual']).default('auto'),
+  mode:          z.enum(['auto', 'manual']).default('manual'),
   timeout_hours: z.number().int().min(0).default(24),  // 0 = no timeout
 });
 

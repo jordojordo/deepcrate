@@ -9,7 +9,7 @@ export const SEARCH_TIMEOUT_MS = 15000;
 export const SEARCH_POLL_INTERVAL_MS = 1000;
 
 /** Maximum time to wait for search completion in milliseconds */
-export const SEARCH_MAX_WAIT_MS = 20000;
+export const SEARCH_MAX_WAIT_MS = 60000;
 
 /** Minimum number of files expected for an album download */
 export const MIN_FILES_ALBUM = 3;
