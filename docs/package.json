@@ -21,10 +21,10 @@
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.7.0",
     "eslint": "^10.0.3",
-    "eslint-plugin-oxlint": "^1.51.0",
+    "eslint-plugin-oxlint": "^1.54.0",
     "eslint-plugin-vue": "^10.8.0",
     "npm-run-all2": "^8.0.4",
-    "oxlint": "^1.52.0",
+    "oxlint": "^1.54.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.3",
     "vitepress": "2.0.0-alpha.16"
