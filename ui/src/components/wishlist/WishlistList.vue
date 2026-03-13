@@ -5,6 +5,8 @@ import type { ComponentPublicInstance } from 'vue';
 import { ref, watch, computed } from 'vue';
 import { getDefaultCoverUrl } from '@/utils/formatters';
 import { useBreakpoint } from '@/composables/useBreakpoint';
+import { copyToClipboard, COPY_CURSOR_CLASS } from '@/composables/useCopyToClipboard';
+import { useToast } from '@/composables/useToast';
 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -22,6 +24,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), { focusIndex: -1 });
 const { isMobile } = useBreakpoint(1100);
+const toast = useToast();
 
 const emit = defineEmits<{
   select:               [id: string];
@@ -163,17 +166,24 @@ function canRequeue(status: WishlistDownloadStatus): boolean {
         @click="emit('update:focus-index', index)"
       >
         <div class="wishlist-mobile__header">
-          <img
-            :src="item.coverUrl || getDefaultCoverUrl()"
-            :alt="`${item.title} cover`"
-            class="wishlist-mobile__cover"
-            @error="($event.target as HTMLImageElement).src = getDefaultCoverUrl()"
-          />
-          <div class="wishlist-mobile__info">
-            <div class="font-semibold">{{ item.title || 'Unknown' }}</div>
-            <div class="text-sm text-muted">{{ item.artist }}</div>
-            <div v-if="item.year" class="text-sm text-muted">{{ item.year }}</div>
+          <div class="wishlist-mobile__details">
+            <img
+              :src="item.coverUrl || getDefaultCoverUrl()"
+              :alt="`${item.title} cover`"
+              class="wishlist-mobile__cover"
+              @error="($event.target as HTMLImageElement).src = getDefaultCoverUrl()"
+            />
+            <div
+              :class="COPY_CURSOR_CLASS"
+              class="wishlist-mobile__info"
+              @click.stop="copyToClipboard([item.title, item.artist], toast)"
+            >
+              <div class="font-semibold">{{ item.title || 'Unknown' }}</div>
+              <div class="text-sm text-muted">{{ item.artist }}</div>
+              <div v-if="item.year" class="text-sm text-muted">{{ item.year }}</div>
+            </div>
           </div>
+
           <div class="wishlist-mobile__tags">
             <div class="wishlist-mobile__tags-item">
               <Tag
@@ -267,7 +277,10 @@ function canRequeue(status: WishlistDownloadStatus): boolean {
 
       <Column field="title" header="Title">
         <template #body="{ data }">
-          <div>
+          <div
+            :class="COPY_CURSOR_CLASS"
+            @click.stop="copyToClipboard([data.title, data.artist], toast)"
+          >
             <div class="font-semibold">{{ data.title || 'Unknown' }}</div>
             <div class="text-sm text-muted">{{ data.artist }}</div>
             <div v-if="data.year" class="text-sm text-muted mt-1">{{ data.year }}</div>
@@ -379,12 +392,23 @@ function canRequeue(status: WishlistDownloadStatus): boolean {
   &__header {
     display: flex;
     align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+    }
+  }
+
+  &__details {
+    display: flex;
+    align-items: flex-start;
     gap: 0.75rem;
   }
 
   &__cover {
-    width: 3rem;
-    height: 3rem;
+    width: 3.5rem;
+    height: 3.5rem;
     border-radius: 0.25rem;
     object-fit: cover;
     flex-shrink: 0;
@@ -402,6 +426,10 @@ function canRequeue(status: WishlistDownloadStatus): boolean {
     align-items: flex-end;
     gap: 0.375rem;
     flex-shrink: 0;
+
+    @media (max-width: 480px) {
+      align-items: flex-start;
+    }
   }
 
   &__tags-item {

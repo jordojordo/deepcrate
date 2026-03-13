@@ -500,6 +500,7 @@ h1, h2, h3, h4, h5, h6,
    Cursor & Pointer Events
    ============================================ */
 .cursor-pointer { cursor: pointer; }
+.cursor-copy { cursor: copy; }
 .cursor-default { cursor: default; }
 .pointer-events-none { pointer-events: none; }
 
