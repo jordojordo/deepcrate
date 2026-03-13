@@ -4,6 +4,8 @@ import type { QueueItem } from '@/types';
 import { computed, ref, watch } from 'vue';
 import { getDefaultCoverUrl } from '@/utils/formatters';
 import { useCollapsedList } from '@/composables/useCollapsedList';
+import { copyToClipboard, COPY_CURSOR_CLASS } from '@/composables/useCopyToClipboard';
+import { useToast } from '@/composables/useToast';
 
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
@@ -27,6 +29,7 @@ const emit = defineEmits<{
   preview: [item: QueueItem];
 }>();
 
+const toast = useToast();
 const cardRef = ref<HTMLElement | null>(null);
 
 watch(
@@ -130,7 +133,11 @@ const handleCardClick = (event: MouseEvent) => {
     />
 
     <div class="queue-card__content">
-      <div class="queue-card__info">
+      <div
+        :class="COPY_CURSOR_CLASS"
+        class="queue-card__info"
+        @click.stop="copyToClipboard([item.album || item.title || '', item.artist], toast)"
+      >
         <h3 class="queue-card__title">{{ displayTitle }}</h3>
         <p class="queue-card__artist">
           {{ item.artist }}

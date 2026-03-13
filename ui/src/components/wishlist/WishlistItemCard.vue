@@ -3,6 +3,8 @@ import type { WishlistEntryWithStatus, WishlistDownloadStatus } from '@/types';
 
 import { computed, ref, watch } from 'vue';
 import { getDefaultCoverUrl } from '@/utils/formatters';
+import { copyToClipboard, COPY_CURSOR_CLASS } from '@/composables/useCopyToClipboard';
+import { useToast } from '@/composables/useToast';
 
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
@@ -24,6 +26,7 @@ const emit = defineEmits<{
   requeue: [id: string];
 }>();
 
+const toast = useToast();
 const cardRef = ref<HTMLElement | null>(null);
 
 watch(
@@ -161,7 +164,11 @@ function handleCardClick(event: MouseEvent) {
     </div>
 
     <div class="wishlist-card__content">
-      <div class="wishlist-card__info">
+      <div
+        :class="COPY_CURSOR_CLASS"
+        class="wishlist-card__info"
+        @click.stop="copyToClipboard([item.title, item.artist], toast)"
+      >
         <h3 class="wishlist-card__title">{{ item.title || 'Unknown' }}</h3>
         <p class="wishlist-card__artist">
           {{ item.artist }}

@@ -6,6 +6,8 @@ import { ref, watch } from 'vue';
 import { getDefaultCoverUrl } from '@/utils/formatters';
 import { useBreakpoint } from '@/composables/useBreakpoint';
 import { getCollapsedList } from '@/composables/useCollapsedList';
+import { copyToClipboard, COPY_CURSOR_CLASS } from '@/composables/useCopyToClipboard';
+import { useToast } from '@/composables/useToast';
 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -22,6 +24,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), { focusIndex: -1 });
 const { isMobile } = useBreakpoint(1280);
+const toast = useToast();
 
 const emit = defineEmits<{
   approve:              [mbids: string[]];
@@ -160,17 +163,25 @@ function getGenreTooltip(genres: string[] | undefined): string | null {
         @click="emit('update:focus-index', index)"
       >
         <div class="queue-list-mobile__header">
-          <img
-            :src="item.cover_url || getDefaultCoverUrl()"
-            :alt="`${item.album || item.title} cover`"
-            class="queue-list-mobile__cover"
-            @click.stop="handlePreview(item)"
-            @error="($event.target as HTMLImageElement).src = getDefaultCoverUrl()"
-          />
-          <div class="queue-list-mobile__info">
-            <div class="font-semibold">{{ item.album || item.title }}</div>
-            <div class="text-sm text-muted">{{ item.artist }}</div>
+          <div class="queue-list-mobile__details">
+            <img
+              :src="item.cover_url || getDefaultCoverUrl()"
+              :alt="`${item.album || item.title} cover`"
+              class="queue-list-mobile__cover"
+              @click.stop="handlePreview(item)"
+              @error="($event.target as HTMLImageElement).src = getDefaultCoverUrl()"
+            />
+            <div
+              :class="COPY_CURSOR_CLASS"
+              class="queue-list-mobile__info"
+              @click.stop="copyToClipboard([item.album || item.title || '', item.artist], toast)"
+            >
+              <div class="font-semibold">{{ item.album || item.title }}</div>
+              <div class="text-sm text-muted">{{ item.artist }}</div>
+              <div v-if="item.year" class="text-sm text-muted">{{ item.year }}</div>
+            </div>
           </div>
+
           <div class="queue-list-mobile__tags">
             <div class="queue-list-mobile__tags-top">
               <Tag
@@ -192,6 +203,7 @@ function getGenreTooltip(genres: string[] | undefined): string | null {
             </div>
             <Tag
               v-if="item.score"
+              class="queue-list-mobile__tags-bottom"
               :value="`${ item.score }%`"
               v-tooltip.left="'Item score'"
               severity="info"
@@ -270,7 +282,10 @@ function getGenreTooltip(genres: string[] | undefined): string | null {
 
       <Column field="album" header="Album/Title">
         <template #body="{ data }">
-          <div>
+          <div
+            :class="COPY_CURSOR_CLASS"
+            @click.stop="copyToClipboard([data.album || data.title || '', data.artist], toast)"
+          >
             <div class="font-semibold">{{ data.album || data.title }}</div>
             <div class="text-sm text-muted">{{ data.artist }}</div>
             <div v-if="data.year" class="text-sm text-muted mt-1">{{ data.year }}</div>
@@ -414,11 +429,21 @@ function getGenreTooltip(genres: string[] | undefined): string | null {
     display: flex;
     gap: 0.75rem;
     align-items: flex-start;
+    justify-content: space-between;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+    }
+  }
+
+  &__details {
+    display: flex;
+    gap: 0.75rem;
   }
 
   &__cover {
-    width: 3rem;
-    height: 3rem;
+    width: 3.5rem;
+    height: 3.5rem;
     border-radius: 0.375rem;
     object-fit: cover;
     flex-shrink: 0;
@@ -449,6 +474,15 @@ function getGenreTooltip(genres: string[] | undefined): string | null {
     @media (max-width: 768px) {
       &-top {
         flex-direction: column;
+      }
+    }
+
+    @media (max-width: 480px) {
+      &-top {
+        flex-direction: row;
+      }
+      &-bottom {
+        display: none;
       }
     }
   }
