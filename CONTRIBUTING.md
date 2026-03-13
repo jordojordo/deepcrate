@@ -6,7 +6,7 @@ Thank you for your interest in contributing to DeepCrate! This document provides
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 24+
 - pnpm
 - Docker (for testing)
 - Git
@@ -20,35 +20,33 @@ git clone https://github.com/jordojordo/deepcrate.git
 cd deepcrate
 ```
 
-2. **Install server dependencies (Node.js/TypeScript)**
+2. **Install all dependencies**
 
 ```bash
-cd server
 pnpm install
 ```
 
-3. **Install ui dependencies (Vue 3)**
+This installs dependencies for all workspace packages (server, ui, docs) from the root.
+
+3. **Create config for development**
 
 ```bash
-cd ../ui
-pnpm install
-```
-
-4. **Create config for development**
-
-```bash
-cd ..
 cp examples/config.yaml.example config.yaml
 # Edit config.yaml with your test credentials
 ```
 
 ## Running Locally
 
-### Server (Express + background jobs)
+### Both (recommended)
 
 ```bash
-cd server
-pnpm run dev    # Starts on http://localhost:8080 with hot reload
+pnpm dev    # Starts server on :8080 and ui on :5173 concurrently
+```
+
+### Server only
+
+```bash
+pnpm -C server dev    # Starts on http://localhost:8080 with hot reload
 ```
 
 DeepCrate runs as a single Node.js process. Background jobs (lb-fetch, catalog-discovery, slskd-downloader) are scheduled via node-cron.
@@ -60,27 +58,19 @@ curl -X POST http://localhost:8080/api/v1/actions/lb-fetch
 curl -X POST http://localhost:8080/api/v1/actions/catalog
 ```
 
-### UI (Vue 3)
+### UI only
 
 ```bash
-cd ui
-pnpm run dev    # Starts on http://localhost:5173, proxies to server
+pnpm -C ui dev    # Starts on http://localhost:5173, proxies to server
 ```
-
-(When running both, leave the server running in one terminal and the ui in another.)
 
 ## Running Tests
 
-Run tests from each workspace:
+Run tests from the project root:
 
 ```bash
-# Server tests
-cd server
-pnpm run test
-
-# UI tests
-cd ../ui
-pnpm run test
+pnpm -C server test
+pnpm -C ui test
 ```
 
 ## Linting / Formatting / Typechecks
@@ -88,16 +78,22 @@ pnpm run test
 Script names can vary—use the repo's package.json as the source of truth—but these are the typical targets:
 
 ```bash
-# Server
-cd server
-pnpm run lint
-pnpm run typecheck
+pnpm -C server lint
+pnpm -C server typecheck
 
-# UI
-cd ../ui
-pnpm run lint
-pnpm run typecheck
+pnpm -C ui lint
+pnpm -C ui typecheck
 ```
+
+## API Documentation
+
+When the server is running, an interactive API reference (powered by [Scalar](https://scalar.com/)) is available at:
+
+```
+http://localhost:8080/api/v1/docs
+```
+
+The raw OpenAPI spec can be found at `http://localhost:8080/api/v1/openapi.json`.
 
 ## Building and Running with Docker
 
@@ -125,7 +121,6 @@ deepcrate/
 │   │   └── api/               # API client
 │   └── package.json
 │
-├── s6-overlay/                # Process supervisor config
 ├── docs/                      # Documentation
 ├── examples/                  # Example configs
 └── Dockerfile
@@ -157,7 +152,7 @@ refactor: extract queue service
 
 ### Pull Request Process
 
-1. **Fork and branch** from `main`
+1. **Fork and branch** from `master`
 2. **Make your changes** with tests
 3. **Update documentation** if needed
 4. **Run tests and linting**
@@ -165,9 +160,9 @@ refactor: extract queue service
 
 ### PR Checklist
 
-- [ ] Server tests pass (`pnpm -C server run test`)
-- [ ] UI tests pass (`pnpm -C ui run test`)
-- [ ] Linting passes (`pnpm -C server run lint` and `pnpm -C ui run lint`)
+- [ ] Server tests pass (`pnpm -C server test`)
+- [ ] UI tests pass (`pnpm -C ui test`)
+- [ ] Linting passes (`pnpm -C server lint` and `pnpm -C ui lint`)
 - [ ] Documentation updated if needed
 - [ ] Commit messages follow convention
 - [ ] PR description explains the change
@@ -185,7 +180,7 @@ refactor: extract queue service
 ```ts
 // Example: keep handlers thin and logic in services
 import type { Request, Response } from "express";
-import { approveQueueItems } from "../services/queue.js";
+import { approveQueueItems } from "@server/services/queue.js";
 
 export async function approve(req: Request, res: Response) {
   const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
@@ -239,15 +234,13 @@ Look for issues labeled `good first issue`:
 
 - Additional discovery sources (Spotify, Bandcamp)
 - Notification integrations (Discord, Telegram)
-- Download quality preferences
-- Album deduplication against library
 - Statistics and analytics dashboard
 
 ## Questions?
 
 - Open a [GitHub Discussion](https://github.com/jordojordo/deepcrate/discussions)
 - Check existing issues for similar questions
-- Read the [documentation](docs/)
+- Read the [documentation](https://jordojordo.github.io/deepcrate)
 
 ## License
 
