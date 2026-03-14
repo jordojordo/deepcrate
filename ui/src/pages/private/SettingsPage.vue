@@ -104,7 +104,7 @@ function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
         <TabList>
           <Tab value="listenbrainz">ListenBrainz</Tab>
           <Tab value="catalog">Catalog Discovery</Tab>
-          <Tab value="slskd">slskd</Tab>
+          <Tab value="slskd">Slskd</Tab>
           <Tab value="preview">Preview</Tab>
           <Tab value="scoring">Scoring</Tab>
           <Tab value="auth">Authentication</Tab>
@@ -143,9 +143,9 @@ function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
 
           <TabPanel value="slskd">
             <div class="settings-page__panel">
-              <h2 class="settings-page__section-title">slskd Connection</h2>
+              <h2 class="settings-page__section-title">Slskd Connection</h2>
               <p class="settings-page__section-desc">
-                Configure your slskd Soulseek client connection and search preferences.
+                Configure your Slskd client connection and search preferences.
               </p>
               <SlskdForm
                 :settings="slskd"

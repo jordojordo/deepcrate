@@ -104,11 +104,11 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
   <component
     :is="isCardClickable ? RouterLink : 'div'"
     :to="isCardClickable ? actionRoute : undefined"
-    class="dashboard-stats-card glass-panel glass-panel--hover p-6 relative overflow-hidden group block no-underline"
+    class="dashboard-stats-card glass-panel glass-panel--hover relative overflow-hidden group block no-underline"
     :class="{ 'dashboard-stats-card--clickable': isCardClickable }"
   >
     <div class="relative z-10">
-      <div class="flex align-items-center justify-content-between mb-4">
+      <div class="flex align-items-center justify-content-between">
         <p class="text-sm font-medium">{{ title }}</p>
         <div class="flex align-items-center gap-2">
           <span v-if="speed" class="text-primary text-xs font-mono">{{ formatSpeed(speed) }}</span>
@@ -120,7 +120,7 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
         </div>
       </div>
 
-      <div class="flex align-items-end gap-2 mb-1">
+      <div class="flex align-items-end gap-2">
         <div v-if="loading" class="loading-unit">
           <Skeleton width="5rem" height="3rem"></Skeleton>
           <Skeleton width="2rem" height="2rem" class="mb-2"></Skeleton>
@@ -131,9 +131,9 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
         </div>
       </div>
 
-      <p v-if="subtitle" class="text-sm mb-4">{{ subtitle }}</p>
+      <p v-if="subtitle" class="text-sm">{{ subtitle }}</p>
 
-      <div v-if="trend" class="mb-4">
+      <div v-if="trend">
         <span
           class="px-2 py-1 rounded text-xs font-bold border"
           :class="trendBadgeClass"
@@ -155,7 +155,7 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
         ></div>
       </div> -->
 
-      <div v-if="downloads && downloads.length > 0" class="space-y-3 mb-4">
+      <div v-if="downloads && downloads.length > 0" class="mb-4">
         <div v-for="download in downloads" :key="download.id">
           <div class="flex justify-content-between text-xs mb-1">
             <span class="truncate max-w-[180px]">{{ download.artist }} - {{ download.album }}</span>
@@ -196,9 +196,14 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
   </component>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .dashboard-stats-card {
   transition: all 0.3s ease;
+  padding: 1rem;
+
+  @media (max-width: 768px) {
+    padding: .25rem;
+  }
 }
 
 .dashboard-stats-card--clickable {
@@ -244,11 +249,6 @@ function activeDownloadProgress(activeDownload: ActiveDownload) {
   background: var(--primary-500);
   border-color: var(--primary-500);
   color: var(--r-text-primary);
-}
-
-/* Space-y utility */
-.space-y-3 > * + * {
-  margin-top: 0.75rem;
 }
 
 .loading-unit {

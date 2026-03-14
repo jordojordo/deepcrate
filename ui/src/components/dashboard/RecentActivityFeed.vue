@@ -27,7 +27,7 @@ defineEmits<{
       <Button
         label="View All"
         class="activity-feed__view-all"
-        link
+        severity="secondary"
         @click="$emit('viewAll')"
       />
     </div>
@@ -46,10 +46,6 @@ defineEmits<{
   padding: 1.5rem;
   overflow: hidden;
   min-width: 0;
-
-  &__view-all {
-    color: var(--r-text-primary);
-  }
 }
 
 @media (max-width: 768px) {

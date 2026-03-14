@@ -87,7 +87,7 @@ async function handleCancelJob(jobName: string) {
             :disabled="triggeringJob !== null"
             @click="handleTriggerListenBrainz"
             class="w-full"
-            outlined
+            severity="secondary"
           />
           <Button
             v-else
@@ -123,7 +123,7 @@ async function handleCancelJob(jobName: string) {
             :disabled="triggeringJob !== null"
             @click="handleTriggerCatalogDiscovery"
             class="w-full"
-            outlined
+            severity="secondary"
           />
           <Button
             v-else
@@ -159,7 +159,7 @@ async function handleCancelJob(jobName: string) {
             :disabled="triggeringJob !== null"
             @click="handleTriggerDownloader"
             class="w-full"
-            outlined
+            severity="secondary"
           />
           <Button
             v-else
@@ -192,7 +192,7 @@ async function handleCancelJob(jobName: string) {
             icon="pi pi-plus"
             @click="showAddModal = true"
             class="w-full"
-            outlined
+            severity="secondary"
           />
         </div>
       </div>
@@ -209,18 +209,5 @@ async function handleCancelJob(jobName: string) {
   font-size: 0.75rem;
   color: var(--surface-400);
   padding: 0 0.25rem;
-}
-
-/* Override button styles for the action button */
-:deep(.p-button.p-component.p-button-outlined) {
-  background: rgba(43, 43, 238, 0.2);
-  border-color: rgba(43, 43, 238, 0.3);
-  color: var(--primary-500);
-}
-
-:deep(.p-button.p-component.p-button-outlined:hover) {
-  background: var(--primary-500);
-  border-color: var(--primary-500);
-  color: var(--r-text-primary);
 }
 </style>

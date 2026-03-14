@@ -2,6 +2,43 @@ import { definePreset } from '@primeuix/themes';
 import Aura from '@primeuix/themes/aura';
 
 export const DeepCratePreset = definePreset(Aura, {
+  components: {
+    button: {
+      colorScheme: {
+        light: {
+          root: {
+            secondary: {
+              background:        '{primary.501}',
+              hoverBackground:   '{primary.600}',
+              activeBackground:  '{primary.700}',
+              borderColor:       '{border.subtle}',
+              hoverBorderColor:  '{border.emphasis}',
+              activeBorderColor: '{primary.700}',
+              color:             '{primary.900}',
+              hoverColor:        '{surface.50}',
+              activeColor:       '{surface.50}',
+            },
+          },
+        },
+        dark: {
+          root: {
+            secondary: {
+              background:        '{primary.501}',
+              hoverBackground:   '{primary.500}',
+              activeBackground:  '{primary.400}',
+              borderColor:       '{border.subtle}',
+              hoverBorderColor:  '{border.emphasis}',
+              activeBorderColor: '{primary.400}',
+              color:             '{primary.50}',
+              hoverColor:        '{surface.50}',
+              activeColor:       '{surface.50}',
+            },
+          },
+        },
+      },
+    },
+    tabs: { colorScheme: { dark: { tab: { activeColor: '{surface.50}' } } } }
+  },
   primitive: {
     borderRadius: {
       none: '0',
@@ -13,14 +50,15 @@ export const DeepCratePreset = definePreset(Aura, {
     },
   },
   semantic: {
-    // New primary palette based on mockup blue (#2b2bee)
     primary: {
       50:  '#eeeeff',
       100: '#d8d8ff',
       200: '#b5b5ff',
       300: '#8b8bff',
       400: '#6060ff',
-      500: '#2b2bee', // Main primary from mockup
+      500: '#2b2bee',
+      501: '#2b2bee33',
+      502: '#2b2bee4d',
       600: '#2424d0',
       700: '#1e1eb0',
       800: '#181890',
@@ -146,6 +184,12 @@ export const DeepCratePreset = definePreset(Aura, {
           900: '#111827',
           950: '#030712',
         },
+        border: {
+          subtle:   '#00000014',
+          default:  '#0000001f',
+          emphasis: '#00000033',
+          accent:   '#2b2bee80',
+        }
       },
       dark: {
         primary: {
@@ -160,7 +204,6 @@ export const DeepCratePreset = definePreset(Aura, {
           color:           '{primary.400}',
           focusColor:      '{primary.300}',
         },
-        // Updated surface colors from mockup
         surface: {
           0:   '#ffffff',
           50:  '#f6f6f8',
@@ -174,6 +217,12 @@ export const DeepCratePreset = definePreset(Aura, {
           800: '#111118',
           900: '#0d0d12',
           950: '#080810',
+        },
+        border: {
+          subtle:   '#ffffff14',
+          default:  '#ffffff1f',
+          emphasis: '#ffffff33',
+          accent:   '#ffadffb3',
         },
         // Form field tokens (inputs, selects, textareas)
         formField: {
