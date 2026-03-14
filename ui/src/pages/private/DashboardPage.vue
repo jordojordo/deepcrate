@@ -57,7 +57,6 @@ const handleViewActivity = () => {
           <Button
             label="Review Queue"
             icon="pi pi-list"
-            class="dashboard__action-btn--primary"
           />
         </RouterLink>
       </div>
@@ -74,8 +73,7 @@ const handleViewActivity = () => {
       <ActionsPanel />
     </div>
 
-    <div class="dashboard__stats-grid">
-      <!-- Pending Approvals (Actionable) -->
+    <div class="dashboard__stats-row">
       <DashboardStatsCard
         :loading="loading"
         title="Pending Approvals"
@@ -87,7 +85,6 @@ const handleViewActivity = () => {
         :action-route="ROUTE_PATHS.QUEUE"
       />
 
-      <!-- Active Downloads (Progress) -->
       <DashboardStatsCard
         :loading="loading"
         title="Active Downloads"
@@ -99,37 +96,23 @@ const handleViewActivity = () => {
         :action-route="ROUTE_PATHS.DOWNLOADS"
       />
 
-      <!-- In Library (Duplicates) -->
-      <DashboardStatsCard
-        :loading="loading"
-        title="In Library"
-        :value="stats.inLibrary || 0"
-        subtitle="Pending items you already own"
-        color="green"
-        icon="pi-check-circle"
-        :action-route="ROUTE_PATHS.LIBRARY"
-      />
-
-      <!-- Library Storage (Capacity) -->
+      <!-- Library Storage -->
       <!-- TODO: Implement library storage capacity API -->
       <!-- <DashboardStatsCard
         title="Library Storage"
         value="—"
-        subtitle="Coming soon"
         color="purple"
         icon="pi-database"
       /> -->
     </div>
 
-    <div class="dashboard__content-row">
+    <div class="dashboard__activity-section">
       <!-- TODO: Discovery sources chart - API not yet implemented -->
       <!-- <div class="dashboard__chart-section">
         <DiscoverySourcesChart :sources="discoverySources" />
       </div> -->
 
-      <div class="dashboard__activity-section">
-        <RecentActivityFeed :activities="recentActivity" @viewAll="handleViewActivity" />
-      </div>
+      <RecentActivityFeed :activities="recentActivity" @viewAll="handleViewActivity" />
     </div>
 
     <ActivityModal
@@ -154,59 +137,24 @@ const handleViewActivity = () => {
     margin-bottom: 2rem;
   }
 
-  &__stats-grid {
-    display: grid;
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+  &__stats-row {
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 
     @media (min-width: 768px) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      flex-direction: row;
     }
 
-    @media (min-width: 1280px) {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
-
-  &__content-row {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-
-    @media (min-width: 1024px) {
-      grid-template-columns: 1.5fr 1fr;
+    > * {
+      flex: 1;
+      min-width: 0;
     }
   }
 
-  &__chart-section,
   &__activity-section {
     min-height: 400px;
-    min-width: 0;
   }
-}
-
-/* Button styling */
-:deep(.dashboard__action-btn) {
-  background: color-mix(in srgb, var(--surface-card) 70%, transparent);
-  border: 1px solid var(--border-subtle);
-  color: var(--r-text-primary);
-}
-
-:deep(.dashboard__action-btn:hover) {
-  background: var(--r-hover-bg);
-  border-color: var(--r-border-emphasis);
-}
-
-:deep(.dashboard__action-btn--primary) {
-  background: var(--primary-500);
-  border-color: var(--primary-500);
-  color: var(--r-text-primary);
-  box-shadow: 0 0 15px rgba(43, 43, 238, 0.25);
-}
-
-:deep(.dashboard__action-btn--primary:hover) {
-  background: var(--primary-600);
-  border-color: var(--primary-600);
 }
 </style>

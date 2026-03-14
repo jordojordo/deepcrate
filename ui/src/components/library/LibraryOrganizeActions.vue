@@ -39,10 +39,11 @@ defineProps<{
 
     <div class="library-actions__row">
       <Button
-        label="Organize Now"
+        label="Organize"
         icon="pi pi-play"
         :disabled="!status?.enabled || !status?.configured || running"
         :loading="triggerLoading"
+        severity="secondary"
         @click="onTrigger"
       />
 
@@ -72,4 +73,3 @@ defineProps<{
   gap: 0.75rem;
 }
 </style>
-

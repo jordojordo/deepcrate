@@ -193,14 +193,12 @@ function toggleExportMenu(event: Event) {
           label="Import"
           icon="pi pi-upload"
           severity="secondary"
-          outlined
           @click="importModalVisible = true"
         />
         <Button
           label="Export"
           icon="pi pi-download"
           severity="secondary"
-          outlined
           @click="toggleExportMenu"
         />
         <Menu ref="exportMenu" :model="exportMenuItems" popup />

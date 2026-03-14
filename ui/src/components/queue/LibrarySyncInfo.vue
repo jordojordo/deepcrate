@@ -79,8 +79,8 @@ onMounted(fetchStats);
         class="library-sync-info__sync-btn"
         label="Sync Now"
         icon="pi pi-sync"
-        text
         size="small"
+        severity="secondary"
         :loading="syncing"
         @click="handleSync"
       />

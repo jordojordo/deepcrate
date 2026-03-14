@@ -136,7 +136,7 @@ onMounted(() => {
           icon="pi pi-download"
           :loading="triggeringJob === JOB_NAMES.SLSKD"
           @click="handleTriggerDownloader"
-          outlined
+          severity="secondary"
         />
         <Button
           label="Refresh"
