@@ -263,7 +263,6 @@ function handleSave() {
           icon="pi pi-eye"
           severity="secondary"
           size="small"
-          outlined
           :loading="testing[index]"
           :disabled="loading || !webhook.url"
           @click="handleTest(index, true)"
@@ -329,7 +328,9 @@ function handleSave() {
   }
 
   &__actions {
+    display: flex;
     margin-top: 0.75rem;
+    gap: .5rem;
   }
 }
 
@@ -375,6 +376,13 @@ function handleSave() {
     &--error {
       color: var(--red-300);
     }
+  }
+}
+
+.settings-form {
+  &__actions {
+    display: flex;
+    gap: .5rem;
   }
 }
 </style>

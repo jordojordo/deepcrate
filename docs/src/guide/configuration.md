@@ -276,6 +276,21 @@ ui:
     # For type: "api_key"
     # api_key: "your_secret_api_key"
 
+# =============================================================================
+# Webhooks
+# HTTP notifications for key events
+# =============================================================================
+webhooks:
+  - name: "discord"
+    enabled: true
+    url: "https://discord.com/api/webhooks/..."
+    secret: "my-signing-secret"     # optional HMAC-SHA256 signing secret
+    events:
+      - download_completed
+      - queue_approved
+    timeout_ms: 10000               # max: 30000
+    retry: 2                        # max: 5
+
 ```
 
 ## Environment Variables
@@ -562,6 +577,20 @@ When enabled, albums that have a positive community rating in MusicBrainz receiv
 | `disabled` | Auto-redirect (no login) | None | "Guest" |
 
 When `enabled: false`, the UI behaves the same as `proxy` mode - users are automatically authenticated and redirected to the dashboard.
+
+### Webhooks
+
+| Key | Type | Required | Default | Description |
+|-----|------|----------|---------|-------------|
+| `name` | string | Yes | — | Display name for logging |
+| `enabled` | bool | No | `true` | Enable/disable this webhook |
+| `url` | string | Yes | — | HTTP(S) endpoint to POST to |
+| `secret` | string | No | — | HMAC-SHA256 signing secret |
+| `events` | string[] | Yes | — | Events: `download_completed`, `queue_approved`, `queue_rejected` |
+| `timeout_ms` | number | No | `10000` | Request timeout in milliseconds (max 30000) |
+| `retry` | number | No | `0` | Retry attempts on failure (max 5) |
+
+See the [Webhooks guide](/guide/webhooks) for payload format, signature verification, and testing details.
 
 ## Minimal Configuration
 
