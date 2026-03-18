@@ -284,6 +284,26 @@ const PreviewSettingsSchema = z.object({
 
 const ScoringSettingsSchema = z.object({ musicbrainz_ratings: z.boolean().default(true) });
 
+const WebhookEventSchema = z.enum([
+  'download_completed',
+  'queue_approved',
+  'queue_rejected',
+]);
+
+const WebhookSchema = z.object({
+  name:       z.string().min(1),
+  enabled:    z.boolean().default(true),
+  url:        z.url(),
+  secret:     z.string().optional(),
+  events:     z.array(WebhookEventSchema).min(1),
+  timeout_ms: z.number().int().positive().max(30000)
+    .default(10000),
+  retry:      z.number().int().min(0).max(5)
+    .default(0),
+});
+
+const WebhooksSettingsSchema = z.array(WebhookSchema).default([]);
+
 export const ConfigSchema = z.object({
   debug:             z.boolean(),
   mode:              z.enum(['album', 'track']),
@@ -296,6 +316,7 @@ export const ConfigSchema = z.object({
   library_organize:  LibraryOrganizeSettingsSchema.optional(),
   preview:           PreviewSettingsSchema.optional(),
   scoring:           ScoringSettingsSchema.optional(),
+  webhooks:          WebhooksSettingsSchema,
   ui:                UISettingsSchema,
 }).superRefine((value, ctx) => {
   if (value.library_duplicate?.enabled && !value.catalog_discovery?.subsonic) {
@@ -331,6 +352,8 @@ export type LibraryOrganizeSettings = z.infer<typeof LibraryOrganizeSettingsSche
 export type PreviewSettings = z.infer<typeof PreviewSettingsSchema>;
 export type SpotifySettings = z.infer<typeof SpotifySettingsSchema>;
 export type ScoringSettings = z.infer<typeof ScoringSettingsSchema>;
+export type WebhookSettings = z.infer<typeof WebhookSchema>;
+export type WebhooksSettings = z.infer<typeof WebhooksSettingsSchema>;
 
 /**
  * Default configuration values
@@ -347,7 +370,8 @@ export const DEFAULT_CONFIG: Config = {
     mode:                      'manual',
     similarity_cache_ttl_days: 30
   },
-  ui: { auth: { enabled: false, type: 'basic' } },
+  webhooks: [],
+  ui:       { auth: { enabled: false, type: 'basic' } },
 };
 
 /**
@@ -361,5 +385,6 @@ export const SECTION_SCHEMAS: Record<string, z.ZodType<unknown>> = {
   library_organize:  LibraryOrganizeSettingsSchema,
   preview:           PreviewSettingsSchema,
   scoring:           ScoringSettingsSchema,
+  webhooks:          WebhooksSettingsSchema,
   ui:                UISettingsSchema,
 };
