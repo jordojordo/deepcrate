@@ -16,7 +16,8 @@ export type SettingsSection =
   | 'library_organize'
   | 'preview'
   | 'ui'
-  | 'scoring';
+  | 'scoring'
+  | 'webhooks';
 
 /**
  * ListenBrainz settings
@@ -242,6 +243,24 @@ export interface ScoringFormData {
 }
 
 /**
+ * Webhook settings
+ */
+export type WebhookEvent =
+  | 'download_completed'
+  | 'queue_approved'
+  | 'queue_rejected';
+
+export interface WebhookConfig {
+  name:       string;
+  enabled:    boolean;
+  url:        string;
+  secret?:    { configured: boolean } | string;
+  events:     WebhookEvent[];
+  timeout_ms: number;
+  retry:      number;
+}
+
+/**
  * Full settings response
  */
 export interface SettingsResponse {
@@ -257,6 +276,7 @@ export interface SettingsResponse {
   preview?:           PreviewSettings;
   ui:                 UISettings;
   scoring?:           ScoringSettings;
+  webhooks:           WebhookConfig[];
 }
 
 /**
