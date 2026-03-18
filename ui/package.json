@@ -37,14 +37,14 @@
     "@vue/tsconfig": "^0.9.0",
     "eslint": "^10.0.3",
     "eslint-plugin-cypress": "^6.2.0",
-    "eslint-plugin-oxlint": "^1.55.0",
+    "eslint-plugin-oxlint": "^1.56.0",
     "eslint-plugin-vue": "^10.8.0",
     "npm-run-all2": "^8.0.4",
-    "oxlint": "^1.55.0",
+    "oxlint": "^1.56.0",
     "prettier": "^3.8.1",
     "sass": "^1.98.0",
     "typescript": "~5.9.3",
     "vite": "^8.0.0",
-    "vue-tsc": "^3.2.5"
+    "vue-tsc": "^3.2.6"
   }
 }
