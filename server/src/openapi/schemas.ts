@@ -138,4 +138,55 @@ registry.register('GetSectionResponse', GetSectionResponseSchema);
 registry.register('UpdateSectionResponse', UpdateSectionResponseSchema);
 registry.register('ValidateResponse', ValidateResponseSchema);
 
-export { activityItemSchema, queueItemResponseSchema };
+// --- Webhook schemas ---
+
+const webhookEventSchema = z.enum([
+  'download_completed',
+  'queue_approved',
+  'queue_rejected',
+]);
+
+const webhookPayloadSchema = z.object({
+  event:     webhookEventSchema,
+  timestamp: z.string(),
+  data:      z.object({
+    artist:        z.string().optional(),
+    album:         z.string().optional(),
+    download_path: z.string().optional(),
+    mbid:          z.string().optional(),
+  }),
+});
+
+const webhookExecutionResultSchema = z.object({
+  success:    z.boolean(),
+  statusCode: z.number().optional(),
+  duration:   z.number(),
+  error:      z.string().optional(),
+});
+
+const testWebhookRequestSchema = z.object({
+  url:        z.url(),
+  secret:     z.string().optional(),
+  timeout_ms: z.number().int().positive().max(30000)
+    .default(10000),
+  dry_run: z.boolean().default(false),
+});
+
+const testWebhookDryRunResponseSchema = z.object({
+  success: z.literal(true),
+  dry_run: z.literal(true),
+  payload: webhookPayloadSchema,
+});
+
+registry.register('WebhookPayload', webhookPayloadSchema);
+registry.register('WebhookExecutionResult', webhookExecutionResultSchema);
+registry.register('TestWebhookRequest', testWebhookRequestSchema);
+registry.register('TestWebhookDryRunResponse', testWebhookDryRunResponseSchema);
+
+export {
+  activityItemSchema,
+  queueItemResponseSchema,
+  testWebhookRequestSchema,
+  webhookExecutionResultSchema,
+  testWebhookDryRunResponseSchema,
+};

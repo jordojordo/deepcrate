@@ -268,3 +268,19 @@ ui:
     # --- Option 4: Disabled Auth ---
     # enabled: false
     # All users treated as "Guest", no login required
+
+# -----------------------------------------------------------------------------
+# Webhooks
+# HTTP notifications for key events
+# -----------------------------------------------------------------------------
+webhooks:
+  - name: "my-webhook-1"
+    enabled: true
+    url: "https://webhook.site"
+    secret: "my-signing-secret"     # optional HMAC-SHA256 signing secret
+    events:
+      - download_completed
+      - queue_approved
+      - queue_rejected
+    timeout_ms: 10000               # max: 30000
+    retry: 2                        # max: 5

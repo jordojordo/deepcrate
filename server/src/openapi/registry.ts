@@ -36,6 +36,7 @@ export async function initializeOpenApiRegistry(): Promise<void> {
   await import('./routes/jobs');
   await import('./routes/search');
   await import('./routes/settings');
+  await import('./routes/webhooks');
   await import('./routes/library');
   await import('./routes/preview');
   await import('./routes/activity');

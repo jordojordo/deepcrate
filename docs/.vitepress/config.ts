@@ -18,6 +18,7 @@ export default defineConfig({
           items: [
             { text: 'Getting Started', link: '/guide/getting-started' },
             { text: 'Configuration', link: '/guide/configuration' },
+            { text: 'Webhooks', link: '/guide/webhooks' },
             { text: 'Authelia Integration', link: '/guide/authelia-integration' },
             { text: 'Comparison', link: '/guide/comparison' },
           ],
