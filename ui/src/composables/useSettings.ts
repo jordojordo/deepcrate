@@ -23,6 +23,7 @@ export function useSettings() {
   const preview = computed(() => store.preview);
   const ui = computed(() => store.ui);
   const scoring = computed(() => store.scoring);
+  const webhooks = computed(() => store.webhooks);
 
   async function fetchSettings() {
     try {
@@ -74,6 +75,7 @@ export function useSettings() {
     preview,
     ui,
     scoring,
+    webhooks,
 
     fetchSettings,
     updateSection,

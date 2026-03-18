@@ -27,6 +27,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const preview = computed(() => settings.value?.preview);
   const ui = computed(() => settings.value?.ui);
   const scoring = computed(() => settings.value?.scoring);
+  const webhooks = computed(() => settings.value?.webhooks);
 
   function loadUIPreferences(): UIPreferences {
     try {
@@ -117,6 +118,7 @@ export const useSettingsStore = defineStore('settings', () => {
     preview,
     ui,
     scoring,
+    webhooks,
 
     fetchSettings,
     updateSection,

@@ -6,6 +6,7 @@ import type {
   PreviewFormData,
   ScoringFormData,
   AuthFormData,
+  WebhookConfig,
   SettingsTab,
   UIPreferences,
 } from '@/types';
@@ -28,6 +29,7 @@ import CatalogDiscoveryForm from '@/components/settings/CatalogDiscoveryForm.vue
 import SlskdForm from '@/components/settings/SlskdForm.vue';
 import PreviewForm from '@/components/settings/PreviewForm.vue';
 import ScoringForm from '@/components/settings/ScoringForm.vue';
+import WebhooksForm from '@/components/settings/WebhooksForm.vue';
 import AuthForm from '@/components/settings/AuthForm.vue';
 import UIPreferencesForm from '@/components/settings/UIPreferencesForm.vue';
 
@@ -46,6 +48,7 @@ const {
   catalogDiscovery,
   preview,
   scoring,
+  webhooks,
   ui,
   uiPreferences,
   fetchSettings,
@@ -75,6 +78,10 @@ async function handlePreviewSave(data: PreviewFormData) {
 
 async function handleScoringSave(data: ScoringFormData) {
   await updateSection('scoring', data);
+}
+
+async function handleWebhooksSave(data: WebhookConfig[]) {
+  await updateSection('webhooks', data);
 }
 
 async function handleAuthSave(data: { auth: AuthFormData }) {
@@ -107,6 +114,7 @@ function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
           <Tab value="slskd">Slskd</Tab>
           <Tab value="preview">Preview</Tab>
           <Tab value="scoring">Scoring</Tab>
+          <Tab value="webhooks">Webhooks</Tab>
           <Tab value="auth">Authentication</Tab>
           <Tab value="ui">UI Preferences</Tab>
         </TabList>
@@ -182,6 +190,21 @@ function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
                 :loading="loading"
                 :saving="saving"
                 @save="handleScoringSave"
+              />
+            </div>
+          </TabPanel>
+
+          <TabPanel value="webhooks">
+            <div class="settings-page__panel">
+              <h2 class="settings-page__section-title">Webhooks</h2>
+              <p class="settings-page__section-desc">
+                Configure HTTP webhooks to receive notifications on events like downloads and queue changes.
+              </p>
+              <WebhooksForm
+                :settings="webhooks"
+                :loading="loading"
+                :saving="saving"
+                @save="handleWebhooksSave"
               />
             </div>
           </TabPanel>

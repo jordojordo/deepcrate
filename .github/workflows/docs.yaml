@@ -9,6 +9,7 @@ on:
       - 'server/src/types/**'
       - '**/package.json'
       - '**/pnpm-lock.yaml'
+      - '.github/workflows/docs.yaml'
   pull_request:
     branches: [master]
     paths:
@@ -17,6 +18,7 @@ on:
       - 'server/src/types/**'
       - '**/package.json'
       - '**/pnpm-lock.yaml'
+      - '.github/workflows/docs.yaml'
   workflow_dispatch:
 
 permissions:

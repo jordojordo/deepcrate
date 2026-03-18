@@ -89,10 +89,13 @@ export async function updateConfig(section: string, updates: Record<string, unkn
       rawConfig = yaml.load(fileContent) as Record<string, unknown> || {};
     }
 
-    const currentSection = rawConfig[section];
-    const nextSection = deepMerge(isPlainObject(currentSection) ? currentSection : {}, updates);
+    const currentSection = rawConfig[section] ?? {};
 
-    rawConfig[section] = nextSection;
+    if (isPlainObject(updates) && isPlainObject(currentSection)) {
+      rawConfig[section] = deepMerge(currentSection, updates);
+    } else {
+      rawConfig[section] = updates;
+    }
 
     const mergedConfig = deepMerge(DEFAULT_CONFIG, rawConfig);
     const result = ConfigSchema.safeParse(mergedConfig);

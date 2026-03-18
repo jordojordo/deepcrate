@@ -3,6 +3,7 @@ import { Op, literal } from '@sequelize/core';
 import QueueItem, { QueueItemSource } from '@server/models/QueueItem';
 import WishlistService from '@server/services/WishlistService';
 import LibraryService from '@server/services/LibraryService';
+import { fireEvent } from '@server/services/WebhookService';
 import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
 import logger from '@server/config/logger';
@@ -62,7 +63,7 @@ export class QueueService {
       const genreConditions = genres.map((_, i) => `genres LIKE :genre${ i }`).join(' OR ');
 
       genres.forEach((g, i) => {
-        replacements[`genre${ i }`] = `%"${ g }"%`; 
+        replacements[`genre${ i }`] = `%"${ g }"%`;
       });
       where[Op.and as unknown as string] = [literal(`(${ genreConditions })`)];
     }
@@ -158,6 +159,13 @@ export class QueueService {
       });
     }
 
+    for (const item of items) {
+      fireEvent('queue_approved', {
+        artist: item.artist,
+        album:  item.album || item.title || '',
+      });
+    }
+
     const stats = await this.getStats();
 
     queueNs.emitQueueStatsUpdated(stats);
@@ -227,6 +235,13 @@ export class QueueService {
           type:        'rejected',
           coverUrl:    item.coverUrl,
         },
+      });
+    }
+
+    for (const item of rejectedItems) {
+      fireEvent('queue_rejected', {
+        artist: item.artist,
+        album:  item.album || item.title || '',
       });
     }
 

@@ -19,6 +19,7 @@ import libraryRoutes from '@server/routes/api/v1/library';
 import previewRoutes from '@server/routes/api/v1/preview';
 import activityRoutes from '@server/routes/api/v1/activity';
 import settingsRoutes from '@server/routes/api/v1/settings';
+import webhookRoutes from '@server/routes/api/v1/webhooks';
 import AuthController from '@server/controllers/AuthController';
 
 const app = express();
@@ -58,6 +59,7 @@ app.use('/api/v1/library', libraryRoutes);
 app.use('/api/v1/preview', previewRoutes);
 app.use('/api/v1/activity', activityRoutes);
 app.use('/api/v1/settings', settingsRoutes);
+app.use('/api/v1/webhooks', webhookRoutes);
 
 // Serve static files in production
 const staticPath = path.join(process.cwd(), 'static');

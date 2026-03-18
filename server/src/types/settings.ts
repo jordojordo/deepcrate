@@ -19,6 +19,7 @@ export const SETTINGS_SECTIONS = [
   'preview',
   'ui',
   'scoring',
+  'webhooks',
 ] as const;
 
 export type SettingsSection = typeof SETTINGS_SECTIONS[number];
@@ -95,6 +96,16 @@ export const SanitizedScoringSchema = z.object({ musicbrainz_ratings: z.boolean(
  * API response types
  */
 
+export const SanitizedWebhookSchema = z.object({
+  name:       z.string(),
+  enabled:    z.boolean(),
+  url:        z.string(),
+  secret:     SecretStatusSchema.optional(),
+  events:     z.array(z.string()),
+  timeout_ms: z.number(),
+  retry:      z.number(),
+});
+
 export const GetSettingsResponseSchema = z.object({
   debug:             z.boolean(),
   mode:              z.enum(['album', 'track']),
@@ -108,6 +119,7 @@ export const GetSettingsResponseSchema = z.object({
   preview:           SanitizedPreviewSchema.optional(),
   ui:                SanitizedUISchema,
   scoring:           SanitizedScoringSchema.optional(),
+  webhooks:          z.array(SanitizedWebhookSchema),
 });
 
 export type GetSettingsResponse = z.infer<typeof GetSettingsResponseSchema>;
@@ -216,13 +228,28 @@ export type ValidateConfigRequest = z.infer<typeof ValidateConfigRequestSchema>;
 /**
  * Map of update request schemas for partial validation
  */
+export const UpdateWebhooksRequestSchema = z.array(z.object({
+  name:       z.string().min(1),
+  enabled:    z.boolean().optional(),
+  url:        z.url(),
+  secret:     z.string().optional(),
+  events:     z.array(z.enum(['download_completed', 'queue_approved', 'queue_rejected'])).min(1),
+  timeout_ms: z.number().int().positive().max(30000)
+    .optional(),
+  retry:      z.number().int().min(0).max(5)
+    .optional(),
+}));
+
+export type UpdateWebhooksRequest = z.infer<typeof UpdateWebhooksRequestSchema>;
+
 export const UPDATE_SCHEMAS: Record<SettingsSection, z.ZodType<unknown>> = {
   listenbrainz:      UpdateListenBrainzRequestSchema,
   slskd:             UpdateSlskdRequestSchema,
   catalog_discovery: UpdateCatalogDiscoveryRequestSchema,
-  library_duplicate: z.object({}).passthrough(),
-  library_organize:  z.object({}).passthrough(),
+  library_duplicate: z.looseObject({}),
+  library_organize:  z.looseObject({}),
   preview:           UpdatePreviewRequestSchema,
   ui:                UpdateUIRequestSchema,
   scoring:           UpdateScoringRequestSchema,
+  webhooks:          UpdateWebhooksRequestSchema,
 };

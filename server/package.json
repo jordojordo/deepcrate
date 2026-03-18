@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.3",
-    "@scalar/express-api-reference": "^0.9.3",
+    "@scalar/express-api-reference": "^0.9.4",
     "@sequelize/core": "7.0.0-alpha.48",
     "@sequelize/sqlite3": "7.0.0-alpha.48",
     "@sequelize/utils": "7.0.0-alpha.48",
@@ -62,7 +62,7 @@
     "tsc-alias": "^1.8.16",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.0",
+    "typescript-eslint": "^8.57.1",
     "vitest": "^4.1.0"
   }
 }

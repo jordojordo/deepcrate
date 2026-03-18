@@ -10,6 +10,6 @@ export const DEFAULT_UI_PREFERENCES: UIPreferences = {
 
 export const UI_PREFS_KEY = 'deepcrate_ui_prefs';
 
-export const SETTINGS_TABS = ['listenbrainz', 'catalog', 'slskd', 'preview', 'scoring', 'auth', 'ui'] as const;
+export const SETTINGS_TABS = ['listenbrainz', 'catalog', 'slskd', 'preview', 'scoring', 'webhooks', 'auth', 'ui'] as const;
 export const DOWNLOADS_TABS = ['active', 'completed', 'failed'] as const;
 export const LIBRARY_TABS = ['unorganized', 'configuration'] as const;

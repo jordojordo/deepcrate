@@ -20,6 +20,7 @@ import {
   calculateProgress,
 } from '@server/services/downloads/transferSync';
 import { scoreSearchResponses } from '@server/services/downloads/searchResultScorer';
+import { fireEvent } from '@server/services/WebhookService';
 import DownloadTask, { DownloadTaskType, DownloadTaskStatus } from '@server/models/DownloadTask';
 import WishlistItem from '@server/models/WishlistItem';
 import { downloadsNs, activityNs } from '@server/plugins/io/namespaces';
@@ -625,6 +626,12 @@ export class DownloadService {
             logger.debug(`Triggered library organize after completing: ${ task.wishlistKey }`);
           }
         }
+
+        fireEvent('download_completed', {
+          download_path: task.downloadPath ?? undefined,
+          artist:        task.artist,
+          album:         task.album,
+        });
       }
     }
 
