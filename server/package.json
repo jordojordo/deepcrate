@@ -25,7 +25,7 @@
     "generate:spec": "tsx -r dotenv/config ./src/openapi/scripts/generateSpec.ts"
   },
   "dependencies": {
-    "@asteasolutions/zod-to-openapi": "^8.4.3",
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "@scalar/express-api-reference": "^0.9.4",
     "@sequelize/core": "7.0.0-alpha.48",
     "@sequelize/sqlite3": "7.0.0-alpha.48",
@@ -51,7 +51,7 @@
     "@types/supertest": "^7.2.0",
     "@vitest/coverage-v8": "^4.1.0",
     "dotenv": "^17.3.1",
-    "eslint": "^10.0.3",
+    "eslint": "^10.1.0",
     "globals": "^17.4.0",
     "jiti": "^2.6.1",
     "nodemon": "^3.1.14",
