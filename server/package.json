@@ -35,11 +35,11 @@
     "cors": "^2.8.6",
     "cron-parser": "^5.5.0",
     "express": "^5.2.1",
-    "js-yaml": "^4.1.1",
     "lru-cache": "^11.2.7",
     "node-cron": "^4.2.1",
     "socket.io": "^4.8.3",
     "winston": "^3.19.0",
+    "yaml": "^2.8.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -47,7 +47,6 @@
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.5.0",
     "@types/node-cron": "^3.0.11",
     "@types/supertest": "^7.2.0",
