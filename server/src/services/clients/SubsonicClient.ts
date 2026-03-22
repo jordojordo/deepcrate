@@ -2,23 +2,17 @@ import axios from 'axios';
 import crypto from 'crypto';
 import logger from '@server/config/logger';
 
-export interface SubsonicArtist {
+interface SubsonicArtist {
   name: string;
   id:   string;
 }
 
-/** @deprecated Use SubsonicArtist instead */
-export type NavidromeArtist = SubsonicArtist;
-
-export interface SubsonicAlbum {
+interface SubsonicAlbum {
   id:     string;
   name:   string;
   artist: string;
   year?:  number;
 }
-
-/** @deprecated Use SubsonicAlbum instead */
-export type NavidromeAlbum = SubsonicAlbum;
 
 /**
  * SubsonicClient provides access to Subsonic-compatible servers (Navidrome, Gonic, Airsonic, etc.).
@@ -256,8 +250,3 @@ export class SubsonicClient {
     }
   }
 }
-
-/** @deprecated Use SubsonicClient instead */
-export const NavidromeClient = SubsonicClient;
-
-export default SubsonicClient;

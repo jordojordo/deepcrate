@@ -20,7 +20,7 @@ function createLookupKey(artist: string, album: string): string {
   return `${ normalizeString(artist) }:::${ normalizeString(album) }`;
 }
 
-export interface LibraryStats {
+interface LibraryStats {
   totalAlbums:  number;
   lastSyncedAt: Date | null;
 }
@@ -252,5 +252,3 @@ export class LibraryService {
     return updatedCount;
   }
 }
-
-export default LibraryService;

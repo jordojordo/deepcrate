@@ -25,13 +25,6 @@ export interface SlskdFile {
 }
 
 /**
- * Search result containing the search ID
- */
-export interface SlskdSearchResult {
-  id: string;
-}
-
-/**
  * Search state from slskd
  */
 export interface SlskdSearchState {

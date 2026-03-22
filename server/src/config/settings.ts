@@ -26,7 +26,7 @@ let cachedConfig: Config | null = null;
  * Environment variable overrides:
  * - DEEPCRATE_* env vars with __ for nesting (e.g., DEEPCRATE_UI__AUTH__ENABLED=true)
  */
-export function loadConfig(): Config {
+function loadConfig(): Config {
   if (cachedConfig) {
     return cachedConfig;
   }
@@ -179,15 +179,3 @@ export function getDataPath(): string {
   return process.env.DATA_PATH || 'data';
 }
 
-/**
- * Ensure data directory exists
- */
-export function ensureDataDir(): string {
-  const dataPath = getDataPath();
-
-  if (!fs.existsSync(dataPath)) {
-    fs.mkdirSync(dataPath, { recursive: true });
-  }
-
-  return dataPath;
-}

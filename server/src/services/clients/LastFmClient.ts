@@ -5,7 +5,7 @@ import logger from '@server/config/logger';
 import { BaseClient } from '@server/services/BaseClient';
 import { LASTFM_BASE_URL } from '@server/constants/clients';
 
-export interface SimilarArtist {
+interface SimilarArtist {
   name:  string;
   match: number;  // Similarity score 0-1
   mbid?: string;
@@ -108,5 +108,3 @@ export class LastFmClient extends BaseClient {
     }
   }
 }
-
-export default LastFmClient;

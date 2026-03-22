@@ -6,12 +6,12 @@ import { sequelize } from '@server/config/db/sequelize';
 /**
  * Status of a queue item in the approval workflow
  */
-export type QueueItemStatus = 'pending' | 'approved' | 'rejected';
+type QueueItemStatus = 'pending' | 'approved' | 'rejected';
 
 /**
  * Type of music item (album or track)
  */
-export type QueueItemType = 'album' | 'track';
+type QueueItemType = 'album' | 'track';
 
 /**
  * Source of the discovery
@@ -22,7 +22,7 @@ export type QueueItemSource = 'listenbrainz' | 'catalog';
  * QueueItem attributes for the unified approval queue.
  * Combines ListenBrainz recommendations and catalog discoveries.
  */
-export interface QueueItemAttributes {
+interface QueueItemAttributes {
   id:           number;
   artist:       string;
   album?:       string;         // For album mode
@@ -44,7 +44,7 @@ export interface QueueItemAttributes {
   updatedAt?:   Date;
 }
 
-export type QueueItemCreationAttributes = PartialBy<QueueItemAttributes, 'id' | 'status' | 'addedAt'>;
+type QueueItemCreationAttributes = PartialBy<QueueItemAttributes, 'id' | 'status' | 'addedAt'>;
 
 /**
  * Sequelize model for queue items.

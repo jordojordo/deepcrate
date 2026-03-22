@@ -19,8 +19,6 @@ export const queueItemSchema = z.object({
   genres:       z.array(z.string()).nullable().optional(),
 });
 
-export type QueueItem = z.infer<typeof queueItemSchema>;
-
 /**
  * Approve request schema
  */
@@ -29,14 +27,10 @@ export const approveRequestSchema = z.object({
   all:   z.boolean().default(false),
 });
 
-export type ApproveRequest = z.infer<typeof approveRequestSchema>;
-
 /**
  * Reject request schema
  */
 export const rejectRequestSchema = z.object({ mbids: z.array(z.string()) });
-
-export type RejectRequest = z.infer<typeof rejectRequestSchema>;
 
 /**
  * Query params for getting pending items
@@ -50,5 +44,3 @@ export const getPendingQuerySchema = z.object({
   hide_in_library: z.coerce.boolean().default(false),
   genres:          z.string().optional(),
 });
-
-export type GetPendingQuery = z.infer<typeof getPendingQuerySchema>;

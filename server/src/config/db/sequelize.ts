@@ -6,7 +6,7 @@ import { SqliteDialect } from '@sequelize/sqlite3';
 import logger from '@server/config/logger';
 import { getDataPath } from '@server/config/settings';
 
-const DATA_DIR = getDataPath();
+const DATA_DIR: string = getDataPath();
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -34,7 +34,7 @@ function resolveDbFile(): string {
   return newPath;
 }
 
-const DB_FILE = resolveDbFile();
+const DB_FILE: string = resolveDbFile();
 
 export const sequelize = new Sequelize({
   dialect: SqliteDialect,
@@ -46,4 +46,3 @@ export const sequelize = new Sequelize({
   },
 });
 
-export { DB_FILE, DATA_DIR };

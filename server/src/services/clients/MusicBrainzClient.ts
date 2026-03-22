@@ -551,5 +551,3 @@ export class MusicBrainzClient extends BaseClient {
     }
   }
 }
-
-export default MusicBrainzClient;

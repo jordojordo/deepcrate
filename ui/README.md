@@ -20,11 +20,10 @@ src/
 │   ├── theme.ts        # Custom DeepCrate PrimeVue theme preset
 │   └── index.css       # Global CSS and utility classes
 ├── components/         # Reusable Vue components
-│   ├── common/         # Shared components (LoadingSpinner, StatsCard)
+│   ├── common/         # Shared components (LoadingSpinner)
 │   ├── layout/         # Layout components (AppLayout, AppHeader, AppNav)
 │   └── queue/          # Queue-specific components (QueueFilters, QueueList)
 ├── composables/        # Vue composables for reusable logic
-│   ├── useAuth.ts      # Authentication composable
 │   ├── useQueue.ts     # Queue management composable
 │   ├── useStats.ts     # Dashboard statistics composable
 │   └── useToast.ts     # Toast notifications composable

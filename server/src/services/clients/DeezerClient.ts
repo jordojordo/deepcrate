@@ -208,5 +208,3 @@ export class DeezerClient {
     return null;
   }
 }
-
-export default DeezerClient;

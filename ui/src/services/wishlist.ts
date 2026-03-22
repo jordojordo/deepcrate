@@ -4,7 +4,6 @@ import type {
   DeleteWishlistResponse,
   UpdateWishlistResponse,
   UpdateWishlistRequest,
-  WishlistResponse,
   WishlistFilters,
   PaginatedWishlistResponse,
   BulkOperationResponse,
@@ -14,12 +13,6 @@ import type {
 } from '@/types';
 
 import client from './api';
-
-export async function getWishlist(): Promise<WishlistResponse> {
-  const response = await client.get<WishlistResponse>('/wishlist');
-
-  return response.data;
-}
 
 export async function addToWishlist(request: AddWishlistRequest): Promise<AddWishlistResponse> {
   const response = await client.post<AddWishlistResponse>('/wishlist', request);

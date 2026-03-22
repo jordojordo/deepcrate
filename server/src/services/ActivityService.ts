@@ -5,7 +5,7 @@ import { Op } from '@sequelize/core';
 import QueueItem from '@server/models/QueueItem';
 import DownloadTask from '@server/models/DownloadTask';
 
-export interface PaginatedActivity {
+interface PaginatedActivity {
   items: ActivityItem[];
   total: number;
 }
@@ -94,5 +94,3 @@ export class ActivityService {
     };
   }
 }
-
-export default ActivityService;

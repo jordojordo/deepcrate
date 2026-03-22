@@ -12,7 +12,7 @@ import { sequelize } from '@server/config/db/sequelize';
  * Retained for backward compatibility during migration.
  * Will be removed in a future version.
  */
-export interface DownloadedItemAttributes {
+interface DownloadedItemAttributes {
   id:           number;
   wishlistKey:  string;  // Format: "artist - album" or "artist - title"
   downloadedAt: Date;
@@ -20,7 +20,7 @@ export interface DownloadedItemAttributes {
   updatedAt?:   Date;
 }
 
-export type DownloadedItemCreationAttributes = PartialBy<DownloadedItemAttributes, 'id' | 'downloadedAt'>;
+type DownloadedItemCreationAttributes = PartialBy<DownloadedItemAttributes, 'id' | 'downloadedAt'>;
 
 /**
  * Sequelize model for downloaded items.

@@ -50,14 +50,6 @@ export interface UpdateWishlistRequest {
   resetDownloadState?: boolean;
 }
 
-export interface BulkDeleteRequest {
-  ids: string[];
-}
-
-export interface BulkRequeueRequest {
-  ids: string[];
-}
-
 export type WishlistSort =
   | 'addedAt_asc' | 'addedAt_desc'
   | 'artist_asc' | 'artist_desc'
@@ -117,11 +109,6 @@ export interface ImportResponse {
   skipped: number;
   errors:  number;
   results: ImportResultItem[];
-}
-
-export interface WishlistResponse {
-  entries: WishlistEntry[];
-  total:   number;
 }
 
 export interface AddWishlistResponse {

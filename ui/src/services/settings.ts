@@ -1,6 +1,5 @@
 import type {
   SettingsResponse,
-  SectionResponse,
   UpdateResponse,
   SettingsSection,
 } from '@/types';
@@ -12,17 +11,6 @@ import client from './api';
  */
 export async function getAll(): Promise<SettingsResponse> {
   const response = await client.get<SettingsResponse>('/settings');
-
-  return response.data;
-}
-
-/**
- * Get a single settings section
- */
-export async function getSection<T = Record<string, unknown>>(
-  section: SettingsSection
-): Promise<SectionResponse<T>> {
-  const response = await client.get<SectionResponse<T>>(`/settings/${ section }`);
 
   return response.data;
 }

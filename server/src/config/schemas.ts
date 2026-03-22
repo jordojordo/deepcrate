@@ -338,22 +338,8 @@ export const ConfigSchema = z.object({
 
 export type Config = z.infer<typeof ConfigSchema>;
 export type AuthSettings = z.infer<typeof AuthSettingsSchema>;
-export type UISettings = z.infer<typeof UISettingsSchema>;
 export type ListenBrainzSettings = z.infer<typeof ListenBrainzSettingsSchema>;
-export type SlskdSettings = z.infer<typeof SlskdSettingsSchema>;
 export type SlskdSearchSettings = z.infer<typeof SlskdSearchSchema>;
-export type SlskdSearchRetrySettings = z.infer<typeof SlskdSearchRetrySchema>;
-export type SlskdQualityPreferencesSettings = z.infer<typeof SlskdQualityPreferencesSchema>;
-export type SlskdCompletenessSettings = z.infer<typeof SlskdCompletenessSchema>;
-export type SlskdSelectionSettings = z.infer<typeof SlskdSelectionSchema>;
-export type CatalogDiscoverySettings = z.infer<typeof CatalogDiscoverySettingsSchema>;
-export type LibraryDuplicateSettings = z.infer<typeof LibraryDuplicateSettingsSchema>;
-export type LibraryOrganizeSettings = z.infer<typeof LibraryOrganizeSettingsSchema>;
-export type PreviewSettings = z.infer<typeof PreviewSettingsSchema>;
-export type SpotifySettings = z.infer<typeof SpotifySettingsSchema>;
-export type ScoringSettings = z.infer<typeof ScoringSettingsSchema>;
-export type WebhookSettings = z.infer<typeof WebhookSchema>;
-export type WebhooksSettings = z.infer<typeof WebhooksSettingsSchema>;
 
 /**
  * Default configuration values
@@ -372,19 +358,4 @@ export const DEFAULT_CONFIG: Config = {
   },
   webhooks: [],
   ui:       { auth: { enabled: false, type: 'basic' } },
-};
-
-/**
- * Section schemas for validation endpoint
- */
-export const SECTION_SCHEMAS: Record<string, z.ZodType<unknown>> = {
-  listenbrainz:      ListenBrainzSettingsSchema,
-  slskd:             SlskdSettingsSchema,
-  catalog_discovery: CatalogDiscoverySettingsSchema,
-  library_duplicate: LibraryDuplicateSettingsSchema,
-  library_organize:  LibraryOrganizeSettingsSchema,
-  preview:           PreviewSettingsSchema,
-  scoring:           ScoringSettingsSchema,
-  webhooks:          WebhooksSettingsSchema,
-  ui:                UISettingsSchema,
 };

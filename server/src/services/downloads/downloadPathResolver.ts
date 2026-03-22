@@ -1,31 +1,12 @@
-import fs from 'fs';
 
+import { sanitizeUsernameSegment } from '@server/utils/slskd';
 import {
   joinDownloadsPath,
   slskdDirectoryToRelativeDownloadPath,
   slskdPathBasename,
-  toSafeRelativePath
+  toSafeRelativePath,
+  pathExists
 } from '@server/utils/slskdPaths';
-
-export function sanitizeUsernameSegment(value: string | null | undefined): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const sanitized = value.replace(/[/\\]/g, '-').trim();
-
-  return sanitized.length ? sanitized : null;
-}
-
-export async function pathExists(candidatePath: string): Promise<boolean> {
-  try {
-    await fs.promises.access(candidatePath, fs.constants.F_OK);
-
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Resolve the local download path for a completed task by trying
@@ -38,7 +19,7 @@ export async function resolveDownloadPath(params: {
   slskdUsername?:  string;
 }): Promise<string | undefined> {
   const {
-    downloadsRoot, downloadPath, slskdDirectory, slskdUsername 
+    downloadsRoot, downloadPath, slskdDirectory, slskdUsername
   } = params;
   const directoryRel = slskdDirectoryToRelativeDownloadPath(slskdDirectory);
   const leaf = slskdPathBasename(slskdDirectory);

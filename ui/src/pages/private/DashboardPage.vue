@@ -15,7 +15,6 @@ import Button from 'primevue/button';
 
 import DashboardStatsCard from '@/components/dashboard/DashboardStatsCard.vue';
 import ErrorMessage from '@/components/common/ErrorMessage.vue';
-// import DiscoverySourcesChart from '@/components/dashboard/DiscoverySourcesChart.vue';
 import RecentActivityFeed from '@/components/dashboard/RecentActivityFeed.vue';
 import ActionsPanel from '@/components/actions/ActionsPanel.vue';
 import ActivityModal from '@/components/dashboard/ActivityModal.vue';
@@ -107,11 +106,6 @@ const handleViewActivity = () => {
     </div>
 
     <div class="dashboard__activity-section">
-      <!-- TODO: Discovery sources chart - API not yet implemented -->
-      <!-- <div class="dashboard__chart-section">
-        <DiscoverySourcesChart :sources="discoverySources" />
-      </div> -->
-
       <RecentActivityFeed :activities="recentActivity" @viewAll="handleViewActivity" />
     </div>
 

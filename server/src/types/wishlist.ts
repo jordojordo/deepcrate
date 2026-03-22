@@ -20,8 +20,6 @@ export const wishlistEntrySchema = z.object({
     .nullable(),
 });
 
-export type WishlistEntry = z.infer<typeof wishlistEntrySchema>;
-
 /**
  * Add to wishlist request schema
  */
@@ -35,8 +33,6 @@ export const addToWishlistRequestSchema = z.object({
   (data) => data.type === 'artist' || data.title.length >= 1,
   { message: 'Title is required for album and track types', path: ['title'] }
 );
-
-export type AddToWishlistRequest = z.infer<typeof addToWishlistRequestSchema>;
 
 /**
  * Wishlist response schema
@@ -103,14 +99,10 @@ export type UpdateWishlistItemResponse = z.infer<typeof updateWishlistItemRespon
  */
 export const bulkDeleteSchema = z.object({ ids: z.array(z.uuid()).min(1, 'At least one ID is required') });
 
-export type BulkDeleteRequest = z.infer<typeof bulkDeleteSchema>;
-
 /**
  * Bulk requeue request schema
  */
 export const bulkRequeueSchema = z.object({ ids: z.array(z.uuid()).min(1, 'At least one ID is required') });
-
-export type BulkRequeueRequest = z.infer<typeof bulkRequeueSchema>;
 
 /**
  * Bulk operation response schema
@@ -133,8 +125,6 @@ export const wishlistSortSchema = z.enum([
   'processedAt_asc', 'processedAt_desc',
 ]);
 
-export type WishlistSort = z.infer<typeof wishlistSortSchema>;
-
 /**
  * Wishlist filters schema for paginated queries
  */
@@ -156,7 +146,7 @@ export type WishlistFilters = z.infer<typeof wishlistFiltersSchema>;
 /**
  * Download status types from DownloadTask
  */
-export const downloadStatusSchema = z.enum([
+const downloadStatusSchema = z.enum([
   'none',               // No download task yet (processedAt is null)
   'pending',            // DownloadTask created, waiting to be processed
   'searching',          // Searching slskd
@@ -167,8 +157,6 @@ export const downloadStatusSchema = z.enum([
   'completed',          // Download completed
   'failed',             // Download failed
 ]);
-
-export type DownloadStatus = z.infer<typeof downloadStatusSchema>;
 
 /**
  * Wishlist entry with download status information
@@ -208,8 +196,6 @@ export const exportRequestSchema = z.object({
   ids:    z.array(z.uuid()).optional(), // If empty/undefined, export all
 });
 
-export type ExportRequest = z.infer<typeof exportRequestSchema>;
-
 /**
  * Single item for import
  */
@@ -233,8 +219,6 @@ export type ImportItem = z.infer<typeof importItemSchema>;
  * Import request schema
  */
 export const importRequestSchema = z.object({ items: z.array(importItemSchema).min(1, 'At least one item is required') });
-
-export type ImportRequest = z.infer<typeof importRequestSchema>;
 
 /**
  * Single import result

@@ -16,7 +16,7 @@ export interface SimilarArtistAttributes {
   updatedAt?:      Date;
 }
 
-export type SimilarArtistCreationAttributes = PartialBy<SimilarArtistAttributes, 'id'>;
+type SimilarArtistCreationAttributes = PartialBy<SimilarArtistAttributes, 'id'>;
 
 class SimilarArtist extends Model<SimilarArtistAttributes, SimilarArtistCreationAttributes> implements SimilarArtistAttributes {
   declare id:              number;

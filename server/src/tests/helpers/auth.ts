@@ -2,7 +2,7 @@
  * Each test file must independently vi.mock('@server/config/settings')
  */
 
-export const AUTH_CREDENTIALS = {
+const AUTH_CREDENTIALS = {
   username: 'testuser',
   password: 'testpass',
 };

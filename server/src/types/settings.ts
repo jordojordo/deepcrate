@@ -3,9 +3,7 @@ import { z } from 'zod';
 /**
  * Secret field indicator (replaces actual values in API responses)
  */
-export const SecretStatusSchema = z.object({ configured: z.boolean() });
-
-export type SecretStatus = z.infer<typeof SecretStatusSchema>;
+const SecretStatusSchema = z.object({ configured: z.boolean() });
 
 /**
  * Valid config section names
@@ -30,14 +28,14 @@ export const SettingsSectionSchema = z.enum(SETTINGS_SECTIONS);
  * API response schemas (secrets replaced with configured status)
  */
 
-export const SanitizedListenBrainzSchema = z.object({
+const SanitizedListenBrainzSchema = z.object({
   username:      z.string(),
   token:         SecretStatusSchema,
   approval_mode: z.enum(['auto', 'manual']),
   source_type:   z.enum(['collaborative', 'weekly_playlist']),
 });
 
-export const SanitizedSlskdSchema = z.object({
+const SanitizedSlskdSchema = z.object({
   host:             z.string(),
   api_key:          SecretStatusSchema,
   url_base:         z.string(),
@@ -47,18 +45,15 @@ export const SanitizedSlskdSchema = z.object({
   selection:        z.record(z.string(), z.unknown()).optional(),
 });
 
-export const SanitizedSubsonicSchema = z.object({
+const SanitizedSubsonicSchema = z.object({
   host:     z.string(),
   username: z.string(),
   password: SecretStatusSchema,
 });
 
-/** @deprecated Use SanitizedSubsonicSchema instead */
-export const SanitizedNavidromeSchema = SanitizedSubsonicSchema;
+const SanitizedLastFmSchema = z.object({ api_key: SecretStatusSchema });
 
-export const SanitizedLastFmSchema = z.object({ api_key: SecretStatusSchema });
-
-export const SanitizedCatalogDiscoverySchema = z.object({
+const SanitizedCatalogDiscoverySchema = z.object({
   enabled:              z.boolean(),
   subsonic:             SanitizedSubsonicSchema.optional(),
   lastfm:               SanitizedLastFmSchema.optional(),
@@ -69,18 +64,18 @@ export const SanitizedCatalogDiscoverySchema = z.object({
   mode:                 z.enum(['auto', 'manual']),
 });
 
-export const SanitizedSpotifySchema = z.object({
+const SanitizedSpotifySchema = z.object({
   enabled:       z.boolean(),
   client_id:     SecretStatusSchema.optional(),
   client_secret: SecretStatusSchema.optional(),
 });
 
-export const SanitizedPreviewSchema = z.object({
+const SanitizedPreviewSchema = z.object({
   enabled: z.boolean(),
   spotify: SanitizedSpotifySchema.optional(),
 });
 
-export const SanitizedAuthSchema = z.object({
+const SanitizedAuthSchema = z.object({
   enabled:  z.boolean(),
   type:     z.enum(['basic', 'api_key', 'proxy']),
   username: z.string().optional(),
@@ -88,15 +83,15 @@ export const SanitizedAuthSchema = z.object({
   api_key:  SecretStatusSchema.optional(),
 });
 
-export const SanitizedUISchema = z.object({ auth: SanitizedAuthSchema });
+const SanitizedUISchema = z.object({ auth: SanitizedAuthSchema });
 
-export const SanitizedScoringSchema = z.object({ musicbrainz_ratings: z.boolean() });
+const SanitizedScoringSchema = z.object({ musicbrainz_ratings: z.boolean() });
 
 /**
  * API response types
  */
 
-export const SanitizedWebhookSchema = z.object({
+const SanitizedWebhookSchema = z.object({
   name:       z.string(),
   enabled:    z.boolean(),
   url:        z.string(),
@@ -153,16 +148,14 @@ export type ValidateResponse = z.infer<typeof ValidateResponseSchema>;
  * API request schemas (for updating sections)
  */
 
-export const UpdateListenBrainzRequestSchema = z.object({
+const UpdateListenBrainzRequestSchema = z.object({
   username:      z.string().optional(),
   token:         z.string().optional(),
   approval_mode: z.enum(['auto', 'manual']).optional(),
   source_type:   z.enum(['collaborative', 'weekly_playlist']).optional(),
 });
 
-export type UpdateListenBrainzRequest = z.infer<typeof UpdateListenBrainzRequestSchema>;
-
-export const UpdateSlskdRequestSchema = z.object({
+const UpdateSlskdRequestSchema = z.object({
   host:             z.string().optional(),
   api_key:          z.string().optional(),
   url_base:         z.string().optional(),
@@ -172,9 +165,7 @@ export const UpdateSlskdRequestSchema = z.object({
   selection:        z.record(z.string(), z.unknown()).optional(),
 });
 
-export type UpdateSlskdRequest = z.infer<typeof UpdateSlskdRequestSchema>;
-
-export const UpdateCatalogDiscoveryRequestSchema = z.object({
+const UpdateCatalogDiscoveryRequestSchema = z.object({
   enabled:              z.boolean().optional(),
   subsonic:             z.object({
     host:     z.string().optional(),
@@ -189,9 +180,7 @@ export const UpdateCatalogDiscoveryRequestSchema = z.object({
   mode:                 z.enum(['auto', 'manual']).optional(),
 });
 
-export type UpdateCatalogDiscoveryRequest = z.infer<typeof UpdateCatalogDiscoveryRequestSchema>;
-
-export const UpdatePreviewRequestSchema = z.object({
+const UpdatePreviewRequestSchema = z.object({
   enabled: z.boolean().optional(),
   spotify: z.object({
     enabled:       z.boolean().optional(),
@@ -200,9 +189,7 @@ export const UpdatePreviewRequestSchema = z.object({
   }).optional(),
 });
 
-export type UpdatePreviewRequest = z.infer<typeof UpdatePreviewRequestSchema>;
-
-export const UpdateUIRequestSchema = z.object({
+const UpdateUIRequestSchema = z.object({
   auth: z.object({
     enabled:  z.boolean().optional(),
     type:     z.enum(['basic', 'api_key', 'proxy']).optional(),
@@ -212,23 +199,12 @@ export const UpdateUIRequestSchema = z.object({
   }).optional(),
 });
 
-export type UpdateUIRequest = z.infer<typeof UpdateUIRequestSchema>;
-
-export const UpdateScoringRequestSchema = z.object({ musicbrainz_ratings: z.boolean().optional() });
-
-export type UpdateScoringRequest = z.infer<typeof UpdateScoringRequestSchema>;
-
-export const ValidateConfigRequestSchema = z.object({
-  section: SettingsSectionSchema,
-  data:    z.record(z.string(), z.unknown()),
-});
-
-export type ValidateConfigRequest = z.infer<typeof ValidateConfigRequestSchema>;
+const UpdateScoringRequestSchema = z.object({ musicbrainz_ratings: z.boolean().optional() });
 
 /**
  * Map of update request schemas for partial validation
  */
-export const UpdateWebhooksRequestSchema = z.array(z.object({
+const UpdateWebhooksRequestSchema = z.array(z.object({
   name:       z.string().min(1),
   enabled:    z.boolean().optional(),
   url:        z.url(),
@@ -239,8 +215,6 @@ export const UpdateWebhooksRequestSchema = z.array(z.object({
   retry:      z.number().int().min(0).max(5)
     .optional(),
 }));
-
-export type UpdateWebhooksRequest = z.infer<typeof UpdateWebhooksRequestSchema>;
 
 export const UPDATE_SCHEMAS: Record<SettingsSection, z.ZodType<unknown>> = {
   listenbrainz:      UpdateListenBrainzRequestSchema,

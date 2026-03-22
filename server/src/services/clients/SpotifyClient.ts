@@ -185,5 +185,3 @@ export class SpotifyClient {
     logger.debug('Spotify access token refreshed');
   }
 }
-
-export default SpotifyClient;

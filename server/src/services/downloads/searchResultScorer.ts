@@ -32,7 +32,7 @@ export interface ScorerConfig {
 /**
  * Compute the theoretical max score for the current config.
  */
-export function computeMaxScore(
+function computeMaxScore(
   qualityPreferences: QualityPreferences | undefined,
   completenessConfig: ScorerConfig['completenessConfig'],
   hasExpectedTrackCount: boolean
@@ -65,7 +65,7 @@ export function computeMaxScore(
 /**
  * Group files by directory path.
  */
-export function groupFilesByDirectory(files: SlskdFile[]): DirectoryGroup[] {
+function groupFilesByDirectory(files: SlskdFile[]): DirectoryGroup[] {
   const directoryMap = new Map<string, SlskdFile[]>();
 
   for (const file of files) {

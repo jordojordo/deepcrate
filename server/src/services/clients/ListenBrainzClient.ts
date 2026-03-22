@@ -204,5 +204,3 @@ export class ListenBrainzClient extends BaseClient {
     return match ? match[1] : null;
   }
 }
-
-export default ListenBrainzClient;

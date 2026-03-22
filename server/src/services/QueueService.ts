@@ -1,8 +1,8 @@
 import { Op, literal } from '@sequelize/core';
 
 import QueueItem, { QueueItemSource } from '@server/models/QueueItem';
-import WishlistService from '@server/services/WishlistService';
-import LibraryService from '@server/services/LibraryService';
+import { WishlistService } from '@server/services/WishlistService';
+import { LibraryService } from '@server/services/LibraryService';
 import { fireEvent } from '@server/services/WebhookService';
 import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
@@ -401,5 +401,3 @@ export class QueueService {
     return item !== null;
   }
 }
-
-export default QueueService;

@@ -16,5 +16,3 @@ export const getRecentQuerySchema = z.object({
     .default(10),
   offset: z.coerce.number().int().nonnegative().default(0),
 });
-
-export type GetRecentQuery = z.infer<typeof getRecentQuerySchema>;

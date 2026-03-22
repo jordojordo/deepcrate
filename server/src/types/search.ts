@@ -10,8 +10,6 @@ export const musicBrainzSearchQuerySchema = z.object({
     .default(20),
 });
 
-export type MusicBrainzSearchQuery = z.infer<typeof musicBrainzSearchQuerySchema>;
-
 /**
  * Album search result schema
  */

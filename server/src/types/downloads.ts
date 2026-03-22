@@ -3,9 +3,7 @@ import { z } from 'zod';
 /**
  * Quality tier enum
  */
-export const qualityTierSchema = z.enum(['lossless', 'high', 'standard', 'low', 'unknown']);
-
-export type QualityTier = z.infer<typeof qualityTierSchema>;
+const qualityTierSchema = z.enum(['lossless', 'high', 'standard', 'low', 'unknown']);
 
 /**
  * Quality info schema
@@ -18,12 +16,10 @@ export const qualityInfoSchema = z.object({
   tier:       qualityTierSchema,
 });
 
-export type QualityInfo = z.infer<typeof qualityInfoSchema>;
-
 /**
  * Download status enum
  */
-export const downloadStatusSchema = z.enum([
+const downloadStatusSchema = z.enum([
   'pending',
   'searching',
   'pending_selection',
@@ -33,8 +29,6 @@ export const downloadStatusSchema = z.enum([
   'completed',
   'failed',
 ]);
-
-export type DownloadStatus = z.infer<typeof downloadStatusSchema>;
 
 /**
  * Download progress schema (real-time data from slskd)
@@ -88,8 +82,6 @@ export const completedDownloadSchema = z.object({
   completedAt:     z.coerce.date(),
 });
 
-export type CompletedDownload = z.infer<typeof completedDownloadSchema>;
-
 /**
  * Failed download schema (database record)
  */
@@ -105,8 +97,6 @@ export const failedDownloadSchema = z.object({
   completedAt:     z.coerce.date(),
 });
 
-export type FailedDownload = z.infer<typeof failedDownloadSchema>;
-
 /**
  * Query params for getting downloads
  */
@@ -115,21 +105,15 @@ export const getDownloadsQuerySchema = z.object({
   offset: z.coerce.number().int().nonnegative().default(0),
 });
 
-export type GetDownloadsQuery = z.infer<typeof getDownloadsQuerySchema>;
-
 /**
  * Retry request schema
  */
 export const retryRequestSchema = z.object({ ids: z.array(z.uuid()).min(1) });
 
-export type RetryRequest = z.infer<typeof retryRequestSchema>;
-
 /**
  * Delete request schema
  */
 export const deleteRequestSchema = z.object({ ids: z.array(z.uuid()).min(1) });
-
-export type DeleteRequest = z.infer<typeof deleteRequestSchema>;
 
 /**
  * Download stats schema
@@ -166,15 +150,13 @@ export type DirectoryGroup = z.infer<typeof directoryGroupSchema>;
 /**
  * Score breakdown for transparency
  */
-export const scoreBreakdownSchema = z.object({
+const scoreBreakdownSchema = z.object({
   hasSlot:           z.number(),
   qualityScore:      z.number(),
   fileCountScore:    z.number(),
   uploadSpeedBonus:  z.number(),
   completenessScore: z.number(),
 });
-
-export type ScoreBreakdown = z.infer<typeof scoreBreakdownSchema>;
 
 /**
  * Scored search response for UI display
@@ -222,8 +204,6 @@ export const searchResultsResponseSchema = z.object({
   minCompletenessRatio: z.number(),
 });
 
-export type SearchResultsResponse = z.infer<typeof searchResultsResponseSchema>;
-
 /**
  * Select result request schema
  */
@@ -232,26 +212,20 @@ export const selectResultRequestSchema = z.object({
   directory: z.string().optional(),
 });
 
-export type SelectResultRequest = z.infer<typeof selectResultRequestSchema>;
-
 /**
  * Skip result request schema
  */
 export const skipResultRequestSchema = z.object({ username: z.string() });
-
-export type SkipResultRequest = z.infer<typeof skipResultRequestSchema>;
 
 /**
  * Retry search request schema
  */
 export const retrySearchRequestSchema = z.object({ query: z.string().optional() });
 
-export type RetrySearchRequest = z.infer<typeof retrySearchRequestSchema>;
-
 /**
  * Cached slskd search response schema for validating JSON parsed data
  */
-export const slskdSearchResponseSchema = z.object({
+const slskdSearchResponseSchema = z.object({
   username:          z.string(),
   files:             z.array(z.object({
     filename:   z.string(),
@@ -266,5 +240,3 @@ export const slskdSearchResponseSchema = z.object({
 });
 
 export const cachedSearchResultsSchema = z.array(slskdSearchResponseSchema);
-
-export type CachedSearchResults = z.infer<typeof cachedSearchResultsSchema>;

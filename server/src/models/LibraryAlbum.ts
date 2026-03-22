@@ -7,7 +7,7 @@ import { sequelize } from '@server/config/db/sequelize';
  * LibraryAlbum attributes.
  * Caches albums from the user's music library (Subsonic-compatible server) for duplicate detection.
  */
-export interface LibraryAlbumAttributes {
+interface LibraryAlbumAttributes {
   id:           number;
   navidromeId:  string;     // Subsonic album ID (column name preserved for DB compatibility)
   name:         string;     // Original album name
@@ -20,7 +20,7 @@ export interface LibraryAlbumAttributes {
   updatedAt?:   Date;
 }
 
-export type LibraryAlbumCreationAttributes = PartialBy<LibraryAlbumAttributes, 'id' | 'lastSyncedAt'>;
+type LibraryAlbumCreationAttributes = PartialBy<LibraryAlbumAttributes, 'id' | 'lastSyncedAt'>;
 
 /**
  * Sequelize model for library albums.

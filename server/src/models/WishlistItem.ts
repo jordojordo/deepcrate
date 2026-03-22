@@ -17,7 +17,7 @@ export type WishlistItemSource = 'listenbrainz' | 'catalog' | 'manual';
  * WishlistItem attributes for the wishlist database table.
  * Replaces wishlist.txt file and consolidates DownloadedItem functionality.
  */
-export interface WishlistItemAttributes {
+interface WishlistItemAttributes {
   id:           string;              // UUID primary key
   artist:       string;              // Max 500 chars
   album:        string;              // Album or track title
@@ -32,7 +32,7 @@ export interface WishlistItemAttributes {
   updatedAt?:   Date;
 }
 
-export type WishlistItemCreationAttributes = PartialBy<
+type WishlistItemCreationAttributes = PartialBy<
   WishlistItemAttributes,
   'id' | 'addedAt'
 >;

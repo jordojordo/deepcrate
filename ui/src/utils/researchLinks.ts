@@ -46,6 +46,3 @@ export function buildResearchLinks(params: ResearchLinkParams): ResearchLinkDef[
   ];
 }
 
-export function getMusicBrainzUrl(mbid: string): string {
-  return `https://musicbrainz.org/release-group/${ mbid }`;
-}

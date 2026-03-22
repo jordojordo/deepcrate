@@ -1,29 +1,9 @@
 import logger from '@server/config/logger';
 import { sequelize } from './sequelize';
 import { runSchemaMigrations } from '@server/scripts/schema-migrations';
-import QueueItem from '@server/models/QueueItem';
-import ProcessedRecording from '@server/models/ProcessedRecording';
-import CatalogArtist from '@server/models/CatalogArtist';
-import DiscoveredArtist from '@server/models/DiscoveredArtist';
-import DownloadedItem from '@server/models/DownloadedItem';
-import SimilarArtist from '@server/models/SimilarArtist';
-import WishlistItem from '@server/models/WishlistItem';
-
-// Export models for use in services
-export {
-  QueueItem,
-  ProcessedRecording,
-  CatalogArtist,
-  DiscoveredArtist,
-  DownloadedItem,
-  SimilarArtist,
-  WishlistItem,
-};
 
 // Export mutex utilities for serializing write operations
-export {
-  dbWriteMutex, withDbWrite, DB_WRITE_TIMEOUT_MS 
-} from './mutex';
+export { withDbWrite } from './mutex';
 
 // Models don't have any associations for now
 // (they are independent tables tracking different aspects of the discovery pipeline)
@@ -67,4 +47,3 @@ export async function stopDb(): Promise<void> {
   }
 }
 
-export { sequelize };

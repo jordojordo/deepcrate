@@ -74,7 +74,7 @@ export function isTransientError(error: unknown): boolean {
 /**
  * Send database busy error response (503 Service Unavailable).
  */
-export function sendDatabaseBusyError(
+function sendDatabaseBusyError(
   res: Response,
   message = 'Database is busy. Please try again later.'
 ): Response {

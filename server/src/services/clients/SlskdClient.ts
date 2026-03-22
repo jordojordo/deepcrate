@@ -14,7 +14,7 @@ import logger from '@server/config/logger';
  * Custom error class for slskd API errors that should be surfaced to callers.
  * Auth errors (401/403) are non-retryable and indicate configuration issues.
  */
-export class SlskdError extends Error {
+class SlskdError extends Error {
   constructor(
     message: string,
     public readonly statusCode?: number, // eslint-disable-line no-unused-vars
@@ -344,5 +344,3 @@ export class SlskdClient {
     }
   }
 }
-
-export default SlskdClient;

@@ -9,14 +9,16 @@ import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
 import DownloadTask from '@server/models/DownloadTask';
-import SubsonicClient from '@server/services/clients/SubsonicClient';
+import { SubsonicClient } from '@server/services/clients/SubsonicClient';
 import { splitCommand } from '@server/utils/command';
+import { sanitizeUsernameSegment } from '@server/utils/slskd';
 import {
   joinDownloadsPath,
   normalizeBasePath,
   slskdDirectoryToRelativeDownloadPath,
   slskdPathBasename,
-  toSafeRelativePath
+  toSafeRelativePath,
+  pathExists
 } from '@server/utils/slskdPaths';
 
 const execFile = promisify(execFileCallback);
@@ -36,16 +38,6 @@ function sanitizePathSegment(value: string): string {
     .trim();
 
   return sanitized.length ? sanitized : 'Unknown';
-}
-
-async function pathExists(candidatePath: string): Promise<boolean> {
-  try {
-    await fs.promises.access(candidatePath, fs.constants.F_OK);
-
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 async function listFilesRecursive(root: string): Promise<string[]> {
@@ -78,16 +70,6 @@ async function listFilesRecursive(root: string): Promise<string[]> {
   await walk(root, '');
 
   return files;
-}
-
-function sanitizeUsernameSegment(value: string | null | undefined): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const sanitized = value.replace(/[/\\]/g, '-').trim();
-
-  return sanitized.length ? sanitized : null;
 }
 
 function endsWithSegments(haystack: string[], needle: string[]): boolean {
@@ -700,5 +682,3 @@ export class LibraryOrganizeService {
     return results;
   }
 }
-
-export default LibraryOrganizeService;
