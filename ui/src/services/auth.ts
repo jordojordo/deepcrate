@@ -1,17 +1,18 @@
 import type { AuthConfig, AuthUser } from '@/types';
 
-import axios from 'axios';
-
-// Use raw axios instance without interceptors for public endpoint
 const baseURL = import.meta.env.VITE_API_URL || '/api/v1';
 
 /**
  * Fetch auth configuration from server (public endpoint)
  */
 export async function fetchAuthConfig(): Promise<AuthConfig> {
-  const response = await axios.get<AuthConfig>(`${ baseURL }/auth/info`);
+  const response = await fetch(`${ baseURL }/auth/info`);
 
-  return response.data;
+  if (!response.ok) {
+    throw new Error(`Failed to fetch auth config: ${ response.status }`);
+  }
+
+  return response.json() as Promise<AuthConfig>;
 }
 
 /**
@@ -19,7 +20,11 @@ export async function fetchAuthConfig(): Promise<AuthConfig> {
  * Uses provided credentials/headers for authentication
  */
 export async function fetchCurrentUser(headers?: Record<string, string>): Promise<AuthUser> {
-  const response = await axios.get<AuthUser>(`${ baseURL }/auth/me`, { headers });
+  const response = await fetch(`${ baseURL }/auth/me`, { headers });
 
-  return response.data;
+  if (!response.ok) {
+    throw new Error(`Failed to fetch current user: ${ response.status }`);
+  }
+
+  return response.json() as Promise<AuthUser>;
 }

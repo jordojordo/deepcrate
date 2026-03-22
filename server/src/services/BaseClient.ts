@@ -1,10 +1,9 @@
-import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { RetryConfig } from '@server/types/clients';
-
-import axios from 'axios';
+import type { RequestOptions, HttpResponse } from '@server/utils/httpClient';
 
 import logger from '@server/config/logger';
 import { isTransientError } from '@server/utils/errorHandler';
+import { fetchJson } from '@server/utils/httpClient';
 import { DEFAULT_MAX_RETRIES, DEFAULT_BASE_DELAY_MS } from '@server/constants/services';
 
 export class BaseClient {
@@ -20,24 +19,29 @@ export class BaseClient {
   public async requestWithRetry<T>(
     method: 'get' | 'post',
     url: string,
-    config?: AxiosRequestConfig,
+    config?: RequestOptions,
     data?: unknown
-  ): Promise<AxiosResponse<T>> {
+  ): Promise<HttpResponse<T>> {
     const { maxRetries, baseDelayMs } = this.retryConfig;
     let lastError: unknown;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       // Bail immediately if the caller already aborted
       if (config?.signal?.aborted) {
-        throw new axios.CanceledError('Request aborted');
+        throw new DOMException('Request aborted', 'AbortError');
       }
 
       try {
-        if (method === 'post') {
-          return await axios.post<T>(url, data, config);
+        const options: RequestOptions = {
+          ...config,
+          method: method === 'post' ? 'POST' : 'GET',
+        };
+
+        if (method === 'post' && data !== undefined) {
+          options.body = data;
         }
 
-        return await axios.get<T>(url, config);
+        return await fetchJson<T>(url, options);
       } catch(error) {
         lastError = error;
 
@@ -72,12 +76,12 @@ export class BaseClient {
 
       const onAbort = () => {
         clearTimeout(timer);
-        reject(new axios.CanceledError('Request aborted'));
+        reject(new DOMException('Request aborted', 'AbortError'));
       };
 
       if (signal.aborted) {
         clearTimeout(timer);
-        reject(new axios.CanceledError('Request aborted'));
+        reject(new DOMException('Request aborted', 'AbortError'));
 
         return;
       }

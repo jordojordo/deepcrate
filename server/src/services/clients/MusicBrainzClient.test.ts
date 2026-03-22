@@ -1,13 +1,23 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import nock from 'nock';
+import {
+  describe, it, expect, afterEach, vi 
+} from 'vitest';
 
 import { MusicBrainzClient } from './MusicBrainzClient';
+import { HttpError } from '@server/utils/HttpError';
+import { fetchJson } from '@server/utils/httpClient';
+
+vi.mock('@server/utils/httpClient');
+vi.mock('@server/config/logger', () => ({
+  default: {
+    info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn()
+  }
+}));
 
 describe('MusicBrainzClient', () => {
   const client = new MusicBrainzClient();
 
   afterEach(() => {
-    nock.cleanAll();
+    vi.restoreAllMocks();
   });
 
   describe('resolveRecording', () => {
@@ -15,10 +25,8 @@ describe('MusicBrainzClient', () => {
       const recordingMbid = 'test-recording-mbid';
       const releaseGroupMbid = 'test-release-group-mbid';
 
-      nock('https://musicbrainz.org')
-        .get(`/ws/2/recording/${ recordingMbid }`)
-        .query({ inc: 'artists+releases+release-groups', fmt: 'json' })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           'id':            recordingMbid,
           'title':         'Test Track',
           'artist-credit': [{ artist: { name: 'Test Artist' } }],
@@ -32,7 +40,9 @@ describe('MusicBrainzClient', () => {
               },
             },
           ],
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.resolveRecording(recordingMbid);
 
@@ -47,10 +57,8 @@ describe('MusicBrainzClient', () => {
     it('prefers Album type over other release types', async() => {
       const recordingMbid = 'test-recording-mbid';
 
-      nock('https://musicbrainz.org')
-        .get(`/ws/2/recording/${ recordingMbid }`)
-        .query({ inc: 'artists+releases+release-groups', fmt: 'json' })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           'id':            recordingMbid,
           'title':         'Test Track',
           'artist-credit': [{ artist: { name: 'Test Artist' } }],
@@ -72,7 +80,9 @@ describe('MusicBrainzClient', () => {
               },
             },
           ],
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.resolveRecording(recordingMbid);
 
@@ -82,10 +92,8 @@ describe('MusicBrainzClient', () => {
     it('falls back to first release when no Album type exists', async() => {
       const recordingMbid = 'test-recording-mbid';
 
-      nock('https://musicbrainz.org')
-        .get(`/ws/2/recording/${ recordingMbid }`)
-        .query({ inc: 'artists+releases+release-groups', fmt: 'json' })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           'id':            recordingMbid,
           'title':         'Test Track',
           'artist-credit': [{ artist: { name: 'Test Artist' } }],
@@ -99,7 +107,9 @@ describe('MusicBrainzClient', () => {
               },
             },
           ],
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.resolveRecording(recordingMbid);
 
@@ -109,15 +119,15 @@ describe('MusicBrainzClient', () => {
     it('returns undefined releaseGroupMbid when no releases exist', async() => {
       const recordingMbid = 'test-recording-mbid';
 
-      nock('https://musicbrainz.org')
-        .get(`/ws/2/recording/${ recordingMbid }`)
-        .query({ inc: 'artists+releases+release-groups', fmt: 'json' })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           'id':            recordingMbid,
           'title':         'Test Track',
           'artist-credit': [{ artist: { name: 'Test Artist' } }],
           'releases':      [],
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.resolveRecording(recordingMbid);
 
@@ -132,10 +142,9 @@ describe('MusicBrainzClient', () => {
     it('returns null on API error', async() => {
       const recordingMbid = 'test-recording-mbid';
 
-      nock('https://musicbrainz.org')
-        .get(`/ws/2/recording/${ recordingMbid }`)
-        .query({ inc: 'artists+releases+release-groups', fmt: 'json' })
-        .reply(404);
+      vi.mocked(fetchJson).mockRejectedValueOnce(
+        new HttpError('HTTP 404: Not Found', 404)
+      );
 
       const result = await client.resolveRecording(recordingMbid);
 
@@ -145,90 +154,69 @@ describe('MusicBrainzClient', () => {
 
   describe('getExpectedTrackCount', () => {
     it('returns track count from a single release', async() => {
-      const mbid = 'rg-single';
-
-      nock('https://musicbrainz.org')
-        .get('/ws/2/release')
-        .query({
-          'release-group': mbid, status: 'official', limit: '5', fmt: 'json' 
-        })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           releases: [
             { id: 'r1', media: [{ 'track-count': 10 }] },
           ],
-        });
+        },
+        status: 200,
+      });
 
-      const result = await client.getExpectedTrackCount(mbid);
+      const result = await client.getExpectedTrackCount('rg-single');
 
       expect(result).toBe(10);
     });
 
     it('returns median track count across multiple releases', async() => {
-      const mbid = 'rg-multi';
-
-      nock('https://musicbrainz.org')
-        .get('/ws/2/release')
-        .query({
-          'release-group': mbid, status: 'official', limit: '5', fmt: 'json' 
-        })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           releases: [
             { id: 'r1', media: [{ 'track-count': 10 }] },
             { id: 'r2', media: [{ 'track-count': 10 }] },
             { id: 'r3', media: [{ 'track-count': 15 }] }, // deluxe edition
           ],
-        });
+        },
+        status: 200,
+      });
 
-      const result = await client.getExpectedTrackCount(mbid);
+      const result = await client.getExpectedTrackCount('rg-multi');
 
       expect(result).toBe(10);
     });
 
     it('returns null when no releases found', async() => {
-      const mbid = 'rg-empty';
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   { releases: [] },
+        status: 200,
+      });
 
-      nock('https://musicbrainz.org')
-        .get('/ws/2/release')
-        .query({
-          'release-group': mbid, status: 'official', limit: '5', fmt: 'json' 
-        })
-        .reply(200, { releases: [] });
-
-      const result = await client.getExpectedTrackCount(mbid);
+      const result = await client.getExpectedTrackCount('rg-empty');
 
       expect(result).toBeNull();
     });
 
     it('returns null on API error', async() => {
-      const mbid = 'rg-error';
+      vi.mocked(fetchJson).mockRejectedValueOnce(
+        new HttpError('HTTP 503: Service Unavailable', 503)
+      );
 
-      nock('https://musicbrainz.org')
-        .get('/ws/2/release')
-        .query({
-          'release-group': mbid, status: 'official', limit: '5', fmt: 'json' 
-        })
-        .reply(503);
-
-      const result = await client.getExpectedTrackCount(mbid);
+      const result = await client.getExpectedTrackCount('rg-error');
 
       expect(result).toBeNull();
     });
 
     it('sums track counts across multi-disc releases', async() => {
-      const mbid = 'rg-multi-disc';
-
-      nock('https://musicbrainz.org')
-        .get('/ws/2/release')
-        .query({
-          'release-group': mbid, status: 'official', limit: '5', fmt: 'json' 
-        })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           releases: [
             { id: 'r1', media: [{ 'track-count': 8 }, { 'track-count': 7 }] },
           ],
-        });
+        },
+        status: 200,
+      });
 
-      const result = await client.getExpectedTrackCount(mbid);
+      const result = await client.getExpectedTrackCount('rg-multi-disc');
 
       expect(result).toBe(15);
     });
@@ -236,100 +224,87 @@ describe('MusicBrainzClient', () => {
 
   describe('getReleaseGroupTags', () => {
     it('returns tags sorted by count descending with null rating when no votes', async() => {
-      const mbid = 'rg-tags';
-
-      nock('https://musicbrainz.org')
-        .get(`/ws/2/release-group/${ mbid }`)
-        .query({ inc: 'tags+ratings', fmt: 'json' })
-        .reply(200, {
-          id:   mbid,
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
+          id:   'rg-tags',
           tags: [
             { name: 'jazz', count: 5 },
             { name: 'electronic', count: 10 },
             { name: 'ambient', count: 3 },
           ],
-        });
+        },
+        status: 200,
+      });
 
-      const result = await client.getReleaseGroupTags(mbid);
+      const result = await client.getReleaseGroupTags('rg-tags');
 
       expect(result).toEqual({ tags: ['electronic', 'jazz', 'ambient'], rating: null });
     });
 
     it('returns rating value when votes exist', async() => {
-      const mbid = 'rg-rated';
-
-      nock('https://musicbrainz.org')
-        .get(`/ws/2/release-group/${ mbid }`)
-        .query({ inc: 'tags+ratings', fmt: 'json' })
-        .reply(200, {
-          id:     mbid,
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
+          id:     'rg-rated',
           tags:   [{ name: 'rock', count: 2 }],
           rating: { 'votes-count': 15, value: 4.2 },
-        });
+        },
+        status: 200,
+      });
 
-      const result = await client.getReleaseGroupTags(mbid);
+      const result = await client.getReleaseGroupTags('rg-rated');
 
       expect(result).toEqual({ tags: ['rock'], rating: 4.2 });
     });
 
     it('returns null rating when votes-count is 0', async() => {
-      const mbid = 'rg-no-votes';
-
-      nock('https://musicbrainz.org')
-        .get(`/ws/2/release-group/${ mbid }`)
-        .query({ inc: 'tags+ratings', fmt: 'json' })
-        .reply(200, {
-          id:     mbid,
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
+          id:     'rg-no-votes',
           tags:   [],
           rating: { 'votes-count': 0, value: null },
-        });
+        },
+        status: 200,
+      });
 
-      const result = await client.getReleaseGroupTags(mbid);
+      const result = await client.getReleaseGroupTags('rg-no-votes');
 
       expect(result).toEqual({ tags: [], rating: null });
     });
 
     it('filters out tags with count < 1', async() => {
-      const mbid = 'rg-tags-filter';
-
-      nock('https://musicbrainz.org')
-        .get(`/ws/2/release-group/${ mbid }`)
-        .query({ inc: 'tags+ratings', fmt: 'json' })
-        .reply(200, {
-          id:   mbid,
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
+          id:   'rg-tags-filter',
           tags: [
             { name: 'rock', count: 3 },
             { name: 'noise', count: 0 },
           ],
-        });
+        },
+        status: 200,
+      });
 
-      const result = await client.getReleaseGroupTags(mbid);
+      const result = await client.getReleaseGroupTags('rg-tags-filter');
 
       expect(result.tags).toEqual(['rock']);
     });
 
     it('returns empty tags and null rating when no data exists', async() => {
-      const mbid = 'rg-no-tags';
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   { id: 'rg-no-tags' },
+        status: 200,
+      });
 
-      nock('https://musicbrainz.org')
-        .get(`/ws/2/release-group/${ mbid }`)
-        .query({ inc: 'tags+ratings', fmt: 'json' })
-        .reply(200, { id: mbid });
-
-      const result = await client.getReleaseGroupTags(mbid);
+      const result = await client.getReleaseGroupTags('rg-no-tags');
 
       expect(result).toEqual({ tags: [], rating: null });
     });
 
     it('returns empty tags and null rating on API error', async() => {
-      const mbid = 'rg-tags-error';
+      vi.mocked(fetchJson).mockRejectedValueOnce(
+        new HttpError('HTTP 404: Not Found', 404)
+      );
 
-      nock('https://musicbrainz.org')
-        .get(`/ws/2/release-group/${ mbid }`)
-        .query({ inc: 'tags+ratings', fmt: 'json' })
-        .reply(404);
-
-      const result = await client.getReleaseGroupTags(mbid);
+      const result = await client.getReleaseGroupTags('rg-tags-error');
 
       expect(result).toEqual({ tags: [], rating: null });
     });

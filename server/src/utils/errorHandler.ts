@@ -2,10 +2,10 @@ import type { Response } from 'express';
 import type { ErrorResponse } from '@server/types/responses';
 
 import { E_TIMEOUT } from 'async-mutex';
-import axios from 'axios';
 
 import logger from '@server/config/logger';
-import { RETRYABLE_STATUS_CODES, TRANSIENT_ERROR_CODES } from '@server/constants/services';
+import { HttpError } from '@server/utils/HttpError';
+import { RETRYABLE_STATUS_CODES } from '@server/constants/services';
 
 /**
  * Custom error for database busy/locked conditions.
@@ -58,17 +58,16 @@ export function isDatabaseBusyError(error: unknown): boolean {
 }
 
 export function isTransientError(error: unknown): boolean {
-  if (!axios.isAxiosError(error)) {
-    return false;
+  if (error instanceof HttpError) {
+    return error.status !== undefined && RETRYABLE_STATUS_CODES.has(error.status);
   }
 
-  if (error.response) {
-    return RETRYABLE_STATUS_CODES.has(error.response.status);
+  // Network errors from fetch are transient
+  if (error instanceof TypeError) {
+    return true;
   }
 
-  const code = error.code || '';
-
-  return TRANSIENT_ERROR_CODES.has(code) || code.startsWith('ERR_TLS');
+  return false;
 }
 
 /**

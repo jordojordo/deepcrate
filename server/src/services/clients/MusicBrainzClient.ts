@@ -17,7 +17,6 @@ import type {
   SearchResults,
 } from '@server/types';
 
-import axios from 'axios';
 import logger from '@server/config/logger';
 import { BaseClient } from '@server/services/BaseClient';
 import { MB_BASE_URL, MB_USER_AGENT } from '@server/constants/clients';
@@ -94,11 +93,7 @@ export class MusicBrainzClient extends BaseClient {
         };
       }
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to resolve recording ${ mbid }: ${ error.message }`);
-      } else {
-        logger.error(`Failed to resolve recording ${ mbid }: ${ String(error) }`);
-      }
+      logger.error(`Failed to resolve recording ${ mbid }: ${ error instanceof Error ? error.message : String(error) }`);
     }
 
     return null;
@@ -190,11 +185,7 @@ export class MusicBrainzClient extends BaseClient {
         };
       }
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to resolve recording ${ mbid } to album: ${ error.message }`);
-      } else {
-        logger.error(`Failed to resolve recording ${ mbid } to album: ${ String(error) }`);
-      }
+      logger.error(`Failed to resolve recording ${ mbid } to album: ${ error instanceof Error ? error.message : String(error) }`);
     }
 
     return null;
@@ -223,11 +214,7 @@ export class MusicBrainzClient extends BaseClient {
 
       return response.data['release-groups'] || [];
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to search release groups for ${ artist }: ${ error.message }`);
-      } else {
-        logger.error(`Failed to search release groups for ${ artist }: ${ String(error) }`);
-      }
+      logger.error(`Failed to search release groups for ${ artist }: ${ error instanceof Error ? error.message : String(error) }`);
 
       return [];
     }
@@ -273,11 +260,7 @@ export class MusicBrainzClient extends BaseClient {
 
       return { results, total };
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to search albums for "${ query }": ${ error.message }`);
-      } else {
-        logger.error(`Failed to search albums for "${ query }": ${ String(error) }`);
-      }
+      logger.error(`Failed to search albums for "${ query }": ${ error instanceof Error ? error.message : String(error) }`);
 
       return { results: [], total: 0 };
     }
@@ -329,11 +312,7 @@ export class MusicBrainzClient extends BaseClient {
 
       return { results, total };
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to search recordings for "${ query }": ${ error.message }`);
-      } else {
-        logger.error(`Failed to search recordings for "${ query }": ${ String(error) }`);
-      }
+      logger.error(`Failed to search recordings for "${ query }": ${ error instanceof Error ? error.message : String(error) }`);
 
       return { results: [], total: 0 };
     }
@@ -382,11 +361,7 @@ export class MusicBrainzClient extends BaseClient {
 
       return { results, total };
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to search artists for "${ query }": ${ error.message }`);
-      } else {
-        logger.error(`Failed to search artists for "${ query }": ${ String(error) }`);
-      }
+      logger.error(`Failed to search artists for "${ query }": ${ error instanceof Error ? error.message : String(error) }`);
 
       return { results: [], total: 0 };
     }
@@ -441,11 +416,7 @@ export class MusicBrainzClient extends BaseClient {
 
       return trackCounts.length % 2 === 0? Math.round((trackCounts[mid - 1] + trackCounts[mid]) / 2): trackCounts[mid];
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to get expected track count for ${ mbid }: ${ error.message }`);
-      } else {
-        logger.error(`Failed to get expected track count for ${ mbid }: ${ String(error) }`);
-      }
+      logger.error(`Failed to get expected track count for ${ mbid }: ${ error instanceof Error ? error.message : String(error) }`);
 
       return null;
     }
@@ -477,11 +448,7 @@ export class MusicBrainzClient extends BaseClient {
 
       return { tags, rating };
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to get tags for release-group ${ mbid }: ${ error.message }`);
-      } else {
-        logger.error(`Failed to get tags for release-group ${ mbid }: ${ String(error) }`);
-      }
+      logger.error(`Failed to get tags for release-group ${ mbid }: ${ error instanceof Error ? error.message : String(error) }`);
 
       return { tags: [], rating: null };
     }
@@ -541,11 +508,7 @@ export class MusicBrainzClient extends BaseClient {
 
       return tracks;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to get release-group tracks for ${ mbid }: ${ error.message }`);
-      } else {
-        logger.error(`Failed to get release-group tracks for ${ mbid }: ${ String(error) }`);
-      }
+      logger.error(`Failed to get release-group tracks for ${ mbid }: ${ error instanceof Error ? error.message : String(error) }`);
 
       return [];
     }

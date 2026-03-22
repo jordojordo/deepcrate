@@ -1,11 +1,20 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import nock from 'nock';
+import {
+  describe, it, expect, afterEach, vi 
+} from 'vitest';
 
 import { ListenBrainzSimilarityProvider } from './ListenBrainzSimilarityProvider';
+import { fetchJson } from '@server/utils/httpClient';
+
+vi.mock('@server/utils/httpClient');
+vi.mock('@server/config/logger', () => ({
+  default: {
+    info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn()
+  }
+}));
 
 describe('ListenBrainzSimilarityProvider', () => {
   afterEach(() => {
-    nock.cleanAll();
+    vi.clearAllMocks();
   });
 
   describe('name', () => {
@@ -29,21 +38,22 @@ describe('ListenBrainzSimilarityProvider', () => {
       const provider = new ListenBrainzSimilarityProvider();
       const artistMbid = 'radiohead-mbid-123';
 
-      nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
-        .reply(200, [
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: [
           {
             artist_mbid:     artistMbid,
             similar_artists: [
               {
-                artist_mbid: 'thom-mbid', name: 'Thom Yorke', score: 0.85 
+                artist_mbid: 'thom-mbid', name: 'Thom Yorke', score: 0.85
               },
               {
-                artist_mbid: 'portishead-mbid', name: 'Portishead', score: 0.75 
+                artist_mbid: 'portishead-mbid', name: 'Portishead', score: 0.75
               },
             ],
           },
-        ]);
+        ],
+        status: 200,
+      });
 
       const result = await provider.getSimilarArtists('Radiohead', artistMbid, 10);
 
@@ -60,32 +70,29 @@ describe('ListenBrainzSimilarityProvider', () => {
       const provider = new ListenBrainzSimilarityProvider();
       const artistMbid = 'resolved-mbid-123';
 
-      // MusicBrainz artist search
-      nock('https://musicbrainz.org')
-        .get('/ws/2/artist')
-        .query({
-          query: 'Radiohead',
-          limit: 1,
-          fmt:   'json',
-        })
-        .reply(200, {
+      // First call: MusicBrainz artist search
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           count:   1,
           artists: [{ id: artistMbid, name: 'Radiohead' }],
-        });
+        },
+        status: 200,
+      });
 
-      // ListenBrainz similar artists
-      nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
-        .reply(200, [
+      // Second call: ListenBrainz similar artists
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: [
           {
             artist_mbid:     artistMbid,
             similar_artists: [
               {
-                artist_mbid: 'sim-mbid', name: 'Similar Artist', score: 0.8 
+                artist_mbid: 'sim-mbid', name: 'Similar Artist', score: 0.8
               },
             ],
           },
-        ]);
+        ],
+        status: 200,
+      });
 
       const result = await provider.getSimilarArtists('Radiohead', undefined, 10);
 
@@ -98,14 +105,10 @@ describe('ListenBrainzSimilarityProvider', () => {
       const provider = new ListenBrainzSimilarityProvider();
 
       // MusicBrainz returns no results
-      nock('https://musicbrainz.org')
-        .get('/ws/2/artist')
-        .query({
-          query: 'Unknown Artist XYZ',
-          limit: 1,
-          fmt:   'json',
-        })
-        .reply(200, { count: 0, artists: [] });
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   { count: 0, artists: [] },
+        status: 200,
+      });
 
       const result = await provider.getSimilarArtists('Unknown Artist XYZ', undefined, 10);
 
@@ -116,24 +119,26 @@ describe('ListenBrainzSimilarityProvider', () => {
       const provider = new ListenBrainzSimilarityProvider();
       const artistMbid = 'cached-mbid-123';
 
-      // MusicBrainz should only be called once
-      nock('https://musicbrainz.org')
-        .get('/ws/2/artist')
-        .query({
-          query: 'Cached Artist',
-          limit: 1,
-          fmt:   'json',
-        })
-        .reply(200, {
+      // First call: MusicBrainz artist search
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           count:   1,
           artists: [{ id: artistMbid, name: 'Cached Artist' }],
-        });
+        },
+        status: 200,
+      });
 
-      // Two ListenBrainz calls
-      nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
-        .times(2)
-        .reply(200, [{ artist_mbid: artistMbid, similar_artists: [] }]);
+      // First ListenBrainz call
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   [{ artist_mbid: artistMbid, similar_artists: [] }],
+        status: 200,
+      });
+
+      // Second ListenBrainz call (no MusicBrainz call needed - cached)
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   [{ artist_mbid: artistMbid, similar_artists: [] }],
+        status: 200,
+      });
 
       // First call - resolves MBID
       await provider.getSimilarArtists('Cached Artist', undefined, 10);
@@ -141,8 +146,8 @@ describe('ListenBrainzSimilarityProvider', () => {
       // Second call - should use cached MBID (MusicBrainz not called again)
       await provider.getSimilarArtists('Cached Artist', undefined, 10);
 
-      // Verify nock interceptors were consumed correctly
-      expect(nock.isDone()).toBe(true);
+      // MusicBrainz search (1) + ListenBrainz (2) = 3 total calls
+      expect(fetchJson).toHaveBeenCalledTimes(3);
     });
   });
 });

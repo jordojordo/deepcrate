@@ -1,29 +1,39 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import nock from 'nock';
+import {
+  describe, it, expect, afterEach, vi 
+} from 'vitest';
 
 import { ListenBrainzClient } from './ListenBrainzClient';
 import { isTransientError } from '@server/utils/errorHandler';
+import { HttpError } from '@server/utils/HttpError';
+import { fetchJson } from '@server/utils/httpClient';
+
+vi.mock('@server/utils/httpClient');
+vi.mock('@server/config/logger', () => ({
+  default: {
+    info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn()
+  }
+}));
 
 describe('ListenBrainzClient', () => {
   const client = new ListenBrainzClient();
 
   afterEach(() => {
-    nock.cleanAll();
+    vi.restoreAllMocks();
   });
 
   describe('fetchRecommendations', () => {
     it('returns recording MBIDs with scores', async() => {
-      nock('https://api.listenbrainz.org')
-        .get('/1/cf/recommendation/user/testuser/recording')
-        .query({ count: 100 })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           payload: {
             mbids: [
               { recording_mbid: 'rec-1', score: 0.95 },
               { recording_mbid: 'rec-2', score: 0.85 },
             ],
           },
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.fetchRecommendations('testuser', 'token123', 100);
 
@@ -34,10 +44,10 @@ describe('ListenBrainzClient', () => {
     });
 
     it('returns empty array on 204 (no content)', async() => {
-      nock('https://api.listenbrainz.org')
-        .get('/1/cf/recommendation/user/testuser/recording')
-        .query({ count: 100 })
-        .reply(204);
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   undefined,
+        status: 204,
+      });
 
       const result = await client.fetchRecommendations('testuser', 'token123', 100);
 
@@ -45,10 +55,9 @@ describe('ListenBrainzClient', () => {
     });
 
     it('returns empty array on error', async() => {
-      nock('https://api.listenbrainz.org')
-        .get('/1/cf/recommendation/user/testuser/recording')
-        .query({ count: 100 })
-        .reply(500);
+      vi.mocked(fetchJson).mockRejectedValueOnce(
+        new HttpError('HTTP 500: Internal Server Error', 500)
+      );
 
       const result = await client.fetchRecommendations('testuser', 'token123', 100);
 
@@ -58,10 +67,8 @@ describe('ListenBrainzClient', () => {
 
   describe('fetchPlaylistsCreatedFor', () => {
     it('returns playlist metadata array', async() => {
-      nock('https://api.listenbrainz.org')
-        .get('/1/user/testuser/playlists/createdfor')
-        .query({ count: 25 })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           count:     2,
           offset:    0,
           playlists: [
@@ -94,7 +101,9 @@ describe('ListenBrainzClient', () => {
               },
             },
           ],
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.fetchPlaylistsCreatedFor('testuser');
 
@@ -104,10 +113,9 @@ describe('ListenBrainzClient', () => {
     });
 
     it('returns empty array on error', async() => {
-      nock('https://api.listenbrainz.org')
-        .get('/1/user/testuser/playlists/createdfor')
-        .query({ count: 25 })
-        .reply(404);
+      vi.mocked(fetchJson).mockRejectedValueOnce(
+        new HttpError('HTTP 404: Not Found', 404)
+      );
 
       const result = await client.fetchPlaylistsCreatedFor('testuser');
 
@@ -119,9 +127,8 @@ describe('ListenBrainzClient', () => {
     it('returns full playlist with tracks', async() => {
       const playlistMbid = 'abc-123-def-456';
 
-      nock('https://api.listenbrainz.org')
-        .get(`/1/playlist/${ playlistMbid }`)
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           playlist: {
             identifier: `https://listenbrainz.org/playlist/${ playlistMbid }`,
             title:      'Weekly Exploration',
@@ -140,7 +147,9 @@ describe('ListenBrainzClient', () => {
               },
             ],
           },
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.fetchPlaylist(playlistMbid);
 
@@ -150,9 +159,9 @@ describe('ListenBrainzClient', () => {
     });
 
     it('returns null on error', async() => {
-      nock('https://api.listenbrainz.org')
-        .get('/1/playlist/nonexistent')
-        .reply(404);
+      vi.mocked(fetchJson).mockRejectedValueOnce(
+        new HttpError('HTTP 404: Not Found', 404)
+      );
 
       const result = await client.fetchPlaylist('nonexistent');
 
@@ -162,10 +171,8 @@ describe('ListenBrainzClient', () => {
 
   describe('findWeeklyExplorationPlaylist', () => {
     it('finds playlist with weekly-exploration in identifier', async() => {
-      nock('https://api.listenbrainz.org')
-        .get('/1/user/testuser/playlists/createdfor')
-        .query({ count: 25 })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           count:     2,
           offset:    0,
           playlists: [
@@ -175,12 +182,7 @@ describe('ListenBrainzClient', () => {
                 title:      'Daily Jams',
                 creator:    'listenbrainz',
                 date:       '2024-01-15',
-                extension:  {
-                  'https://musicbrainz.org/doc/jspf#playlist': {
-                    public:      true,
-                    created_for: 'testuser',
-                  },
-                },
+                extension:  {},
               },
             },
             {
@@ -189,16 +191,13 @@ describe('ListenBrainzClient', () => {
                 title:      'Weekly Exploration for testuser',
                 creator:    'listenbrainz',
                 date:       '2024-01-10',
-                extension:  {
-                  'https://musicbrainz.org/doc/jspf#playlist': {
-                    public:      true,
-                    created_for: 'testuser',
-                  },
-                },
+                extension:  {},
               },
             },
           ],
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.findWeeklyExplorationPlaylist('testuser');
 
@@ -207,10 +206,8 @@ describe('ListenBrainzClient', () => {
     });
 
     it('returns null when no weekly playlist exists', async() => {
-      nock('https://api.listenbrainz.org')
-        .get('/1/user/testuser/playlists/createdfor')
-        .query({ count: 25 })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           count:     1,
           offset:    0,
           playlists: [
@@ -220,16 +217,13 @@ describe('ListenBrainzClient', () => {
                 title:      'Daily Jams',
                 creator:    'listenbrainz',
                 date:       '2024-01-15',
-                extension:  {
-                  'https://musicbrainz.org/doc/jspf#playlist': {
-                    public:      true,
-                    created_for: 'testuser',
-                  },
-                },
+                extension:  {},
               },
             },
           ],
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.findWeeklyExplorationPlaylist('testuser');
 
@@ -241,9 +235,8 @@ describe('ListenBrainzClient', () => {
     it('returns similar artists with scores', async() => {
       const artistMbid = 'abc-123-def-456';
 
-      nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
-        .reply(200, [
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: [
           {
             artist_mbid:     artistMbid,
             similar_artists: [
@@ -255,7 +248,9 @@ describe('ListenBrainzClient', () => {
               },
             ],
           },
-        ]);
+        ],
+        status: 200,
+      });
 
       const result = await client.getSimilarArtists(artistMbid, 10);
 
@@ -275,9 +270,8 @@ describe('ListenBrainzClient', () => {
     it('respects limit parameter', async() => {
       const artistMbid = 'abc-123-def-456';
 
-      nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
-        .reply(200, [
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: [
           {
             artist_mbid:     artistMbid,
             similar_artists: [
@@ -292,7 +286,9 @@ describe('ListenBrainzClient', () => {
               },
             ],
           },
-        ]);
+        ],
+        status: 200,
+      });
 
       const result = await client.getSimilarArtists(artistMbid, 2);
 
@@ -302,9 +298,10 @@ describe('ListenBrainzClient', () => {
     it('returns empty array when no similar artists found', async() => {
       const artistMbid = 'abc-123-def-456';
 
-      nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
-        .reply(200, [{ artist_mbid: artistMbid, similar_artists: [] }]);
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   [{ artist_mbid: artistMbid, similar_artists: [] }],
+        status: 200,
+      });
 
       const result = await client.getSimilarArtists(artistMbid, 10);
 
@@ -314,9 +311,10 @@ describe('ListenBrainzClient', () => {
     it('returns empty array on error response', async() => {
       const artistMbid = 'abc-123-def-456';
 
-      nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
-        .reply(200, [{ artist_mbid: artistMbid, error: 'Artist not found' }]);
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   [{ artist_mbid: artistMbid, error: 'Artist not found' }],
+        status: 200,
+      });
 
       const result = await client.getSimilarArtists(artistMbid, 10);
 
@@ -326,9 +324,9 @@ describe('ListenBrainzClient', () => {
     it('returns empty array on API error', async() => {
       const artistMbid = 'abc-123-def-456';
 
-      nock('https://labs.api.listenbrainz.org')
-        .post('/similar-artists/json', [{ artist_mbids: [artistMbid], algorithm: 'session_based_days_9000_session_300_contribution_5_threshold_15_limit_50_skip_30' }])
-        .reply(500);
+      vi.mocked(fetchJson).mockRejectedValueOnce(
+        new HttpError('HTTP 500: Internal Server Error', 500)
+      );
 
       const result = await client.getSimilarArtists(artistMbid, 10);
 
@@ -337,38 +335,20 @@ describe('ListenBrainzClient', () => {
   });
 
   describe('isTransientError', () => {
-    it('identifies ECONNRESET as transient', () => {
-      const error = Object.assign(new Error('socket hang up'), {
-        isAxiosError: true,
-        code:         'ECONNRESET',
-        response:     undefined,
-        config:       {},
-        toJSON:       () => ({}),
-      });
+    it('identifies TypeError (network error) as transient', () => {
+      const error = new TypeError('fetch failed');
 
       expect(isTransientError(error)).toBe(true);
     });
 
-    it('identifies TLS errors as transient', () => {
-      const error = Object.assign(new Error('TLS connection failed'), {
-        isAxiosError: true,
-        code:         'ERR_TLS_CERT_ALTNAME_INVALID',
-        response:     undefined,
-        config:       {},
-        toJSON:       () => ({}),
-      });
+    it('identifies 429 as transient', () => {
+      const error = new HttpError('Too Many Requests', 429);
 
       expect(isTransientError(error)).toBe(true);
     });
 
     it('does not treat HTTP 500 as transient', () => {
-      const error = Object.assign(new Error('Request failed'), {
-        isAxiosError: true,
-        code:         'ERR_BAD_RESPONSE',
-        response:     { status: 500, data: {} },
-        config:       {},
-        toJSON:       () => ({}),
-      });
+      const error = new HttpError('Internal Server Error', 500);
 
       expect(isTransientError(error)).toBe(false);
     });
@@ -377,37 +357,26 @@ describe('ListenBrainzClient', () => {
   describe('retry behavior', () => {
     const retryClient = new ListenBrainzClient({ baseDelayMs: 0 });
 
-    function networkError(code: string, message: string): Error {
-      const err = new Error(message);
-
-      (err as Error & { code: string }).code = code;
-
-      return err;
-    }
-
     it('retries on transient error then succeeds', async() => {
-      nock('https://api.listenbrainz.org')
-        .get('/1/user/testuser/playlists/createdfor')
-        .query({ count: 25 })
-        .replyWithError(networkError('ECONNRESET', 'socket hang up'));
-
-      nock('https://api.listenbrainz.org')
-        .get('/1/user/testuser/playlists/createdfor')
-        .query({ count: 25 })
-        .reply(200, {
-          count:     1,
-          offset:    0,
-          playlists: [
-            {
-              playlist: {
-                identifier: 'https://listenbrainz.org/playlist/abc-123',
-                title:      'Weekly Exploration for testuser',
-                creator:    'listenbrainz',
-                date:       '2024-01-15',
-                extension:  {},
+      vi.mocked(fetchJson)
+        .mockRejectedValueOnce(new TypeError('fetch failed'))
+        .mockResolvedValueOnce({
+          data: {
+            count:     1,
+            offset:    0,
+            playlists: [
+              {
+                playlist: {
+                  identifier: 'https://listenbrainz.org/playlist/abc-123',
+                  title:      'Weekly Exploration for testuser',
+                  creator:    'listenbrainz',
+                  date:       '2024-01-15',
+                  extension:  {},
+                },
               },
-            },
-          ],
+            ],
+          },
+          status: 200,
         });
 
       const result = await retryClient.fetchPlaylistsCreatedFor('testuser');
@@ -417,21 +386,18 @@ describe('ListenBrainzClient', () => {
     });
 
     it('throws after exhausting retries on persistent network error', async() => {
-      for (let i = 0; i < 3; i++) {
-        nock('https://api.listenbrainz.org')
-          .get('/1/user/testuser/playlists/createdfor')
-          .query({ count: 25 })
-          .replyWithError(networkError('ECONNRESET', 'socket hang up'));
-      }
+      vi.mocked(fetchJson)
+        .mockRejectedValueOnce(new TypeError('fetch failed'))
+        .mockRejectedValueOnce(new TypeError('fetch failed'))
+        .mockRejectedValueOnce(new TypeError('fetch failed'));
 
-      await expect(retryClient.fetchPlaylistsCreatedFor('testuser')).rejects.toThrow('socket hang up');
+      await expect(retryClient.fetchPlaylistsCreatedFor('testuser')).rejects.toThrow('fetch failed');
     });
 
     it('does not retry on HTTP 4xx/5xx errors', async() => {
-      nock('https://api.listenbrainz.org')
-        .get('/1/user/testuser/playlists/createdfor')
-        .query({ count: 25 })
-        .reply(404);
+      vi.mocked(fetchJson).mockRejectedValueOnce(
+        new HttpError('HTTP 404: Not Found', 404)
+      );
 
       const result = await retryClient.fetchPlaylistsCreatedFor('testuser');
 
@@ -439,15 +405,12 @@ describe('ListenBrainzClient', () => {
     });
 
     it('retries fetchRecommendations on transient error', async() => {
-      nock('https://api.listenbrainz.org')
-        .get('/1/cf/recommendation/user/testuser/recording')
-        .query({ count: 100 })
-        .replyWithError(networkError('ECONNRESET', 'socket hang up'));
-
-      nock('https://api.listenbrainz.org')
-        .get('/1/cf/recommendation/user/testuser/recording')
-        .query({ count: 100 })
-        .reply(200, { payload: { mbids: [{ recording_mbid: 'rec-1', score: 0.9 }] } });
+      vi.mocked(fetchJson)
+        .mockRejectedValueOnce(new TypeError('fetch failed'))
+        .mockResolvedValueOnce({
+          data:   { payload: { mbids: [{ recording_mbid: 'rec-1', score: 0.9 }] } },
+          status: 200,
+        });
 
       const result = await retryClient.fetchRecommendations('testuser', 'token', 100);
 

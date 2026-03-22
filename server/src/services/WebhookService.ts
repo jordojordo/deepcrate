@@ -1,10 +1,11 @@
 import type { WebhookConfig, WebhookEvent, WebhookExecutionResult, WebhookPayload } from '@server/types/webhook';
 
 import crypto from 'crypto';
-import axios from 'axios';
 
 import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
+import { HttpError } from '@server/utils/HttpError';
+import { fetchJson } from '@server/utils/httpClient';
 
 export function signPayload(body: string, secret: string): string {
   return crypto.createHmac('sha256', secret).update(body).digest('hex');
@@ -35,7 +36,9 @@ export async function sendWebhook(
   }
 
   try {
-    const response = await axios.post(webhook.url, payload, {
+    const response = await fetchJson(webhook.url, {
+      method:  'POST',
+      body:    payload,
       headers,
       timeout: webhook.timeout_ms,
     });
@@ -48,10 +51,10 @@ export async function sendWebhook(
   } catch(error) {
     const duration = Date.now() - start;
 
-    if (axios.isAxiosError(error)) {
+    if (error instanceof HttpError) {
       return {
         success:    false,
-        statusCode: error.response?.status,
+        statusCode: error.status,
         duration,
         error:      error.message,
       };

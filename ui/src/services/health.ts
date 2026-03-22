@@ -1,12 +1,14 @@
 import type { HealthResponse } from '@/types/api';
 
-import axios from 'axios';
-
 export async function fetchHealth(): Promise<HealthResponse | undefined> {
   try {
-    const { data } = await axios.get('/health');
+    const response = await fetch('/health');
 
-    return data;
+    if (!response.ok) {
+      throw new Error(`Health check failed: ${ response.status }`);
+    }
+
+    return await response.json() as HealthResponse;
   } catch {
     throw new Error('Failed to fetch health check');
   }

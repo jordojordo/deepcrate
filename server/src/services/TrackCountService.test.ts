@@ -1,27 +1,34 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import nock from 'nock';
+import {
+  describe, it, expect, afterEach, vi 
+} from 'vitest';
 
 import { TrackCountService } from './TrackCountService';
-import { DEEZER_BASE_URL } from '@server/constants/clients';
+import { HttpError } from '@server/utils/HttpError';
+import { fetchJson } from '@server/utils/httpClient';
+
+vi.mock('@server/utils/httpClient');
+vi.mock('@server/config/logger', () => ({
+  default: {
+    info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn()
+  }
+}));
 
 describe('TrackCountService', () => {
   const service = new TrackCountService();
 
   afterEach(() => {
-    nock.cleanAll();
+    vi.restoreAllMocks();
   });
 
   it('returns MusicBrainz track count when mbid is available', async() => {
-    nock('https://musicbrainz.org')
-      .get('/ws/2/release')
-      .query({
-        'release-group': 'test-mbid', status: 'official', limit: '5', fmt: 'json'
-      })
-      .reply(200, {
+    vi.mocked(fetchJson).mockResolvedValueOnce({
+      data: {
         releases: [
           { id: 'r1', media: [{ 'track-count': 12 }] },
         ],
-      });
+      },
+      status: 200,
+    });
 
     const result = await service.resolveExpectedTrackCount({
       mbid:   'test-mbid',
@@ -33,17 +40,17 @@ describe('TrackCountService', () => {
   });
 
   it('falls back to Deezer when MusicBrainz fails', async() => {
-    nock('https://musicbrainz.org')
-      .get('/ws/2/release')
-      .query({
-        'release-group': 'bad-mbid', status: 'official', limit: '5', fmt: 'json'
-      })
-      .reply(200, { releases: [] });
+    // MusicBrainz returns no releases
+    vi.mocked(fetchJson).mockResolvedValueOnce({
+      data:   { releases: [] },
+      status: 200,
+    });
 
-    nock(DEEZER_BASE_URL)
-      .get('/search/album')
-      .query({ q: 'artist:"Artist" album:"Album"' })
-      .reply(200, { data: [{ id: 1, nb_tracks: 10 }] });
+    // Deezer album search
+    vi.mocked(fetchJson).mockResolvedValueOnce({
+      data:   { data: [{ id: 1, nb_tracks: 10 }] },
+      status: 200,
+    });
 
     const result = await service.resolveExpectedTrackCount({
       mbid:   'bad-mbid',
@@ -55,10 +62,10 @@ describe('TrackCountService', () => {
   });
 
   it('falls back to Deezer when no mbid is provided', async() => {
-    nock(DEEZER_BASE_URL)
-      .get('/search/album')
-      .query({ q: 'artist:"Artist" album:"Album"' })
-      .reply(200, { data: [{ id: 1, nb_tracks: 8 }] });
+    vi.mocked(fetchJson).mockResolvedValueOnce({
+      data:   { data: [{ id: 1, nb_tracks: 8 }] },
+      status: 200,
+    });
 
     const result = await service.resolveExpectedTrackCount({
       artist: 'Artist',
@@ -69,22 +76,22 @@ describe('TrackCountService', () => {
   });
 
   it('returns null when both sources fail', async() => {
-    nock('https://musicbrainz.org')
-      .get('/ws/2/release')
-      .query({
-        'release-group': 'test-mbid', status: 'official', limit: '5', fmt: 'json'
-      })
-      .reply(503);
+    // MusicBrainz fails
+    vi.mocked(fetchJson).mockRejectedValueOnce(
+      new HttpError('HTTP 503: Service Unavailable', 503)
+    );
 
-    nock(DEEZER_BASE_URL)
-      .get('/search/album')
-      .query({ q: 'artist:"Artist" album:"Album"' })
-      .reply(200, { data: [] });
+    // Deezer exact search - empty
+    vi.mocked(fetchJson).mockResolvedValueOnce({
+      data:   { data: [] },
+      status: 200,
+    });
 
-    nock(DEEZER_BASE_URL)
-      .get('/search/album')
-      .query({ q: 'Artist Album' })
-      .reply(200, { data: [] });
+    // Deezer loose search - empty
+    vi.mocked(fetchJson).mockResolvedValueOnce({
+      data:   { data: [] },
+      status: 200,
+    });
 
     const result = await service.resolveExpectedTrackCount({
       mbid:   'test-mbid',

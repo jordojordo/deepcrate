@@ -8,8 +8,6 @@ import type {
   RetryConfig
 } from '@server/types';
 
-import axios from 'axios';
-
 import { BaseClient } from '@server/services/BaseClient';
 import { isTransientError } from '@server/utils/errorHandler';
 import logger from '@server/config/logger';
@@ -52,11 +50,7 @@ export class ListenBrainzClient extends BaseClient {
 
       return mbids;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to fetch ListenBrainz recommendations: ${ error.message }`);
-      } else {
-        logger.error(`Failed to fetch ListenBrainz recommendations: ${ String(error) }`);
-      }
+      logger.error(`Failed to fetch ListenBrainz recommendations: ${ error instanceof Error ? error.message : String(error) }`);
 
       return [];
     }
@@ -85,11 +79,7 @@ export class ListenBrainzClient extends BaseClient {
         throw error;
       }
 
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to fetch playlists created for ${ username }: ${ error.message }`);
-      } else {
-        logger.error(`Failed to fetch playlists created for ${ username }: ${ String(error) }`);
-      }
+      logger.error(`Failed to fetch playlists created for ${ username }: ${ error instanceof Error ? error.message : String(error) }`);
 
       return [];
     }
@@ -107,11 +97,7 @@ export class ListenBrainzClient extends BaseClient {
 
       return response.data;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to fetch playlist ${ playlistMbid }: ${ error.message }`);
-      } else {
-        logger.error(`Failed to fetch playlist ${ playlistMbid }: ${ String(error) }`);
-      }
+      logger.error(`Failed to fetch playlist ${ playlistMbid }: ${ error instanceof Error ? error.message : String(error) }`);
 
       return null;
     }
@@ -184,11 +170,7 @@ export class ListenBrainzClient extends BaseClient {
 
       return similarArtists;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.debug(`Failed to get similar artists from ListenBrainz for ${ artistMbid }: ${ error.message }`);
-      } else {
-        logger.debug(`Failed to get similar artists from ListenBrainz for ${ artistMbid }: ${ String(error) }`);
-      }
+      logger.debug(`Failed to get similar artists from ListenBrainz for ${ artistMbid }: ${ error instanceof Error ? error.message : String(error) }`);
 
       return [];
     }

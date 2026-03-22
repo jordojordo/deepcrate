@@ -5,9 +5,8 @@ import type {
   DeezerAlbumTracksResponse,
 } from '@server/types/preview';
 
-import axios from 'axios';
-
 import logger from '@server/config/logger';
+import { fetchJson } from '@server/utils/httpClient';
 import { DEEZER_BASE_URL } from '@server/constants/clients';
 
 /**
@@ -40,11 +39,7 @@ export class DeezerClient {
 
       return null;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.debug(`Deezer search failed for '${ artist } - ${ track }': ${ error.message }`);
-      } else {
-        logger.debug(`Deezer search failed for '${ artist } - ${ track }': ${ String(error) }`);
-      }
+      logger.debug(`Deezer search failed for '${ artist } - ${ track }': ${ error instanceof Error ? error.message : String(error) }`);
 
       return null;
     }
@@ -54,7 +49,7 @@ export class DeezerClient {
    * Execute search query against Deezer API
    */
   private async search(query: string): Promise<DeezerSearchResult | null> {
-    const response = await axios.get<DeezerSearchResponse>(`${ DEEZER_BASE_URL }/search`, {
+    const response = await fetchJson<DeezerSearchResponse>(`${ DEEZER_BASE_URL }/search`, {
       params:  { q: query },
       timeout: 10000,
     });
@@ -78,7 +73,7 @@ export class DeezerClient {
     try {
       // Try exact search first
       const exactQuery = `artist:"${ artist }" album:"${ album }"`;
-      const response = await axios.get<DeezerAlbumSearchResponse>(`${ DEEZER_BASE_URL }/search/album`, {
+      const response = await fetchJson<DeezerAlbumSearchResponse>(`${ DEEZER_BASE_URL }/search/album`, {
         params:  { q: exactQuery },
         timeout: 10000,
       });
@@ -91,7 +86,7 @@ export class DeezerClient {
 
       // Fallback to looser search
       const looseQuery = `${ artist } ${ album }`;
-      const looseResponse = await axios.get<DeezerAlbumSearchResponse>(`${ DEEZER_BASE_URL }/search/album`, {
+      const looseResponse = await fetchJson<DeezerAlbumSearchResponse>(`${ DEEZER_BASE_URL }/search/album`, {
         params:  { q: looseQuery },
         timeout: 10000,
       });
@@ -104,11 +99,7 @@ export class DeezerClient {
 
       return null;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.debug(`Deezer album search failed for '${ artist } - ${ album }': ${ error.message }`);
-      } else {
-        logger.debug(`Deezer album search failed for '${ artist } - ${ album }': ${ String(error) }`);
-      }
+      logger.debug(`Deezer album search failed for '${ artist } - ${ album }': ${ error instanceof Error ? error.message : String(error) }`);
 
       return null;
     }
@@ -120,7 +111,7 @@ export class DeezerClient {
   async getAlbumTrackCount(artist: string, album: string): Promise<number | null> {
     try {
       const exactQuery = `artist:"${ artist }" album:"${ album }"`;
-      const response = await axios.get<DeezerAlbumSearchResponse>(`${ DEEZER_BASE_URL }/search/album`, {
+      const response = await fetchJson<DeezerAlbumSearchResponse>(`${ DEEZER_BASE_URL }/search/album`, {
         params:  { q: exactQuery },
         timeout: 10000,
       });
@@ -133,7 +124,7 @@ export class DeezerClient {
 
       // Fallback to looser search
       const looseQuery = `${ artist } ${ album }`;
-      const looseResponse = await axios.get<DeezerAlbumSearchResponse>(`${ DEEZER_BASE_URL }/search/album`, {
+      const looseResponse = await fetchJson<DeezerAlbumSearchResponse>(`${ DEEZER_BASE_URL }/search/album`, {
         params:  { q: looseQuery },
         timeout: 10000,
       });
@@ -146,11 +137,7 @@ export class DeezerClient {
 
       return null;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.debug(`Deezer album track count failed for '${ artist } - ${ album }': ${ error.message }`);
-      } else {
-        logger.debug(`Deezer album track count failed for '${ artist } - ${ album }': ${ String(error) }`);
-      }
+      logger.debug(`Deezer album track count failed for '${ artist } - ${ album }': ${ error instanceof Error ? error.message : String(error) }`);
 
       return null;
     }
@@ -161,15 +148,11 @@ export class DeezerClient {
    */
   async getAlbumTracks(albumId: number): Promise<DeezerAlbumTracksResponse['data']> {
     try {
-      const response = await axios.get<DeezerAlbumTracksResponse>(`${ DEEZER_BASE_URL }/album/${ albumId }/tracks`, { timeout: 10000 });
+      const response = await fetchJson<DeezerAlbumTracksResponse>(`${ DEEZER_BASE_URL }/album/${ albumId }/tracks`, { timeout: 10000 });
 
       return response.data.data || [];
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.debug(`Deezer get album tracks failed for '${ albumId }': ${ error.message }`);
-      } else {
-        logger.debug(`Deezer get album tracks failed for '${ albumId }': ${ String(error) }`);
-      }
+      logger.debug(`Deezer get album tracks failed for '${ albumId }': ${ error instanceof Error ? error.message : String(error) }`);
 
       return [];
     }

@@ -1,6 +1,7 @@
-import axios from 'axios';
 import crypto from 'crypto';
+
 import logger from '@server/config/logger';
+import { fetchJson } from '@server/utils/httpClient';
 
 interface SubsonicArtist {
   name: string;
@@ -57,18 +58,18 @@ export class SubsonicClient {
     try {
       logger.info(`Fetching artists from Subsonic server at ${ this.host }...`);
 
-      const response = await axios.get(url, {
+      const response = await fetchJson(url, {
         params,
         timeout: 30000,
       });
 
-      const data = response.data;
+      const data = response.data as Record<string, unknown>;
 
       // Check for Subsonic error
-      const subsonicResp = data['subsonic-response'] || {};
+      const subsonicResp = (data['subsonic-response'] || {}) as Record<string, unknown>;
 
       if (subsonicResp.status !== 'ok') {
-        const error = subsonicResp.error || {};
+        const error = (subsonicResp.error || {}) as Record<string, unknown>;
 
         logger.error(`Subsonic API error: ${ error.message || 'Unknown error' }`);
 
@@ -77,12 +78,13 @@ export class SubsonicClient {
 
       // Parse artist index
       const artists: Record<string, SubsonicArtist> = {};
-      const artistIndex = subsonicResp.artists?.index || [];
+      const artistsData = subsonicResp.artists as Record<string, unknown> | undefined;
+      const artistIndex = (artistsData?.index || []) as Array<Record<string, unknown>>;
 
       for (const indexEntry of artistIndex) {
-        for (const artist of indexEntry.artist || []) {
-          const name = artist.name || '';
-          const artistId = artist.id || '';
+        for (const artist of (indexEntry.artist || []) as Array<Record<string, unknown>>) {
+          const name = (artist.name || '') as string;
+          const artistId = (artist.id || '') as string;
 
           if (name) {
             artists[name.toLowerCase()] = {
@@ -97,11 +99,7 @@ export class SubsonicClient {
 
       return artists;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to fetch artists from Subsonic server: ${ error.message }`);
-      } else {
-        logger.error(`Failed to fetch artists from Subsonic server: ${ String(error) }`);
-      }
+      logger.error(`Failed to fetch artists from Subsonic server: ${ error instanceof Error ? error.message : String(error) }`);
 
       return {};
     }
@@ -141,16 +139,16 @@ export class SubsonicClient {
           offset: offset,
         };
 
-        const response = await axios.get(url, {
+        const response = await fetchJson(url, {
           params,
           timeout: 60000, // Longer timeout for large libraries
         });
 
-        const data = response.data;
-        const subsonicResp = data['subsonic-response'] || {};
+        const data = response.data as Record<string, unknown>;
+        const subsonicResp = (data['subsonic-response'] || {}) as Record<string, unknown>;
 
         if (subsonicResp.status !== 'ok') {
-          const error = subsonicResp.error || {};
+          const error = (subsonicResp.error || {}) as Record<string, unknown>;
           const code = error.code;
 
           // Subsonic error codes: 0=generic, 10=missing param, 40=auth, 50=not allowed, 70=not found
@@ -163,17 +161,18 @@ export class SubsonicClient {
           break;
         }
 
-        const albumList = subsonicResp.albumList2?.album || [];
+        const albumList2 = subsonicResp.albumList2 as Record<string, unknown> | undefined;
+        const albumList = (albumList2?.album || []) as Array<Record<string, unknown>>;
 
         if (albumList.length === 0) {
           hasMore = false;
         } else {
           for (const album of albumList) {
             albums.push({
-              id:     album.id || '',
-              name:   album.name || album.title || '',
-              artist: album.artist || '',
-              year:   album.year,
+              id:     (album.id || '') as string,
+              name:   (album.name || album.title || '') as string,
+              artist: (album.artist || '') as string,
+              year:   album.year as number | undefined,
             });
           }
 
@@ -190,11 +189,7 @@ export class SubsonicClient {
 
       return albums;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to fetch albums from Subsonic server: ${ error.message }`);
-      } else {
-        logger.error(`Failed to fetch albums from Subsonic server: ${ String(error) }`);
-      }
+      logger.error(`Failed to fetch albums from Subsonic server: ${ error instanceof Error ? error.message : String(error) }`);
 
       return [];
     }
@@ -222,16 +217,16 @@ export class SubsonicClient {
     try {
       logger.info(`Triggering Subsonic server scan at ${ this.host }...`);
 
-      const response = await axios.get(url, {
+      const response = await fetchJson(url, {
         params,
         timeout: 30000,
       });
 
-      const data = response.data;
-      const subsonicResp = data['subsonic-response'] || {};
+      const data = response.data as Record<string, unknown>;
+      const subsonicResp = (data['subsonic-response'] || {}) as Record<string, unknown>;
 
       if (subsonicResp.status !== 'ok') {
-        const error = subsonicResp.error || {};
+        const error = (subsonicResp.error || {}) as Record<string, unknown>;
 
         logger.error(`Subsonic startScan error: ${ error.message || 'Unknown error' }`);
 
@@ -240,11 +235,7 @@ export class SubsonicClient {
 
       return true;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to trigger Subsonic server scan: ${ error.message }`);
-      } else {
-        logger.error(`Failed to trigger Subsonic server scan: ${ String(error) }`);
-      }
+      logger.error(`Failed to trigger Subsonic server scan: ${ error instanceof Error ? error.message : String(error) }`);
 
       return false;
     }

@@ -1,30 +1,29 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import nock from 'nock';
+import {
+  describe, it, expect, afterEach, vi 
+} from 'vitest';
 
 import { LastFmClient } from './LastFmClient';
-import { LASTFM_BASE_URL } from '@server/constants/clients';
+import { HttpError } from '@server/utils/HttpError';
+import { fetchJson } from '@server/utils/httpClient';
 
-const LASTFM_HOST = new URL(LASTFM_BASE_URL).origin;
-const LASTFM_PATH = new URL(LASTFM_BASE_URL).pathname;
+vi.mock('@server/utils/httpClient');
+vi.mock('@server/config/logger', () => ({
+  default: {
+    info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn()
+  }
+}));
 
 describe('LastFmClient', () => {
   const client = new LastFmClient('test-api-key');
 
   afterEach(() => {
-    nock.cleanAll();
+    vi.restoreAllMocks();
   });
 
   describe('getArtistTopTags', () => {
     it('returns tags lowercased and limited by count', async() => {
-      nock(LASTFM_HOST)
-        .get(LASTFM_PATH)
-        .query({
-          method:  'artist.gettoptags',
-          artist:  'Radiohead',
-          api_key: 'test-api-key',
-          format:  'json',
-        })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           toptags: {
             tag: [
               { name: 'Alternative Rock', count: 100 },
@@ -32,7 +31,9 @@ describe('LastFmClient', () => {
               { name: 'Indie', count: 60 },
             ],
           },
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.getArtistTopTags('Radiohead');
 
@@ -44,13 +45,13 @@ describe('LastFmClient', () => {
     });
 
     it('returns empty array on Last.fm API error response', async() => {
-      nock(LASTFM_HOST)
-        .get(LASTFM_PATH)
-        .query(true)
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           error:   6,
           message: 'Artist not found',
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.getArtistTopTags('NonExistentArtist');
 
@@ -58,10 +59,9 @@ describe('LastFmClient', () => {
     });
 
     it('returns empty array on HTTP error', async() => {
-      nock(LASTFM_HOST)
-        .get(LASTFM_PATH)
-        .query(true)
-        .reply(500);
+      vi.mocked(fetchJson).mockRejectedValueOnce(
+        new HttpError('HTTP 500: Internal Server Error', 500)
+      );
 
       const result = await client.getArtistTopTags('SomeArtist');
 
@@ -69,10 +69,8 @@ describe('LastFmClient', () => {
     });
 
     it('respects custom limit parameter (client-side slice)', async() => {
-      nock(LASTFM_HOST)
-        .get(LASTFM_PATH)
-        .query(true)  // match any query params
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           toptags: {
             tag: [
               { name: 'Ambient', count: 90 },
@@ -81,7 +79,9 @@ describe('LastFmClient', () => {
               { name: 'Experimental', count: 50 },
             ],
           },
-        });
+        },
+        status: 200,
+      });
 
       const result = await client.getArtistTopTags('Boards of Canada', 3);
 
@@ -90,10 +90,10 @@ describe('LastFmClient', () => {
     });
 
     it('returns empty array when toptags is missing', async() => {
-      nock(LASTFM_HOST)
-        .get(LASTFM_PATH)
-        .query(true)
-        .reply(200, {});
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   {},
+        status: 200,
+      });
 
       const result = await client.getArtistTopTags('SomeArtist');
 

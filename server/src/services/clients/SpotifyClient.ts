@@ -6,8 +6,8 @@ import type {
   SpotifyAlbumTrack,
 } from '@server/types/preview';
 
-import axios from 'axios';
 import logger from '@server/config/logger';
+import { fetchJson } from '@server/utils/httpClient';
 import { SPOTIFY_AUTH_URL, SPOTIFY_API_URL } from '@server/constants/clients';
 
 /**
@@ -35,7 +35,7 @@ export class SpotifyClient {
       await this.ensureAccessToken();
 
       const query = `artist:${ artist } track:${ track }`;
-      const response = await axios.get<SpotifySearchResponse>(`${ SPOTIFY_API_URL }/search`, {
+      const response = await fetchJson<SpotifySearchResponse>(`${ SPOTIFY_API_URL }/search`, {
         params: {
           q:     query,
           type:  'track',
@@ -56,11 +56,7 @@ export class SpotifyClient {
 
       return null;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.debug(`Spotify search failed for '${ artist } - ${ track }': ${ error.message }`);
-      } else {
-        logger.debug(`Spotify search failed for '${ artist } - ${ track }': ${ String(error) }`);
-      }
+      logger.debug(`Spotify search failed for '${ artist } - ${ track }': ${ error instanceof Error ? error.message : String(error) }`);
 
       return null;
     }
@@ -74,7 +70,7 @@ export class SpotifyClient {
       await this.ensureAccessToken();
 
       const query = `artist:${ artist } album:${ album }`;
-      const response = await axios.get<SpotifyAlbumSearchResponse>(`${ SPOTIFY_API_URL }/search`, {
+      const response = await fetchJson<SpotifyAlbumSearchResponse>(`${ SPOTIFY_API_URL }/search`, {
         params: {
           q:     query,
           type:  'album',
@@ -92,11 +88,7 @@ export class SpotifyClient {
 
       return null;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.debug(`Spotify album search failed for '${ artist } - ${ album }': ${ error.message }`);
-      } else {
-        logger.debug(`Spotify album search failed for '${ artist } - ${ album }': ${ String(error) }`);
-      }
+      logger.debug(`Spotify album search failed for '${ artist } - ${ album }': ${ error instanceof Error ? error.message : String(error) }`);
 
       return null;
     }
@@ -109,7 +101,7 @@ export class SpotifyClient {
     try {
       await this.ensureAccessToken();
 
-      const response = await axios.get<SpotifyAlbumTracksResponse>(`${ SPOTIFY_API_URL }/albums/${ albumId }/tracks`, {
+      const response = await fetchJson<SpotifyAlbumTracksResponse>(`${ SPOTIFY_API_URL }/albums/${ albumId }/tracks`, {
         params:  { limit: 50 },
         headers: { Authorization: `Bearer ${ this.accessToken }` },
         timeout: 10000,
@@ -117,11 +109,7 @@ export class SpotifyClient {
 
       return response.data.items || [];
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.debug(`Spotify get album tracks failed for '${ albumId }': ${ error.message }`);
-      } else {
-        logger.debug(`Spotify get album tracks failed for '${ albumId }': ${ String(error) }`);
-      }
+      logger.debug(`Spotify get album tracks failed for '${ albumId }': ${ error instanceof Error ? error.message : String(error) }`);
 
       return [];
     }
@@ -171,7 +159,9 @@ export class SpotifyClient {
 
     const credentials = Buffer.from(`${ this.clientId }:${ this.clientSecret }`).toString('base64');
 
-    const response = await axios.post<SpotifyTokenResponse>(SPOTIFY_AUTH_URL, 'grant_type=client_credentials', {
+    const response = await fetchJson<SpotifyTokenResponse>(SPOTIFY_AUTH_URL, {
+      method:  'POST',
+      body:    'grant_type=client_credentials',
       headers: {
         'Authorization': `Basic ${ credentials }`,
         'Content-Type':  'application/x-www-form-urlencoded',
