@@ -3,12 +3,15 @@ import type { WebhookConfig, WebhookPayload } from '@server/types/webhook';
 import {
   describe, it, expect, vi, beforeEach, afterEach
 } from 'vitest';
-import nock from 'nock';
 
 import { getConfig } from '@server/config/settings';
+import { HttpError } from '@server/utils/HttpError';
+import { fetchJson } from '@server/utils/httpClient';
 import {
   signPayload, buildPayload, sendWebhook, sendWithRetry, fireEvent
 } from './WebhookService';
+
+vi.mock('@server/utils/httpClient');
 
 vi.mock('@server/config/logger', () => ({
   default: {
@@ -33,8 +36,8 @@ const testPayload: WebhookPayload = {
   data:      { artist: 'Test Artist', album: 'Test Album' },
 };
 
-beforeEach(() => nock.cleanAll());
-afterEach(() => nock.cleanAll());
+beforeEach(() => vi.clearAllMocks());
+afterEach(() => vi.clearAllMocks());
 
 describe('signPayload', () => {
   it('produces consistent HMAC-SHA256 hex digest', () => {
@@ -57,7 +60,7 @@ describe('buildPayload', () => {
 
 describe('sendWebhook', () => {
   it('returns success on 200', async() => {
-    nock('http://hook.test').post('/callback').reply(200, { ok: true });
+    vi.mocked(fetchJson).mockResolvedValueOnce({ data: { ok: true }, status: 200 });
 
     const result = await sendWebhook(baseWebhook, testPayload);
 
@@ -67,7 +70,9 @@ describe('sendWebhook', () => {
   });
 
   it('returns failure on 500', async() => {
-    nock('http://hook.test').post('/callback').reply(500, 'error');
+    vi.mocked(fetchJson).mockRejectedValueOnce(
+      new HttpError('HTTP 500: Internal Server Error', 500)
+    );
 
     const result = await sendWebhook(baseWebhook, testPayload);
 
@@ -76,7 +81,9 @@ describe('sendWebhook', () => {
   });
 
   it('returns failure on timeout', async() => {
-    nock('http://hook.test').post('/callback').delay(6000).reply(200);
+    vi.mocked(fetchJson).mockRejectedValueOnce(
+      new DOMException('The operation was aborted', 'TimeoutError')
+    );
 
     const result = await sendWebhook({ ...baseWebhook, timeout_ms: 100 }, testPayload);
 
@@ -85,22 +92,23 @@ describe('sendWebhook', () => {
   });
 
   it('includes X-Webhook-Signature header when secret is set', async() => {
-    const scope = nock('http://hook.test')
-      .post('/callback')
-      .matchHeader('X-Webhook-Signature', /^[a-f0-9]{64}$/)
-      .reply(200);
+    vi.mocked(fetchJson).mockResolvedValueOnce({ data: {}, status: 200 });
 
     await sendWebhook({ ...baseWebhook, secret: 'my-secret' }, testPayload);
 
-    expect(scope.isDone()).toBe(true);
+    expect(fetchJson).toHaveBeenCalledWith(
+      'http://hook.test/callback',
+      expect.objectContaining({ headers: expect.objectContaining({ 'X-Webhook-Signature': expect.stringMatching(/^[a-f0-9]{64}$/) }) })
+    );
   });
 });
 
 describe('sendWithRetry', () => {
   it('retries on failure with exponential backoff', async() => {
-    nock('http://hook.test').post('/callback').reply(500);
-    nock('http://hook.test').post('/callback').reply(500);
-    nock('http://hook.test').post('/callback').reply(200);
+    vi.mocked(fetchJson)
+      .mockRejectedValueOnce(new HttpError('HTTP 500', 500))
+      .mockRejectedValueOnce(new HttpError('HTTP 500', 500))
+      .mockResolvedValueOnce({ data: { ok: true }, status: 200 });
 
     const result = await sendWithRetry({ ...baseWebhook, retry: 2 }, testPayload);
 
@@ -108,7 +116,10 @@ describe('sendWithRetry', () => {
   }, 15000);
 
   it('returns failure after exhausting retries', async() => {
-    nock('http://hook.test').post('/callback').times(3).reply(500);
+    vi.mocked(fetchJson)
+      .mockRejectedValueOnce(new HttpError('HTTP 500', 500))
+      .mockRejectedValueOnce(new HttpError('HTTP 500', 500))
+      .mockRejectedValueOnce(new HttpError('HTTP 500', 500));
 
     const result = await sendWithRetry({ ...baseWebhook, retry: 2 }, testPayload);
 
@@ -127,11 +138,15 @@ describe('fireEvent', () => {
       ],
     } as ReturnType<typeof getConfig>);
 
-    const scope = nock('http://hook.test').post('/callback').reply(200);
+    vi.mocked(fetchJson).mockResolvedValueOnce({ data: {}, status: 200 });
 
     await fireEvent('download_completed', { artist: 'A' });
 
-    expect(scope.isDone()).toBe(true);
+    expect(fetchJson).toHaveBeenCalledTimes(1);
+    expect(fetchJson).toHaveBeenCalledWith(
+      'http://hook.test/callback',
+      expect.anything()
+    );
   });
 
   it('skips disabled webhooks', async() => {
@@ -141,10 +156,8 @@ describe('fireEvent', () => {
       ],
     } as ReturnType<typeof getConfig>);
 
-    const scope = nock('http://hook.test').post('/callback').reply(200);
-
     await fireEvent('download_completed', { artist: 'A' });
 
-    expect(scope.isDone()).toBe(false);
+    expect(fetchJson).not.toHaveBeenCalled();
   });
 });

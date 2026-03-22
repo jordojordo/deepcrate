@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 
 export function normalizeSlskdPath(value: string | null | undefined): string | null {
@@ -74,4 +75,14 @@ export function slskdDirectoryToRelativeDownloadPath(
 
 export function joinDownloadsPath(downloadsRoot: string, relativePath: string): string {
   return path.join(downloadsRoot, ...relativePath.split('/'));
+}
+
+export async function pathExists(candidatePath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(candidatePath, fs.constants.F_OK);
+
+    return true;
+  } catch {
+    return false;
+  }
 }

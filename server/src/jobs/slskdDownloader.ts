@@ -30,6 +30,7 @@ import {
   shouldRejectFile,
   getDominantQualityInfo,
 } from '@server/utils/audioQuality';
+import { isMusicFile } from '@server/utils/fileHandler';
 
 import { JOB_NAMES } from '@server/constants/jobs';
 import {
@@ -39,7 +40,6 @@ import {
   MIN_FILES_ALBUM,
   MIN_FILES_TRACK,
   MB_TO_BYTES,
-  MUSIC_EXTENSIONS,
   QUALITY_SCORES,
   MAX_STORED_SELECTION_RESULTS,
 } from '@server/constants/slskd';
@@ -659,12 +659,6 @@ function normalizeSlskdPath(value: string): string {
   const normalized = value.replace(/\\/g, '/').replace(/\/+$/, '');
 
   return normalized === '.' ? '' : normalized;
-}
-
-function isMusicFile(filename: string): boolean {
-  const ext = path.extname(filename).toLowerCase();
-
-  return MUSIC_EXTENSIONS.includes(ext);
 }
 
 function pickBestResponse(

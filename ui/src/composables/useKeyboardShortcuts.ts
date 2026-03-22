@@ -2,7 +2,7 @@ import type { KeyboardShortcutsConfig, ShortcutDefinition } from '@/types';
 
 import { ref, onMounted, onUnmounted } from 'vue';
 
-export const QUEUE_SHORTCUTS: ShortcutDefinition[] = [
+const QUEUE_SHORTCUTS: ShortcutDefinition[] = [
   { key: '↑ ↓ ← →', description: 'Navigate between items' },
   { key: 'Space', description: 'Play/pause preview' },
   { key: 'a', description: 'Approve focused item' },

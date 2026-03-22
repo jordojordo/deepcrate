@@ -7,7 +7,7 @@ import { sequelize } from '@server/config/db/sequelize';
  * CatalogArtist attributes.
  * Caches artists from the user's music library (Subsonic-compatible server).
  */
-export interface CatalogArtistAttributes {
+interface CatalogArtistAttributes {
   id:                    number;
   navidromeId:           string;  // Subsonic artist ID (column name preserved for DB compatibility)
   name:                  string;
@@ -19,7 +19,7 @@ export interface CatalogArtistAttributes {
   updatedAt?:            Date;
 }
 
-export type CatalogArtistCreationAttributes = PartialBy<CatalogArtistAttributes, 'id' | 'lastSyncedAt'>;
+type CatalogArtistCreationAttributes = PartialBy<CatalogArtistAttributes, 'id' | 'lastSyncedAt'>;
 
 /**
  * Sequelize model for catalog artists.

@@ -155,5 +155,3 @@ export class AlbumTrackSelector {
     logger.debug('Album track selection cache cleared');
   }
 }
-
-export default AlbumTrackSelector;

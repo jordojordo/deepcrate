@@ -1,16 +1,18 @@
-import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
-
-import axios from 'axios';
-
 import { MAX_RETRIES, RETRY_DELAYS } from '@/constants/api';
 import { ROUTE_PATHS } from '@/constants/routes';
 
-let redirectingToLogin = false;
+interface HttpResponse<T = unknown> {
+  data:   T;
+  status: number;
+}
 
-/**
- * Toast callback for showing error messages from outside Vue components.
- * Set by calling setToastCallback from App.vue.
- */
+interface RequestConfig {
+  params?:       Record<string, string | number | boolean>;
+  headers?:      Record<string, string>;
+  data?:         unknown;
+  responseType?: 'blob' | 'json';
+}
+
 let showErrorToast: ((message: string, detail?: string) => void) | null = null;
 
 /**
@@ -21,107 +23,159 @@ export function setToastCallback(callback: (message: string, detail?: string) =>
   showErrorToast = callback;
 }
 
-interface RetryConfig extends InternalAxiosRequestConfig {
-  _retryCount?: number;
+const baseURL = import.meta.env.VITE_API_URL || '/api/v1';
+
+let redirectingToLogin = false;
+
+function getAuthMode(): string | null {
+  return localStorage.getItem('auth_mode');
 }
 
-function isDatabaseBusyError(error: AxiosError): boolean {
-  if (error.response?.status !== 503) {
-    return false;
+function buildURL(path: string, params?: Record<string, string | number | boolean>): string {
+  const url = new URL(`${ baseURL }${ path }`, window.location.origin);
+
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.set(key, String(value));
+    }
   }
 
-  const data = error.response.data as { code?: string } | undefined;
+  return url.toString();
+}
 
-  return data?.code === 'database_busy';
+function buildAuthHeaders(): Record<string, string> {
+  const authMode = getAuthMode();
+
+  if (authMode === 'proxy' || authMode === 'disabled') {
+    return {};
+  }
+
+  if (authMode === 'api_key') {
+    const apiKey = localStorage.getItem('auth_api_key');
+
+    return apiKey ? { Authorization: `Bearer ${ apiKey }` } : {};
+  }
+
+  const credentials = localStorage.getItem('auth_credentials');
+
+  return credentials ? { Authorization: `Basic ${ credentials }` } : {};
 }
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
-  headers: { 'Content-Type': 'application/json' },
-});
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  config?: RequestConfig,
+): Promise<HttpResponse<T>> {
+  const url = buildURL(path, config?.params);
 
-/**
- * Get the current auth mode from localStorage cache
- * This avoids circular dependency with the store
- */
-function getAuthMode(): string | null {
-  return localStorage.getItem('auth_mode');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...buildAuthHeaders(),
+    ...config?.headers,
+  };
+
+  const init: RequestInit = { method, headers };
+
+  if (body !== undefined) {
+    init.body = JSON.stringify(body);
+  } else if (config?.data !== undefined) {
+    init.body = JSON.stringify(config.data);
+  }
+
+  return executeWithRetry<T>(url, init, config?.responseType ?? 'json');
 }
 
-client.interceptors.request.use((config) => {
-  const authMode = getAuthMode();
+async function executeWithRetry<T>(
+  url: string,
+  init: RequestInit,
+  responseType: 'blob' | 'json',
+  retryCount = 0,
+): Promise<HttpResponse<T>> {
+  const response = await fetch(url, init);
 
-  // For proxy/disabled modes, don't add any auth headers
-  if (authMode === 'proxy' || authMode === 'disabled') {
-    return config;
-  }
+  // 401 -> redirect to login
+  if (response.status === 401) {
+    const authMode = getAuthMode();
 
-  if (authMode === 'api_key') {
-    const apiKey = localStorage.getItem('auth_api_key');
+    if (authMode !== 'proxy' && authMode !== 'disabled') {
+      localStorage.removeItem('auth_credentials');
+      localStorage.removeItem('auth_username');
+      localStorage.removeItem('auth_api_key');
 
-    if (apiKey) {
-      config.headers.Authorization = `Bearer ${ apiKey }`;
-    }
-
-    return config;
-  }
-
-  const credentials = localStorage.getItem('auth_credentials');
-
-  if (credentials) {
-    config.headers.Authorization = `Basic ${ credentials }`;
-  }
-
-  return config;
-});
-
-// Response interceptor to handle 401 (redirect to login) and 503 (database busy with retry)
-client.interceptors.response.use(
-  (response) => response,
-  async(error: AxiosError) => {
-    const config = error.config as RetryConfig | undefined;
-
-    if (error.response?.status === 401) {
-      const authMode = getAuthMode();
-
-      // Only redirect to login for modes that require it
-      if (authMode !== 'proxy' && authMode !== 'disabled') {
-        localStorage.removeItem('auth_credentials');
-        localStorage.removeItem('auth_username');
-        localStorage.removeItem('auth_api_key');
-
-        if (!redirectingToLogin && window.location.pathname !== ROUTE_PATHS.LOGIN) {
-          redirectingToLogin = true;
-          window.location.replace(ROUTE_PATHS.LOGIN);
-        }
+      if (!redirectingToLogin && window.location.pathname !== ROUTE_PATHS.LOGIN) {
+        redirectingToLogin = true;
+        window.location.replace(ROUTE_PATHS.LOGIN);
       }
-
-      return Promise.reject(error);
     }
 
-    if (isDatabaseBusyError(error) && config) {
-      const retryCount = config._retryCount || 0;
+    throw new HttpClientError('Unauthorized', response.status);
+  }
 
-      if (retryCount < MAX_RETRIES) {
-        config._retryCount = retryCount + 1;
+  // 503 database_busy -> retry
+  if (response.status === 503) {
+    const clone = response.clone();
+
+    try {
+      const errorData = await clone.json() as { code?: string };
+
+      if (errorData?.code === 'database_busy' && retryCount < MAX_RETRIES) {
         const delay = RETRY_DELAYS[retryCount] ?? RETRY_DELAYS[RETRY_DELAYS.length - 1] ?? 1000;
 
         await sleep(delay);
 
-        return client.request(config);
+        return executeWithRetry<T>(url, init, responseType, retryCount + 1);
       }
 
-      if (showErrorToast) {
+      if (errorData?.code === 'database_busy' && showErrorToast) {
         showErrorToast('Database Busy', `The database is busy after ${ MAX_RETRIES } retries. Please try again later.`);
       }
+    } catch {
+      // Not JSON: fall through to generic error
     }
 
-    return Promise.reject(error);
+    throw new HttpClientError('Service Unavailable', response.status);
   }
-);
+
+  if (!response.ok) {
+    throw new HttpClientError(`HTTP ${ response.status }`, response.status);
+  }
+
+  const data = responseType === 'blob'? await response.blob() as T: await response.json() as T;
+
+  return { data, status: response.status };
+}
+
+class HttpClientError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'HttpClientError';
+    this.status = status;
+  }
+}
+
+const client = {
+  get<T = unknown>(url: string, config?: RequestConfig): Promise<HttpResponse<T>> {
+    return request<T>('GET', url, undefined, config);
+  },
+
+  post<T = unknown>(url: string, body?: unknown, config?: RequestConfig): Promise<HttpResponse<T>> {
+    return request<T>('POST', url, body, config);
+  },
+
+  put<T = unknown>(url: string, body?: unknown, config?: RequestConfig): Promise<HttpResponse<T>> {
+    return request<T>('PUT', url, body, config);
+  },
+
+  delete<T = unknown>(url: string, config?: RequestConfig): Promise<HttpResponse<T>> {
+    return request<T>('DELETE', url, undefined, config);
+  },
+};
 
 export default client;

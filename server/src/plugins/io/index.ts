@@ -36,10 +36,6 @@ export function initIo(httpServer: http.Server): Server {
   return io;
 }
 
-export function getIo(): Server | null {
-  return io;
-}
-
 export async function stopIo(): Promise<void> {
   if (!io) {
     return;

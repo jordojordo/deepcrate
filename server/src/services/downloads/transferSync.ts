@@ -8,7 +8,7 @@ import { normalizeSlskdPath } from '@server/utils/slskdPaths';
  * slskd returns transfer states as comma-separated enum flags
  * (e.g., "Completed, Succeeded" or "InProgress") rather than single values.
  */
-export function tokenizeSlskdState(value: unknown): string[] {
+function tokenizeSlskdState(value: unknown): string[] {
   if (typeof value !== 'string') {
     return [];
   }
@@ -19,7 +19,7 @@ export function tokenizeSlskdState(value: unknown): string[] {
     .filter(Boolean);
 }
 
-export function summarizeTransferErrors(errorFiles: SlskdTransferFile[], totalFiles: number): string {
+function summarizeTransferErrors(errorFiles: SlskdTransferFile[], totalFiles: number): string {
   const counts = errorFiles.reduce<Record<string, number>>((acc, file) => {
     const state = typeof file.state === 'string' ? file.state : String(file.state);
     const key = state || 'Unknown';

@@ -2,7 +2,7 @@ import type { Config } from '@server/config/schemas';
 
 import fs from 'fs';
 import path from 'path';
-import yaml from 'js-yaml';
+import { parse, stringify } from 'yaml';
 import { Mutex } from 'async-mutex';
 
 import { ConfigSchema, DEFAULT_CONFIG } from '@server/config/schemas';
@@ -26,7 +26,7 @@ let cachedConfig: Config | null = null;
  * Environment variable overrides:
  * - DEEPCRATE_* env vars with __ for nesting (e.g., DEEPCRATE_UI__AUTH__ENABLED=true)
  */
-export function loadConfig(): Config {
+function loadConfig(): Config {
   if (cachedConfig) {
     return cachedConfig;
   }
@@ -37,7 +37,7 @@ export function loadConfig(): Config {
   if (fs.existsSync(configPath)) {
     const fileContent = fs.readFileSync(configPath, 'utf-8');
 
-    rawConfig = yaml.load(fileContent) as Record<string, unknown> || {};
+    rawConfig = parse(fileContent) as Record<string, unknown> || {};
   }
 
   // Apply environment variable overrides
@@ -86,7 +86,7 @@ export async function updateConfig(section: string, updates: Record<string, unkn
     if (fs.existsSync(configPath)) {
       const fileContent = await fs.promises.readFile(configPath, 'utf-8');
 
-      rawConfig = yaml.load(fileContent) as Record<string, unknown> || {};
+      rawConfig = parse(fileContent) as Record<string, unknown> || {};
     }
 
     const currentSection = rawConfig[section] ?? {};
@@ -106,7 +106,7 @@ export async function updateConfig(section: string, updates: Record<string, unkn
       throw new Error(`Invalid configuration:\n${ errors }`);
     }
 
-    const output = yaml.dump(rawConfig, { noRefs: true, lineWidth: 120 });
+    const output = stringify(rawConfig, { lineWidth: 120 });
 
     await fs.promises.writeFile(configPath, output, 'utf-8');
     clearConfigCache();
@@ -177,17 +177,4 @@ function parseEnvValue(value: string): unknown {
  */
 export function getDataPath(): string {
   return process.env.DATA_PATH || 'data';
-}
-
-/**
- * Ensure data directory exists
- */
-export function ensureDataDir(): string {
-  const dataPath = getDataPath();
-
-  if (!fs.existsSync(dataPath)) {
-    fs.mkdirSync(dataPath, { recursive: true });
-  }
-
-  return dataPath;
 }

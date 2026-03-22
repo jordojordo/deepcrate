@@ -8,8 +8,8 @@ import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
 import { triggerJob } from '@server/plugins/jobs';
-import SlskdClient from '@server/services/clients/SlskdClient';
-import WishlistService from '@server/services/WishlistService';
+import { SlskdClient } from '@server/services/clients/SlskdClient';
+import { WishlistService } from '@server/services/WishlistService';
 import { parseCachedSearchResults } from '@server/services/downloads/searchResultParser';
 import { buildQualityPreferences } from '@server/services/downloads/qualityPrefsBuilder';
 import { getFileSizeConstraints, filterMusicFiles } from '@server/services/downloads/musicFileFilter';
@@ -1001,5 +1001,3 @@ export class DownloadService {
     return processedCount;
   }
 }
-
-export default DownloadService;

@@ -179,5 +179,3 @@ export class PreviewService {
     logger.debug('Preview cache cleared');
   }
 }
-
-export default PreviewService;

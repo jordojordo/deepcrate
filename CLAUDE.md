@@ -66,11 +66,11 @@ Vue 3 + TypeScript + Pinia + PrimeVue 4.
 - `pages/private/` - Authenticated page components: DashboardPage, QueuePage
 - `pages/public/` - Public page components: LoginPage
 - `components/` - Reusable UI components:
-  - `common/` - LoadingSpinner, StatsCard
+  - `common/` - LoadingSpinner
   - `layout/` - AppShell, SidebarNavList
   - `queue/` - QueueFilters, QueueList
 - `stores/` - Pinia state management (source of truth for state)
-- `composables/` - Reusable composition functions: useQueue, useAuth, useToast, useStats
+- `composables/` - Reusable composition functions: useQueue, useToast, useStats
 - `services/` - API clients (Axios): api.ts (base client), queue.ts
 - `types/` - TypeScript type definitions organized by feature: queue.ts, auth.ts, api.ts
 - `utils/` - Utility functions: formatters.ts, validation.ts

@@ -1,6 +1,6 @@
 import logger from '@server/config/logger';
-import MusicBrainzClient from '@server/services/clients/MusicBrainzClient';
-import DeezerClient from '@server/services/clients/DeezerClient';
+import { MusicBrainzClient } from '@server/services/clients/MusicBrainzClient';
+import { DeezerClient } from '@server/services/clients/DeezerClient';
 
 /**
  * TrackCountService orchestrates expected track count resolution
@@ -53,5 +53,3 @@ export class TrackCountService {
     return null;
   }
 }
-
-export default TrackCountService;

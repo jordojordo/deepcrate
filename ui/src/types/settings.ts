@@ -118,9 +118,6 @@ export interface SubsonicSettings {
   password: SecretStatus;
 }
 
-/** @deprecated Use SubsonicSettings instead */
-export type NavidromeSettings = SubsonicSettings;
-
 export interface LastFmSettings {
   api_key: SecretStatus;
 }
@@ -277,14 +274,6 @@ export interface SettingsResponse {
   ui:                 UISettings;
   scoring?:           ScoringSettings;
   webhooks:           WebhookConfig[];
-}
-
-/**
- * Section response
- */
-export interface SectionResponse<T = unknown> {
-  section: string;
-  data:    T;
 }
 
 /**

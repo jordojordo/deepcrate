@@ -1,9 +1,6 @@
 import {
   describe, it, expect, beforeEach, afterEach, vi
 } from 'vitest';
-import nock from 'nock';
-
-import { DEEZER_BASE_URL } from '@server/constants/clients';
 
 // Mock the config module before importing AlbumTrackSelector
 vi.mock('@server/config/settings', () => ({
@@ -30,18 +27,20 @@ vi.mock('@server/config/logger', () => ({
   },
 }));
 
+vi.mock('@server/utils/httpClient');
+
 import { AlbumTrackSelector } from './AlbumTrackSelector';
+import { fetchJson } from '@server/utils/httpClient';
 
 describe('AlbumTrackSelector', () => {
   let selector: AlbumTrackSelector;
 
   beforeEach(() => {
-    nock.cleanAll();
+    vi.clearAllMocks();
     selector = new AlbumTrackSelector();
   });
 
   afterEach(() => {
-    nock.cleanAll();
     selector.clearCache();
   });
 
@@ -62,20 +61,19 @@ describe('AlbumTrackSelector', () => {
 
     it('selects track from Deezer when sourceTrack not provided', async() => {
       // Mock Deezer album search
-      nock(DEEZER_BASE_URL)
-        .get('/search/album')
-        .query({ q: 'artist:"Dream Theater" album:"Images and Words"' })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           data:  [{
             id: 12345, title: 'Images and Words', artist: { id: 1, name: 'Dream Theater' }
           }],
           total: 1,
-        });
+        },
+        status: 200,
+      });
 
       // Mock Deezer album tracks
-      nock(DEEZER_BASE_URL)
-        .get('/album/12345/tracks')
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           data: [
             {
               id: 1, title: 'Pull Me Under', preview: 'https://deezer.com/preview/1', artist: { id: 1, name: 'Dream Theater' }, duration: 300, track_position: 1
@@ -85,7 +83,9 @@ describe('AlbumTrackSelector', () => {
             },
           ],
           total: 2,
-        });
+        },
+        status: 200,
+      });
 
       const result = await selector.selectTrack({
         artist: 'Dream Theater',
@@ -100,38 +100,36 @@ describe('AlbumTrackSelector', () => {
     });
 
     it('falls back to MusicBrainz when Deezer fails', async() => {
-      // Mock Deezer album search - not found
-      nock(DEEZER_BASE_URL)
-        .get('/search/album')
-        .query({ q: 'artist:"Obscure Artist" album:"Rare Album"' })
-        .reply(200, { data: [], total: 0 });
+      // Mock Deezer album search - not found (exact)
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   { data: [], total: 0 },
+        status: 200,
+      });
 
-      nock(DEEZER_BASE_URL)
-        .get('/search/album')
-        .query({ q: 'Obscure Artist Rare Album' })
-        .reply(200, { data: [], total: 0 });
+      // Mock Deezer album search - not found (loose)
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   { data: [], total: 0 },
+        status: 200,
+      });
 
       // Mock MusicBrainz release lookup
-      nock('https://musicbrainz.org')
-        .get('/ws/2/release')
-        .query({
-          'release-group': 'abc123-mbid',
-          'limit':         1,
-          'fmt':           'json',
-        })
-        .reply(200, { releases: [{ id: 'release-id' }] });
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   { releases: [{ id: 'release-id' }] },
+        status: 200,
+      });
 
-      nock('https://musicbrainz.org')
-        .get('/ws/2/release/release-id')
-        .query({ inc: 'recordings', fmt: 'json' })
-        .reply(200, {
+      // Mock MusicBrainz release tracks
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           media: [{
             tracks: [
               { title: 'Hidden Gem', position: 1 },
               { title: 'Another Track', position: 2 },
             ],
           }],
-        });
+        },
+        status: 200,
+      });
 
       const result = await selector.selectTrack({
         artist: 'Obscure Artist',
@@ -146,16 +144,17 @@ describe('AlbumTrackSelector', () => {
     });
 
     it('returns null when no track is found', async() => {
-      // Mock Deezer album search - not found
-      nock(DEEZER_BASE_URL)
-        .get('/search/album')
-        .query({ q: 'artist:"Unknown Artist" album:"Unknown Album"' })
-        .reply(200, { data: [], total: 0 });
+      // Mock Deezer album search - not found (exact)
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   { data: [], total: 0 },
+        status: 200,
+      });
 
-      nock(DEEZER_BASE_URL)
-        .get('/search/album')
-        .query({ q: 'Unknown Artist Unknown Album' })
-        .reply(200, { data: [], total: 0 });
+      // Mock Deezer album search - not found (loose)
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   { data: [], total: 0 },
+        status: 200,
+      });
 
       const result = await selector.selectTrack({
         artist: 'Unknown Artist',
@@ -167,27 +166,28 @@ describe('AlbumTrackSelector', () => {
 
     it('caches results', async() => {
       // Mock Deezer album search
-      const deezerScope = nock(DEEZER_BASE_URL)
-        .get('/search/album')
-        .query({ q: 'artist:"Cached Artist" album:"Cached Album"' })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           data:  [{
             id: 99999, title: 'Cached Album', artist: { id: 1, name: 'Cached Artist' }
           }],
           total: 1,
-        });
+        },
+        status: 200,
+      });
 
       // Mock Deezer album tracks
-      const tracksScope = nock(DEEZER_BASE_URL)
-        .get('/album/99999/tracks')
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           data: [
             {
               id: 1, title: 'Cached Track', preview: 'https://deezer.com/cached', artist: { id: 1, name: 'Cached Artist' }, duration: 200, track_position: 1
             },
           ],
           total: 1,
-        });
+        },
+        status: 200,
+      });
 
       // First call
       const result1 = await selector.selectTrack({
@@ -202,8 +202,8 @@ describe('AlbumTrackSelector', () => {
       });
 
       expect(result1).toEqual(result2);
-      expect(deezerScope.isDone()).toBe(true);
-      expect(tracksScope.isDone()).toBe(true);
+      // Only 2 fetchJson calls (album search + tracks), not 4
+      expect(fetchJson).toHaveBeenCalledTimes(2);
     });
   });
 

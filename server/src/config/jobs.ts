@@ -8,7 +8,7 @@ import { getConfig } from '@server/config/settings';
  * Convert seconds to cron expression
  * Handles common intervals: hourly, every N hours, daily, weekly
  */
-export function secondsToCron(seconds: number): string {
+function secondsToCron(seconds: number): string {
   const hours = seconds / 3600;
   const days = seconds / 86400;
 

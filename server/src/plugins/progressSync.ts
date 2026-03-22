@@ -1,5 +1,5 @@
 import logger from '@server/config/logger';
-import DownloadService from '@server/services/DownloadService';
+import { DownloadService } from '@server/services/DownloadService';
 
 const PROGRESS_SYNC_INTERVAL_MS = 3000; // 3 seconds
 

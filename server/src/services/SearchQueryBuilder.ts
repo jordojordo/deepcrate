@@ -152,5 +152,3 @@ export class SearchQueryBuilder {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }
-
-export default SearchQueryBuilder;

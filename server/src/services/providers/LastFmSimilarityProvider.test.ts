@@ -1,13 +1,22 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import nock from 'nock';
+import {
+  describe, it, expect, afterEach, vi 
+} from 'vitest';
 
 import { LastFmSimilarityProvider } from './LastFmSimilarityProvider';
+import { fetchJson } from '@server/utils/httpClient';
+
+vi.mock('@server/utils/httpClient');
+vi.mock('@server/config/logger', () => ({
+  default: {
+    info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn()
+  }
+}));
 
 describe('LastFmSimilarityProvider', () => {
   const provider = new LastFmSimilarityProvider('test-api-key');
 
   afterEach(() => {
-    nock.cleanAll();
+    vi.restoreAllMocks();
   });
 
   describe('name', () => {
@@ -24,27 +33,21 @@ describe('LastFmSimilarityProvider', () => {
 
   describe('getSimilarArtists', () => {
     it('returns similar artists with provider name', async() => {
-      nock('https://ws.audioscrobbler.com')
-        .get('/2.0/')
-        .query({
-          method:  'artist.getsimilar',
-          artist:  'Radiohead',
-          api_key: 'test-api-key',
-          limit:   10,
-          format:  'json',
-        })
-        .reply(200, {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
           similarartists: {
             artist: [
               {
-                name: 'Thom Yorke', match: '0.85', mbid: 'thom-mbid' 
+                name: 'Thom Yorke', match: '0.85', mbid: 'thom-mbid'
               },
               {
-                name: 'Portishead', match: '0.75', mbid: 'portishead-mbid' 
+                name: 'Portishead', match: '0.75', mbid: 'portishead-mbid'
               },
             ],
           },
-        });
+        },
+        status: 200,
+      });
 
       const result = await provider.getSimilarArtists('Radiohead', undefined, 10);
 
@@ -64,16 +67,10 @@ describe('LastFmSimilarityProvider', () => {
     });
 
     it('returns empty array on API error', async() => {
-      nock('https://ws.audioscrobbler.com')
-        .get('/2.0/')
-        .query({
-          method:  'artist.getsimilar',
-          artist:  'Unknown Artist',
-          api_key: 'test-api-key',
-          limit:   10,
-          format:  'json',
-        })
-        .reply(200, { error: 6, message: 'Artist not found' });
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data:   { error: 6, message: 'Artist not found' },
+        status: 200,
+      });
 
       const result = await provider.getSimilarArtists('Unknown Artist', undefined, 10);
 

@@ -8,7 +8,7 @@ import { sequelize } from '@server/config/db/sequelize';
  * Tracks artists that have been discovered via catalog discovery
  * to prevent re-discovery.
  */
-export interface DiscoveredArtistAttributes {
+interface DiscoveredArtistAttributes {
   id:           number;
   nameLower:    string;  // Lowercase artist name (unique)
   discoveredAt: Date;
@@ -16,7 +16,7 @@ export interface DiscoveredArtistAttributes {
   updatedAt?:   Date;
 }
 
-export type DiscoveredArtistCreationAttributes = PartialBy<DiscoveredArtistAttributes, 'id' | 'discoveredAt'>;
+type DiscoveredArtistCreationAttributes = PartialBy<DiscoveredArtistAttributes, 'id' | 'discoveredAt'>;
 
 /**
  * Sequelize model for discovered artists.

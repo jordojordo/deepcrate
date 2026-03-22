@@ -20,7 +20,7 @@ export type DownloadTaskType = 'artist' | 'album' | 'track';
  * DownloadTask attributes for tracking download lifecycle.
  * Tracks items from wishlist through slskd download to completion.
  */
-export interface DownloadTaskAttributes {
+interface DownloadTaskAttributes {
   id:                  string;           // UUID
   wishlistKey:         string;           // Format: "artist - album" (unique) - @deprecated use wishlistItemId
   wishlistItemId?:     string;           // UUID FK to WishlistItem
@@ -56,7 +56,7 @@ export interface DownloadTaskAttributes {
   updatedAt?:          Date;
 }
 
-export type DownloadTaskCreationAttributes = PartialBy<
+type DownloadTaskCreationAttributes = PartialBy<
   DownloadTaskAttributes,
   'id' | 'status' | 'retryCount' | 'queuedAt'
 >;

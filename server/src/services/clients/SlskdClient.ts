@@ -6,15 +6,15 @@ import type {
   SlskdEnqueueResult,
 } from '@server/types/slskd-client';
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
-
 import logger from '@server/config/logger';
+import { HttpError } from '@server/utils/HttpError';
+import { fetchJson } from '@server/utils/httpClient';
 
 /**
  * Custom error class for slskd API errors that should be surfaced to callers.
  * Auth errors (401/403) are non-retryable and indicate configuration issues.
  */
-export class SlskdError extends Error {
+class SlskdError extends Error {
   constructor(
     message: string,
     public readonly statusCode?: number, // eslint-disable-line no-unused-vars
@@ -26,8 +26,8 @@ export class SlskdError extends Error {
     this.name = 'SlskdError';
   }
 
-  static fromAxiosError(error: AxiosError, context: string): SlskdError {
-    const status = error.response?.status;
+  static fromHttpError(error: HttpError, context: string): SlskdError {
+    const status = error.status;
     const code = error.code;
     const isAuthError = status === 401 || status === 403;
     const detail = error.message
@@ -52,7 +52,9 @@ export class SlskdError extends Error {
  * https://github.com/slskd/slskd
  */
 export class SlskdClient {
-  private client: AxiosInstance;
+  private baseURL:        string;
+  private defaultHeaders: Record<string, string>;
+  private timeout:        number;
 
   constructor(host: string, apiKey: string, urlBase: string = '/') {
     const trimmedHost = host.replace(/\/$/, '');
@@ -60,10 +62,18 @@ export class SlskdClient {
     const normalizedBase =
       trimmedBase === '' || trimmedBase === '/'? '': `/${ trimmedBase.replace(/^\/+|\/+$/g, '') }`;
 
-    this.client = axios.create({
-      baseURL: `${ trimmedHost }${ normalizedBase }`,
-      headers: { 'X-API-Key': apiKey },
-      timeout: 30000,
+    this.baseURL = `${ trimmedHost }${ normalizedBase }`;
+    this.defaultHeaders = { 'X-API-Key': apiKey };
+    this.timeout = 30000;
+  }
+
+  private async request<T>(path: string, options: { method?: 'GET' | 'POST' | 'DELETE'; body?: unknown; params?: Record<string, string | number | boolean> } = {}) {
+    return fetchJson<T>(`${ this.baseURL }${ path }`, {
+      method:  options.method ?? 'GET',
+      headers: { ...this.defaultHeaders },
+      timeout: this.timeout,
+      body:    options.body,
+      params:  options.params,
     });
   }
 
@@ -72,14 +82,17 @@ export class SlskdClient {
    */
   async search(query: string, timeout: number = 15000, minFiles: number = 3): Promise<string | null> {
     try {
-      const response = await this.client.post('/api/v0/searches', {
-        searchText:               query,
-        searchTimeout:            timeout,
-        filterResponses:          true,
-        minimumResponseFileCount: minFiles,
+      const response = await this.request('/api/v0/searches', {
+        method: 'POST',
+        body:   {
+          searchText:               query,
+          searchTimeout:            timeout,
+          filterResponses:          true,
+          minimumResponseFileCount: minFiles,
+        },
       });
 
-      const searchId = response.data?.id;
+      const searchId = (response.data as Record<string, unknown>)?.id as string | undefined;
 
       if (!searchId) {
         logger.error('No search ID returned from slskd');
@@ -89,8 +102,8 @@ export class SlskdClient {
 
       return searchId;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        const slskdError = SlskdError.fromAxiosError(error, 'slskd search failed');
+      if (error instanceof HttpError) {
+        const slskdError = SlskdError.fromHttpError(error, 'slskd search failed');
 
         logger.error(slskdError.message);
 
@@ -150,7 +163,7 @@ export class SlskdClient {
 
     for (const endpoint of candidates) {
       try {
-        const response = await this.client.get(endpoint);
+        const response = await this.request(endpoint);
         const data = response.data as unknown;
 
         if (typeof data === 'string') {
@@ -186,8 +199,8 @@ export class SlskdClient {
 
         return null;
       } catch(error) {
-        if (axios.isAxiosError(error)) {
-          if (error.response?.status === 404) {
+        if (error instanceof HttpError) {
+          if (error.status === 404) {
             continue;
           }
 
@@ -210,15 +223,11 @@ export class SlskdClient {
    */
   async getSearchResponses(searchId: string): Promise<SlskdSearchResponse[]> {
     try {
-      const response = await this.client.get(`/api/v0/searches/${ encodeURIComponent(searchId) }/responses`);
+      const response = await this.request(`/api/v0/searches/${ encodeURIComponent(searchId) }/responses`);
 
-      return response.data || [];
+      return (response.data || []) as SlskdSearchResponse[];
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to get search responses: ${ error.message }`);
-      } else {
-        logger.error(`Failed to get search responses: ${ String(error) }`);
-      }
+      logger.error(`Failed to get search responses: ${ error instanceof Error ? error.message : String(error) }`);
 
       return [];
     }
@@ -229,7 +238,7 @@ export class SlskdClient {
    */
   async deleteSearch(searchId: string): Promise<void> {
     try {
-      await this.client.delete(`/api/v0/searches/${ encodeURIComponent(searchId) }`);
+      await this.request(`/api/v0/searches/${ encodeURIComponent(searchId) }`, { method: 'DELETE' });
     } catch(error) {
       // Ignore errors when cleaning up searches
       logger.debug(`Failed to delete search ${ searchId }: ${ String(error) }`);
@@ -242,12 +251,15 @@ export class SlskdClient {
    */
   async enqueue(username: string, files: SlskdFile[]): Promise<SlskdEnqueueResult | null> {
     try {
-      const response = await this.client.post<SlskdEnqueueResult>(
+      const response = await this.request<SlskdEnqueueResult>(
         `/api/v0/transfers/downloads/${ encodeURIComponent(username) }`,
-        files.map(file => ({
-          filename: file.filename,
-          size:     file.size ?? 0,
-        }))
+        {
+          method: 'POST',
+          body:   files.map(file => ({
+            filename: file.filename,
+            size:     file.size ?? 0,
+          })),
+        }
       );
 
       const enqueued = response.data.enqueued ?? [];
@@ -257,8 +269,8 @@ export class SlskdClient {
 
       return { enqueued, failed };
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        const slskdError = SlskdError.fromAxiosError(error, 'Failed to enqueue downloads');
+      if (error instanceof HttpError) {
+        const slskdError = SlskdError.fromHttpError(error, 'Failed to enqueue downloads');
 
         logger.error(slskdError.message);
 
@@ -278,12 +290,12 @@ export class SlskdClient {
    */
   async getDownloads(): Promise<SlskdUserTransfers[]> {
     try {
-      const response = await this.client.get('/api/v0/transfers/downloads');
+      const response = await this.request('/api/v0/transfers/downloads');
 
-      return response.data || [];
+      return (response.data || []) as SlskdUserTransfers[];
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        const slskdError = SlskdError.fromAxiosError(error, 'Failed to get downloads');
+      if (error instanceof HttpError) {
+        const slskdError = SlskdError.fromHttpError(error, 'Failed to get downloads');
 
         logger.error(slskdError.message);
 
@@ -303,15 +315,11 @@ export class SlskdClient {
    */
   async getUserDownloads(username: string): Promise<SlskdUserTransfers | null> {
     try {
-      const response = await this.client.get(`/api/v0/transfers/downloads/${ encodeURIComponent(username) }`);
+      const response = await this.request(`/api/v0/transfers/downloads/${ encodeURIComponent(username) }`);
 
       return response.data as SlskdUserTransfers;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to get downloads for user ${ username }: ${ error.message }`);
-      } else {
-        logger.error(`Failed to get downloads for user ${ username }: ${ String(error) }`);
-      }
+      logger.error(`Failed to get downloads for user ${ username }: ${ error instanceof Error ? error.message : String(error) }`);
 
       return null;
     }
@@ -325,24 +333,21 @@ export class SlskdClient {
    */
   async cancelDownload(username: string, fileId: string, remove: boolean = true): Promise<boolean> {
     try {
-      await this.client.delete(
+      await this.request(
         `/api/v0/transfers/downloads/${ encodeURIComponent(username) }/${ encodeURIComponent(fileId) }`,
-        { params: { remove } }
+        {
+          method: 'DELETE',
+          params: { remove },
+        }
       );
 
       logger.info(`Cancelled download: ${ username }/${ fileId } (remove=${ remove })`);
 
       return true;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.error(`Failed to cancel download: ${ error.message }`);
-      } else {
-        logger.error(`Failed to cancel download: ${ String(error) }`);
-      }
+      logger.error(`Failed to cancel download: ${ error instanceof Error ? error.message : String(error) }`);
 
       return false;
     }
   }
 }
-
-export default SlskdClient;

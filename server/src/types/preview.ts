@@ -8,8 +8,6 @@ export const previewQuerySchema = z.object({
   track:  z.string().min(1),
 });
 
-export type PreviewQuery = z.infer<typeof previewQuerySchema>;
-
 /**
  * Zod schema for album preview query parameters
  */

@@ -2,20 +2,12 @@ import type { SlskdFile } from '@server/types/slskd-client';
 
 import path from 'path';
 
-import { MUSIC_EXTENSIONS, MB_TO_BYTES } from '@server/constants/slskd';
+import { isMusicFile } from '@server/utils/fileHandler';
+import { MB_TO_BYTES } from '@server/constants/slskd';
 
 export interface FileSizeConstraints {
   minFileSizeBytes: number;
   maxFileSizeBytes: number;
-}
-
-/**
- * Check if a filename has a recognized music extension.
- */
-export function isMusicFile(filename: string): boolean {
-  const ext = path.extname(filename).toLowerCase();
-
-  return MUSIC_EXTENSIONS.includes(ext);
 }
 
 /**

@@ -16,5 +16,3 @@ export class CoverArtArchiveClient {
     return `${ COVER_ART_ARCHIVE_BASE_URL }/release-group/${ releaseGroupMbid }/front-${ size }`;
   }
 }
-
-export default CoverArtArchiveClient;

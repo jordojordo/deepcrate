@@ -8,7 +8,7 @@ import { sequelize } from '@server/config/db/sequelize';
  * Tracks which MusicBrainz recordings/release-groups have been processed
  * to prevent duplicate recommendations.
  */
-export interface ProcessedRecordingAttributes {
+interface ProcessedRecordingAttributes {
   id:          number;
   mbid:        string;  // MusicBrainz ID (recording or release-group)
   source:      string;  // Source that processed it ('listenbrainz', 'catalog')
@@ -17,7 +17,7 @@ export interface ProcessedRecordingAttributes {
   updatedAt?:  Date;
 }
 
-export type ProcessedRecordingCreationAttributes = PartialBy<ProcessedRecordingAttributes, 'id' | 'processedAt'>;
+type ProcessedRecordingCreationAttributes = PartialBy<ProcessedRecordingAttributes, 'id' | 'processedAt'>;
 
 /**
  * Sequelize model for processed recordings.

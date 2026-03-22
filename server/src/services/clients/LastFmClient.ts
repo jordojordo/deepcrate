@@ -1,11 +1,10 @@
 import type { LastFmArtistTopTagsResponse, LastFmSimilarArtistsResponse, RetryConfig } from '@server/types';
 
-import axios from 'axios';
 import logger from '@server/config/logger';
 import { BaseClient } from '@server/services/BaseClient';
 import { LASTFM_BASE_URL } from '@server/constants/clients';
 
-export interface SimilarArtist {
+interface SimilarArtist {
   name:  string;
   match: number;  // Similarity score 0-1
   mbid?: string;
@@ -61,11 +60,7 @@ export class LastFmClient extends BaseClient {
 
       return similar;
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.debug(`Failed to get similar artists for '${ artistName }': ${ error.message }`);
-      } else {
-        logger.debug(`Failed to get similar artists for '${ artistName }': ${ String(error) }`);
-      }
+      logger.debug(`Failed to get similar artists for '${ artistName }': ${ error instanceof Error ? error.message : String(error) }`);
 
       return [];
     }
@@ -98,15 +93,9 @@ export class LastFmClient extends BaseClient {
         .slice(0, limit)
         .map((tag) => ({ name: tag.name.toLowerCase(), count: tag.count }));
     } catch(error) {
-      if (axios.isAxiosError(error)) {
-        logger.debug(`Failed to get top tags for '${ artistName }': ${ error.message }`);
-      } else {
-        logger.debug(`Failed to get top tags for '${ artistName }': ${ String(error) }`);
-      }
+      logger.debug(`Failed to get top tags for '${ artistName }': ${ error instanceof Error ? error.message : String(error) }`);
 
       return [];
     }
   }
 }
-
-export default LastFmClient;

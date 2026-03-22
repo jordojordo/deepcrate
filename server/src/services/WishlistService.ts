@@ -576,5 +576,3 @@ export class WishlistService {
     });
   }
 }
-
-export default WishlistService;

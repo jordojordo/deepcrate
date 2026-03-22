@@ -10,8 +10,6 @@ export const jobStatusSchema = z.object({
   lastRun: z.string().nullable(),
 });
 
-export type JobStatus = z.infer<typeof jobStatusSchema>;
-
 /**
  * Get all job statuses response schema
  */

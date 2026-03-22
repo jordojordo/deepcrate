@@ -236,7 +236,7 @@ The auth guard checks `authStore.isAuthenticated` before each navigation. For pr
 
 Composables follow two patterns:
 
-- **Store wrappers** (`useQueue`, `useAuth`, `useDownloads`, etc.): Provide convenient access to Pinia stores from page components. Do not duplicate state.
+- **Store wrappers** (`useQueue`, `useDownloads`, etc.): Provide convenient access to Pinia stores from page components. Do not duplicate state.
 - **Socket composables** (`useQueueSocket`, `useDownloadsSocket`, `useJobsSocket`, `useWishlistSocket`): Manage Socket.io connections with ref subscriptions via `useSocketConnection`. Multiple components can subscribe to the same namespace; the connection is opened on first subscriber and closed when the last unsubscribes.
 - **Utility composables** (`useToast`, `useStats`, `useBreakpoint`, `useKeyboardShortcuts`, `useTabSync`, `useSidebarItems`): Reusable UI logic.
 
