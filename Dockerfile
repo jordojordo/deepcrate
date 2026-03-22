@@ -48,23 +48,19 @@ ARG APP_VERSION=dev
 WORKDIR /app
 ENV CI=true
 
-RUN corepack enable
-RUN apk add --no-cache curl su-exec python3 make g++ sqlite-dev
+RUN corepack enable && apk add --no-cache curl su-exec
 
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY server/package.json ./server/
 COPY ui/package.json ./ui/
 
-RUN pnpm --filter @deepcrate/server install --prod --frozen-lockfile
+RUN pnpm --filter @deepcrate/server install --prod --frozen-lockfile --ignore-scripts
 
-RUN cd /app/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3 && \
-    npm run install && \
-    ls -la build/ && \
-    echo "SQLite3 production build complete"
-
+COPY --from=server-builder \
+    /build/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3/build/ \
+    /app/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3/build/
 COPY --from=server-builder /build/server/dist ./server/dist
 COPY --from=ui-builder /build/ui/dist ./static
-RUN apk del python3 make g++
 
 ENV APP_VERSION=$APP_VERSION \
     NODE_ENV=production \
@@ -85,8 +81,7 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server/dist/server.js"]
