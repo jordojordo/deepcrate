@@ -7,7 +7,7 @@ interface HttpResponse<T = unknown> {
 }
 
 interface RequestConfig {
-  params?:       Record<string, string | number | boolean>;
+  params?:       Record<string, string | number | boolean | null | undefined>;
   headers?:      Record<string, string>;
   data?:         unknown;
   responseType?: 'blob' | 'json';
@@ -31,11 +31,18 @@ function getAuthMode(): string | null {
   return localStorage.getItem('auth_mode');
 }
 
-function buildURL(path: string, params?: Record<string, string | number | boolean>): string {
+function buildURL(
+  path: string,
+  params?: Record<string, string | number | boolean | null | undefined>,
+): string {
   const url = new URL(`${ baseURL }${ path }`, window.location.origin);
 
   if (params) {
     for (const [key, value] of Object.entries(params)) {
+      if (value === null || value === undefined) {
+        continue;
+      }
+
       url.searchParams.set(key, String(value));
     }
   }
