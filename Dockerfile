@@ -32,7 +32,7 @@ COPY ui/package.json ./ui/
 RUN pnpm --filter @deepcrate/server install --frozen-lockfile
 
 # Navigate into sqlite3's actual directory and build it manually
-RUN cd /build/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3 && \
+RUN cd /build/node_modules/.pnpm/sqlite3@*/node_modules/sqlite3 && \
     npm run install && \
     ls -la build/ && \
     echo "SQLite3 build complete"
@@ -57,8 +57,18 @@ COPY ui/package.json ./ui/
 RUN pnpm --filter @deepcrate/server install --prod --frozen-lockfile --ignore-scripts
 
 COPY --from=server-builder \
-    /build/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3/build/ \
-    /app/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3/build/
+    /build/node_modules/.pnpm/sqlite3@*/node_modules/sqlite3/build/ \
+    /tmp/sqlite3-build/
+RUN set -eu; \
+    SQLITE_DIR=$(find /app -type d -path '*/node_modules/sqlite3' -not -path '*/node_modules/sqlite3/*' | head -n1); \
+    if [ -z "$SQLITE_DIR" ]; then \
+        echo "sqlite3 install directory not found under /app"; \
+        find /app -maxdepth 5 -type d -name 'sqlite3*' || true; \
+        exit 1; \
+    fi; \
+    cp -r /tmp/sqlite3-build "$SQLITE_DIR/build"; \
+    rm -rf /tmp/sqlite3-build
+
 COPY --from=server-builder /build/server/dist ./server/dist
 COPY --from=ui-builder /build/ui/dist ./static
 
