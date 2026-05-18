@@ -1,5 +1,4 @@
-import type { Socket } from 'socket.io';
-import type { ExtendedError } from 'socket.io/dist/namespace';
+import type { ExtendedError, Socket } from 'socket.io';
 
 import crypto from 'crypto';
 import logger from '@server/config/logger';

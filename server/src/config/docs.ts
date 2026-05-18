@@ -2,7 +2,7 @@ import type { ApiReferenceConfiguration } from '@scalar/express-api-reference';
 
 import { apiReference } from '@scalar/express-api-reference';
 
-const docsConfig: ApiReferenceConfiguration = {
+const docsConfig: Partial<ApiReferenceConfiguration> = {
   url:         '/api/v1/openapi.json',
   theme:       'deepSpace',
   layout:      'modern',
