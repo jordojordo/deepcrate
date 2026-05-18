@@ -3,10 +3,10 @@ packages:
   - server
   - docs
 
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - esbuild
-  - sqlite3
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  sqlite3: true
 
 overrides:
   minimatch: '>=10.2.1'
