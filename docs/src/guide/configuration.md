@@ -504,6 +504,9 @@ When both providers are configured, results are combined and artists found by mu
 
 ### Library Duplicate Detection
 
+> [!TIP]
+> This feature reads albums from your Subsonic server via API and does **not** read or modify your filesystem. It works whether or not `library_organize` is enabled, and does not require any specific on-disk layout. See [Using Your Own Organizer](/guide/external-organizer).
+
 | Key | Type | Required | Default | Description |
 |-----|------|----------|---------|-------------|
 | `enabled` | bool | No | `false` | Enable library duplicate checking |
@@ -512,6 +515,9 @@ When both providers are configured, results are combined and artists found by mu
 Requires `catalog_discovery.subsonic` to be configured for library sync.
 
 ### Library Organization
+
+> [!TIP]
+> If another tool (wrtag, beets, slskd post-processing scripts) already organizes downloads into your library, leave `enabled: false`. You can still get library awareness from [Library Duplicate Detection](#library-duplicate-detection) without enabling this.
 
 | Key | Type | Required | Default | Description |
 |-----|------|----------|---------|-------------|
