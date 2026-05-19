@@ -18,6 +18,7 @@ export default defineConfig({
           items: [
             { text: 'Getting Started', link: '/guide/getting-started' },
             { text: 'Configuration', link: '/guide/configuration' },
+            { text: 'Using Your Own Organizer', link: '/guide/external-organizer' },
             { text: 'Webhooks', link: '/guide/webhooks' },
             { text: 'Authelia Integration', link: '/guide/authelia-integration' },
             { text: 'Comparison', link: '/guide/comparison' },
@@ -34,8 +35,6 @@ export default defineConfig({
         },
       ],
     },
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/jordojordo/deepcrate' },
-    ],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/jordojordo/deepcrate' }],
   },
 });
