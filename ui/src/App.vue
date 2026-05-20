@@ -7,7 +7,7 @@ import { useSidebarItems } from '@/composables/useSidebarItems';
 import { useToast } from '@/composables/useToast';
 import { setToastCallback } from '@/services/api';
 import { fetchHealth } from '@/services/health';
-import { ROUTE_PATHS } from '@/constants/routes';
+import { EXTERNAL_URLS, ROUTE_PATHS } from '@/constants/routes';
 
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
@@ -74,17 +74,55 @@ function handleLogout(): void {
 
     <template #header-right>
       <Button
+        v-tooltip.bottom="'Documentation'"
+        as="a"
+        :href="EXTERNAL_URLS.DOCS_SITE"
+        target="_blank"
+        class="sidebar__header-button"
+        rel="noopener noreferrer"
+        aria-label="Documentation"
+        size="small"
+        icon="pi pi-book"
+      />
+      <Button
+        v-tooltip.bottom="'API reference'"
+        as="a"
+        :href="EXTERNAL_URLS.API_DOCS"
+        target="_blank"
+        class="sidebar__header-button"
+        rel="noopener noreferrer"
+        aria-label="API reference"
+        size="small"
+        icon="pi pi-code"
+      />
+      <Button
         v-if="requiresLogin && isAuthed"
+        v-tooltip.bottom="'Logout'"
         appearance="secondary"
         size="small"
+        icon="pi pi-sign-out"
+        aria-label="Logout"
         @click="handleLogout"
-      >
-        Logout
-      </Button>
+      />
     </template>
 
     <template #sidebar-footer="{ sidebarCollapsed }">
-      <ThemeToggle :collapsed="sidebarCollapsed" />
+      <div class="sidebar__footer" :class="{ 'sidebar__footer--collapsed': sidebarCollapsed }">
+        <ThemeToggle :collapsed="sidebarCollapsed" />
+        <Button
+          v-tooltip.top="'DeepCrate repo'"
+          as="a"
+          :href="EXTERNAL_URLS.GITHUB"
+          target="_blank"
+          class="sidebar__footer-button"
+          severity="secondary"
+          text
+          rel="noopener noreferrer"
+          aria-label="Github repo"
+          size="small"
+          icon="pi pi-github"
+        />
+      </div>
     </template>
 
     <router-view />
@@ -136,6 +174,31 @@ function handleLogout(): void {
     color: var(--surface-400, #9d9db9);
     font-weight: 500;
     letter-spacing: 0.025em;
+  }
+
+  &__footer {
+    display: flex;
+    gap: 1rem;
+
+    &--collapsed {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+
+  &__header-button {
+    text-decoration: none;
+  }
+
+  &__footer-button {
+    text-decoration: none;
+    color: var(--surface-300);
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      background-color: var(--r-hover-bg);
+      color: var(--r-text-primary);
+    }
   }
 }
 </style>
