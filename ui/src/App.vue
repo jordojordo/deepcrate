@@ -7,7 +7,7 @@ import { useSidebarItems } from '@/composables/useSidebarItems';
 import { useToast } from '@/composables/useToast';
 import { setToastCallback } from '@/services/api';
 import { fetchHealth } from '@/services/health';
-import { ROUTE_PATHS } from '@/constants/routes';
+import { EXTERNAL_URLS, ROUTE_PATHS } from '@/constants/routes';
 
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
@@ -74,6 +74,28 @@ function handleLogout(): void {
 
     <template #header-right>
       <Button
+        v-tooltip.bottom="'Documentation'"
+        as="a"
+        :href="EXTERNAL_URLS.DOCS_SITE"
+        target="_blank"
+        class="sidebar__header-button"
+        rel="noopener noreferrer"
+        aria-label="Documentation"
+        size="small"
+        icon="pi pi-book"
+      />
+      <Button
+        v-tooltip.bottom="'API reference'"
+        as="a"
+        :href="EXTERNAL_URLS.API_DOCS"
+        target="_blank"
+        class="sidebar__header-button"
+        rel="noopener noreferrer"
+        aria-label="API reference"
+        size="small"
+        icon="pi pi-code"
+      />
+      <Button
         v-if="requiresLogin && isAuthed"
         appearance="secondary"
         size="small"
@@ -136,6 +158,10 @@ function handleLogout(): void {
     color: var(--surface-400, #9d9db9);
     font-weight: 500;
     letter-spacing: 0.025em;
+  }
+
+  &__header-button {
+    text-decoration: none;
   }
 }
 </style>
