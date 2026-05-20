@@ -11,7 +11,7 @@ export const useThemeStore = defineStore('theme', () => {
 
   const systemPrefersDark = ref(true);
 
-  const mode = computed({
+  const mode = computed<ThemeMode>({
     get: () => uiPreferences.value.theme,
     set: (newMode: ThemeMode) => {
       settingsStore.saveUIPreferences({ theme: newMode });

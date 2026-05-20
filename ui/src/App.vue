@@ -97,16 +97,32 @@ function handleLogout(): void {
       />
       <Button
         v-if="requiresLogin && isAuthed"
+        v-tooltip.bottom="'Logout'"
         appearance="secondary"
         size="small"
+        icon="pi pi-sign-out"
+        aria-label="Logout"
         @click="handleLogout"
-      >
-        Logout
-      </Button>
+      />
     </template>
 
     <template #sidebar-footer="{ sidebarCollapsed }">
-      <ThemeToggle :collapsed="sidebarCollapsed" />
+      <div class="sidebar__footer" :class="{ 'sidebar__footer--collapsed': sidebarCollapsed }">
+        <ThemeToggle :collapsed="sidebarCollapsed" />
+        <Button
+          v-tooltip.top="'DeepCrate repo'"
+          as="a"
+          :href="EXTERNAL_URLS.GITHUB"
+          target="_blank"
+          class="sidebar__footer-button"
+          severity="secondary"
+          text
+          rel="noopener noreferrer"
+          aria-label="Github repo"
+          size="small"
+          icon="pi pi-github"
+        />
+      </div>
     </template>
 
     <router-view />
@@ -160,8 +176,29 @@ function handleLogout(): void {
     letter-spacing: 0.025em;
   }
 
+  &__footer {
+    display: flex;
+    gap: 1rem;
+
+    &--collapsed {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+
   &__header-button {
     text-decoration: none;
+  }
+
+  &__footer-button {
+    text-decoration: none;
+    color: var(--surface-300);
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      background-color: var(--r-hover-bg);
+      color: var(--r-text-primary);
+    }
   }
 }
 </style>
