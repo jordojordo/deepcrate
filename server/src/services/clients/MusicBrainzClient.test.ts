@@ -152,6 +152,77 @@ describe('MusicBrainzClient', () => {
     });
   });
 
+  describe('resolveRecordingToAlbum', () => {
+    it('skips VA compilations and resolves to the studio album', async() => {
+      const recordingMbid = 'test-recording-mbid';
+
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
+          'id':            recordingMbid,
+          'title':         'Test Track',
+          'artist-credit': [{ artist: { name: 'Test Artist' } }],
+          'releases':      [
+            {
+              'id':            'comp-release',
+              'title':         'Greatest Hits Compilation',
+              'release-group': {
+                'id':              'comp-rg-mbid',
+                'title':           'Greatest Hits Compilation',
+                'primary-type':    'Album',
+                'secondary-types': ['Compilation'],
+              },
+            },
+            {
+              'id':            'album-release',
+              'title':         'Test Album',
+              'release-group': {
+                'id':           'album-rg-mbid',
+                'title':        'Test Album',
+                'primary-type': 'Album',
+              },
+            },
+          ],
+        },
+        status: 200,
+      });
+
+      const result = await client.resolveRecordingToAlbum(recordingMbid);
+
+      expect(result?.mbid).toBe('album-rg-mbid');
+      expect(result?.title).toBe('Test Album');
+    });
+
+    it('falls back to a compilation when it is the only album', async() => {
+      const recordingMbid = 'test-recording-mbid';
+
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
+          'id':            recordingMbid,
+          'title':         'Test Track',
+          'artist-credit': [{ artist: { name: 'Test Artist' } }],
+          'releases':      [
+            {
+              'id':            'comp-release',
+              'title':         'Various Artists Compilation',
+              'release-group': {
+                'id':              'comp-rg-mbid',
+                'title':           'Various Artists Compilation',
+                'primary-type':    'Album',
+                'secondary-types': ['Compilation'],
+              },
+            },
+          ],
+        },
+        status: 200,
+      });
+
+      const result = await client.resolveRecordingToAlbum(recordingMbid);
+
+      expect(result?.mbid).toBe('comp-rg-mbid');
+      expect(result?.title).toBe('Various Artists Compilation');
+    });
+  });
+
   describe('getExpectedTrackCount', () => {
     it('returns track count from a single release', async() => {
       vi.mocked(fetchJson).mockResolvedValueOnce({
