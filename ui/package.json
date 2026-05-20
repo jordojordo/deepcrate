@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^5.10.0",
-    "@types/node": "^25.8.0",
+    "@types/node": "^25.9.0",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vitest/eslint-plugin": "^1.6.17",
     "@vue/eslint-config-prettier": "^10.2.0",
@@ -35,13 +35,13 @@
     "@vue/tsconfig": "^0.9.1",
     "eslint": "^10.4.0",
     "eslint-plugin-cypress": "^6.4.1",
-    "eslint-plugin-oxlint": "^1.65.0",
+    "eslint-plugin-oxlint": "^1.66.0",
     "eslint-plugin-vue": "^10.9.1",
-    "oxlint": "^1.65.0",
+    "oxlint": "^1.66.0",
     "prettier": "^3.8.3",
     "sass": "^1.99.0",
     "typescript": "~6.0.3",
     "vite": "^8.0.13",
-    "vue-tsc": "^3.2.9"
+    "vue-tsc": "^3.3.0"
   }
 }
