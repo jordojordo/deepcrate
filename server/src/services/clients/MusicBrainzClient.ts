@@ -143,19 +143,24 @@ export class MusicBrainzClient extends BaseClient {
         return null;
       }
 
-      // Prefer official albums over singles/EPs/compilations
+      // Prefer official albums over singles/EPs/compilations.
+      // VA compilations are typed primary-type "Album" + secondary-types
+      // ["Compilation"], skip those first to favor the artist's own album.
       let albumRelease = null;
 
       for (const release of releases) {
-        if (release['release-group']?.['primary-type'] === 'Album') {
+        const rg = release['release-group'];
+
+        if (rg?.['primary-type'] === 'Album' && !(rg['secondary-types'] || []).includes('Compilation')) {
           albumRelease = release;
           break;
         }
       }
 
-      // Fall back to first release if no album found
+      // Fall back to any album (including compilations) if no studio album exists,
+      // then to the first release of any type.
       if (!albumRelease) {
-        albumRelease = releases[0];
+        albumRelease = releases.find((r) => r['release-group']?.['primary-type'] === 'Album') ?? releases[0];
       }
 
       const rg = albumRelease['release-group'];

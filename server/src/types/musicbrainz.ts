@@ -55,6 +55,7 @@ interface MBReleaseGroupRef {
   id:                    string;
   title:                 string;
   'primary-type'?:       string;
+  'secondary-types'?:    string[];
   'first-release-date'?: string;
 }
 
