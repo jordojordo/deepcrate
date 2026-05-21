@@ -10,6 +10,7 @@ import {
   extractQualityInfo,
   calculateQualityScore,
   shouldRejectFile,
+  exceedsLosslessCap,
   getDominantQualityInfo,
   calculateAverageQualityScore,
 } from './audioQuality';
@@ -178,12 +179,15 @@ describe('audioQuality utilities', () => {
 
   describe('calculateQualityScore', () => {
     const defaultPreferences: QualityPreferences = {
-      enabled:          true,
-      preferredFormats: ['flac', 'wav', 'alac', 'mp3'],
-      minBitrate:       256,
-      preferLossless:   true,
-      rejectLowQuality: false,
-      rejectLossless:   false,
+      enabled:               true,
+      preferredFormats:      ['flac', 'wav', 'alac', 'mp3'],
+      minBitrate:            256,
+      preferLossless:        true,
+      rejectLowQuality:      false,
+      rejectLossless:        false,
+      maxLosslessBitDepth:   0,
+      maxLosslessSampleRate: 0,
+      rejectHighResLossless: false,
     };
 
     it('returns 0 when preferences are disabled', () => {
@@ -242,16 +246,40 @@ describe('audioQuality utilities', () => {
       // Base 50 + preferred format 100 - below bitrate 200 = -50
       expect(score).toBe(-50);
     });
+
+    it('penalizes over-cap lossless below a compliant lossless file', () => {
+      const capPrefs = {
+        ...defaultPreferences,
+        maxLosslessBitDepth:   16,
+        maxLosslessSampleRate: 44100,
+      };
+      const compliant: QualityInfo = {
+        format: 'flac', bitRate: 1411, bitDepth: 16, sampleRate: 44100, tier: 'lossless'
+      };
+      const overCap: QualityInfo = {
+        format: 'flac', bitRate: 2304, bitDepth: 24, sampleRate: 96000, tier: 'lossless'
+      };
+
+      const compliantScore = calculateQualityScore(compliant, capPrefs);
+      const overCapScore = calculateQualityScore(overCap, capPrefs);
+
+      // Over-cap loses the 500 penalty regardless of the reject toggle
+      expect(overCapScore).toBe(compliantScore - 500);
+      expect(overCapScore).toBeLessThan(compliantScore);
+    });
   });
 
   describe('shouldRejectFile', () => {
     const preferences: QualityPreferences = {
-      enabled:          true,
-      preferredFormats: ['flac', 'mp3'],
-      minBitrate:       256,
-      preferLossless:   true,
-      rejectLowQuality: true,
-      rejectLossless:   false,
+      enabled:               true,
+      preferredFormats:      ['flac', 'mp3'],
+      minBitrate:            256,
+      preferLossless:        true,
+      rejectLowQuality:      true,
+      rejectLossless:        false,
+      maxLosslessBitDepth:   0,
+      maxLosslessSampleRate: 0,
+      rejectHighResLossless: false,
     };
 
     it('returns false when preferences are disabled', () => {
@@ -323,6 +351,115 @@ describe('audioQuality utilities', () => {
       };
 
       expect(shouldRejectFile(info, preferences)).toBe(false);
+    });
+
+    describe('max lossless quality cap', () => {
+      // 16-bit / 44.1 kHz cap with the hard-cutoff toggle enabled
+      const capPrefs: QualityPreferences = {
+        ...preferences,
+        maxLosslessBitDepth:   16,
+        maxLosslessSampleRate: 44100,
+        rejectHighResLossless: true,
+      };
+
+      it('rejects over-cap lossless when rejectHighResLossless is true', () => {
+        const info: QualityInfo = {
+          format: 'flac', bitRate: 2304, bitDepth: 24, sampleRate: 96000, tier: 'lossless'
+        };
+
+        expect(shouldRejectFile(info, capPrefs)).toBe(true);
+      });
+
+      it('accepts at-or-under-cap lossless', () => {
+        const info: QualityInfo = {
+          format: 'flac', bitRate: 1411, bitDepth: 16, sampleRate: 44100, tier: 'lossless'
+        };
+
+        expect(shouldRejectFile(info, capPrefs)).toBe(false);
+      });
+
+      it('does not reject over-cap lossless when toggle is off (deprioritize only)', () => {
+        const info: QualityInfo = {
+          format: 'flac', bitRate: 2304, bitDepth: 24, sampleRate: 96000, tier: 'lossless'
+        };
+        const noToggle = { ...capPrefs, rejectHighResLossless: false };
+
+        expect(shouldRejectFile(info, noToggle)).toBe(false);
+      });
+
+      it('never rejects on unknown bit depth / sample rate', () => {
+        const info: QualityInfo = {
+          format: 'flac', bitRate: null, bitDepth: null, sampleRate: null, tier: 'lossless'
+        };
+
+        expect(shouldRejectFile(info, capPrefs)).toBe(false);
+      });
+
+      it('enforces the cap independently of rejectLowQuality', () => {
+        const info: QualityInfo = {
+          format: 'flac', bitRate: 2304, bitDepth: 24, sampleRate: 96000, tier: 'lossless'
+        };
+        const noLowQuality = { ...capPrefs, rejectLowQuality: false };
+
+        expect(shouldRejectFile(info, noLowQuality)).toBe(true);
+      });
+    });
+  });
+
+  describe('exceedsLosslessCap', () => {
+    const capPrefs: QualityPreferences = {
+      enabled:               true,
+      preferredFormats:      ['flac'],
+      minBitrate:            256,
+      preferLossless:        true,
+      rejectLowQuality:      false,
+      rejectLossless:        false,
+      maxLosslessBitDepth:   16,
+      maxLosslessSampleRate: 44100,
+      rejectHighResLossless: true,
+    };
+
+    it('returns true when bit depth or sample rate exceeds the cap', () => {
+      const info: QualityInfo = {
+        format: 'flac', bitRate: 2304, bitDepth: 24, sampleRate: 96000, tier: 'lossless'
+      };
+
+      expect(exceedsLosslessCap(info, capPrefs)).toBe(true);
+    });
+
+    it('returns false at the cap boundary', () => {
+      const info: QualityInfo = {
+        format: 'flac', bitRate: 1411, bitDepth: 16, sampleRate: 44100, tier: 'lossless'
+      };
+
+      expect(exceedsLosslessCap(info, capPrefs)).toBe(false);
+    });
+
+    it('returns false when metadata is unknown', () => {
+      const info: QualityInfo = {
+        format: 'flac', bitRate: null, bitDepth: null, sampleRate: null, tier: 'lossless'
+      };
+
+      expect(exceedsLosslessCap(info, capPrefs)).toBe(false);
+    });
+
+    it('returns false when caps are 0 (unlimited)', () => {
+      const info: QualityInfo = {
+        format: 'flac', bitRate: 2304, bitDepth: 24, sampleRate: 192000, tier: 'lossless'
+      };
+      const unlimited = {
+        ...capPrefs, maxLosslessBitDepth: 0, maxLosslessSampleRate: 0 
+      };
+
+      expect(exceedsLosslessCap(info, unlimited)).toBe(false);
+    });
+
+    it('returns false for lossy files regardless of caps', () => {
+      const info: QualityInfo = {
+        format: 'mp3', bitRate: 320, bitDepth: null, sampleRate: 48000, tier: 'high'
+      };
+
+      expect(exceedsLosslessCap(info, capPrefs)).toBe(false);
     });
   });
 
@@ -397,12 +534,15 @@ describe('audioQuality utilities', () => {
 
   describe('calculateAverageQualityScore', () => {
     const preferences: QualityPreferences = {
-      enabled:          true,
-      preferredFormats: ['flac', 'mp3'],
-      minBitrate:       256,
-      preferLossless:   true,
-      rejectLowQuality: false,
-      rejectLossless:   false,
+      enabled:               true,
+      preferredFormats:      ['flac', 'mp3'],
+      minBitrate:            256,
+      preferLossless:        true,
+      rejectLowQuality:      false,
+      rejectLossless:        false,
+      maxLosslessBitDepth:   0,
+      maxLosslessSampleRate: 0,
+      rejectHighResLossless: false,
     };
 
     it('returns 0 for empty file list', () => {

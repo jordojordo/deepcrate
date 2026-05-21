@@ -14,6 +14,7 @@ import {
   LOW_QUALITY_BITRATE,
   QUALITY_SCORES,
   QUALITY_TIER_ORDER,
+  LOSSLESS_OVER_CAP_PENALTY,
 } from '@server/constants/slskd';
 
 /**
@@ -105,6 +106,30 @@ export function extractQualityInfo(file: SlskdFile): QualityInfo {
 }
 
 /**
+ * Determine whether a lossless file exceeds the configured maximum lossless
+ * quality cap (max bit depth and/or max sample rate). A cap of 0 means
+ * unlimited. Files with unknown (null) bit depth or sample rate are given the
+ * benefit of the doubt and never reported as exceeding the cap.
+ */
+export function exceedsLosslessCap(info: QualityInfo, preferences: QualityPreferences): boolean {
+  if (info.tier !== 'lossless') {
+    return false;
+  }
+
+  const { maxLosslessBitDepth, maxLosslessSampleRate } = preferences;
+
+  if (maxLosslessBitDepth > 0 && info.bitDepth !== null && info.bitDepth > maxLosslessBitDepth) {
+    return true;
+  }
+
+  if (maxLosslessSampleRate > 0 && info.sampleRate !== null && info.sampleRate > maxLosslessSampleRate) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Calculate a quality score for a file based on preferences
  */
 export function calculateQualityScore(info: QualityInfo, preferences: QualityPreferences): number {
@@ -122,6 +147,12 @@ export function calculateQualityScore(info: QualityInfo, preferences: QualityPre
   // Bonus for lossless when prefer_lossless is enabled
   if (preferences.preferLossless && info.tier === 'lossless') {
     score += 500;
+  }
+
+  // Penalize lossless files exceeding the max lossless quality cap so they rank
+  // below compliant files even when not hard-rejected (deprioritize behavior).
+  if (exceedsLosslessCap(info, preferences)) {
+    score -= LOSSLESS_OVER_CAP_PENALTY;
   }
 
   // Bonus/penalty based on bitrate relative to minBitrate
@@ -148,6 +179,12 @@ export function shouldRejectFile(info: QualityInfo, preferences: QualityPreferen
 
   // Reject lossless files if rejectLossless is enabled
   if (preferences.rejectLossless && info.tier === 'lossless') {
+    return true;
+  }
+
+  // Hard cutoff for lossless files exceeding the max lossless quality cap.
+  // Independent of rejectLowQuality so it applies on its own toggle.
+  if (preferences.rejectHighResLossless && exceedsLosslessCap(info, preferences)) {
     return true;
   }
 

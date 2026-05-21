@@ -34,6 +34,29 @@ const selectionModeOptions = [
   { label: 'Auto', value: 'auto' },
 ];
 
+// Max lossless quality presets. bitDepth/sampleRate of 0 means unlimited.
+// 'custom' has no fixed values and reveals the manual bit depth / sample rate inputs.
+const LOSSLESS_PRESETS = [
+  {
+    label: 'Unlimited',                  value: 'unlimited', bitDepth: 0,  sampleRate: 0
+  },
+  {
+    label: 'CD (16-bit / 44.1 kHz)',     value: 'cd',        bitDepth: 16, sampleRate: 44100
+  },
+  {
+    label: 'Hi-Res (24-bit / 48 kHz)',   value: 'hires_48',  bitDepth: 24, sampleRate: 48000
+  },
+  {
+    label: 'Hi-Res (24-bit / 96 kHz)',   value: 'hires_96',  bitDepth: 24, sampleRate: 96000
+  },
+  {
+    label: 'Hi-Res (24-bit / 192 kHz)',  value: 'hires_192', bitDepth: 24, sampleRate: 192000
+  },
+  { label: 'Custom',                     value: 'custom' },
+] as const;
+
+const losslessPresetOptions = LOSSLESS_PRESETS.map(({ label, value }) => ({ label, value }));
+
 const FORMAT_SUGGESTIONS = ['flac', 'wav', 'alac', 'aiff', 'mp3', 'm4a', 'aac', 'ogg', 'opus', 'wma'];
 const EXCLUDE_TERM_SUGGESTIONS = ['live', 'remix', 'demo', 'cover', 'acoustic', 'instrumental', 'remaster', 'bootleg', 'karaoke', 'tribute'];
 const FALLBACK_QUERY_SUGGESTIONS = ['{artist}', '{album}', '{artist} {album}', '{artist} discography', '{artist} {album} {year}'];
@@ -67,12 +90,15 @@ const form = reactive<SlskdForm>({
       delay_between_retries_ms: 5000,
     },
     quality_preferences: {
-      enabled:            false,
-      preferred_formats:  ['flac', 'wav', 'alac', 'mp3', 'm4a', 'ogg'],
-      min_bitrate:        256,
-      prefer_lossless:    true,
-      reject_low_quality: false,
-      reject_lossless:    false,
+      enabled:                  false,
+      preferred_formats:        ['flac', 'wav', 'alac', 'mp3', 'm4a', 'ogg'],
+      min_bitrate:              256,
+      prefer_lossless:          true,
+      reject_low_quality:       false,
+      reject_lossless:          false,
+      max_lossless_bit_depth:   0,
+      max_lossless_sample_rate: 0,
+      reject_high_res_lossless: false,
     },
     completeness: {
       enabled:                true,
@@ -86,6 +112,19 @@ const form = reactive<SlskdForm>({
   },
   selection: { mode: 'manual', timeout_hours: 24 },
 });
+
+// Selected preset for the max lossless quality control. Derived from the stored
+// bit depth / sample rate; selecting a non-custom preset writes those values back.
+const losslessPreset = ref<string>('unlimited');
+
+function deriveLosslessPreset(): string {
+  const { max_lossless_bit_depth: bitDepth, max_lossless_sample_rate: sampleRate } = form.search.quality_preferences;
+  const match = LOSSLESS_PRESETS.find(
+    p => p.value !== 'custom' && p.bitDepth === bitDepth && p.sampleRate === sampleRate,
+  );
+
+  return match ? match.value : 'custom';
+}
 
 watch(
   () => props.settings,
@@ -102,6 +141,7 @@ watch(
 
     if (next.search && form.search) {
       Object.assign(form.search, next.search);
+      losslessPreset.value = deriveLosslessPreset();
     }
 
     if (next.selection && form.selection) {
@@ -110,6 +150,18 @@ watch(
   },
   { immediate: true }
 );
+
+watch(losslessPreset, (value) => {
+  const preset = LOSSLESS_PRESETS.find(p => p.value === value);
+
+  // 'custom' leaves the values untouched so the manual inputs can edit them.
+  if (preset && preset.value !== 'custom') {
+    form.search.quality_preferences.max_lossless_bit_depth = preset.bitDepth;
+    form.search.quality_preferences.max_lossless_sample_rate = preset.sampleRate;
+  }
+});
+
+const showCustomLosslessCaps = computed(() => losslessPreset.value === 'custom');
 
 const apiKeyConfigured = computed(() => props.settings?.api_key?.configured ?? false);
 
@@ -517,6 +569,68 @@ function searchFallbackQueries(event: { query: string }) {
             v-model="form.search.quality_preferences.reject_lossless"
             :disabled="loading || !form.search.quality_preferences.enabled"
           />
+        </div>
+
+        <div class="settings-form__field">
+          <label for="setting-slskd-max-lossless" class="settings-form__label">
+            Max Lossless Quality
+          </label>
+          <Select
+            id="setting-slskd-max-lossless"
+            v-model="losslessPreset"
+            :options="losslessPresetOptions"
+            option-label="label"
+            option-value="value"
+            :disabled="loading || !form.search.quality_preferences.enabled"
+            fluid
+          />
+          <span class="settings-form__help">
+            Cap the resolution of lossless downloads. Files with unknown bit depth /
+            sample rate are never rejected.
+          </span>
+        </div>
+
+        <div v-if="showCustomLosslessCaps" class="settings-form__field">
+          <label for="setting-slskd-max-bit-depth" class="settings-form__label">
+            Max Bit Depth
+          </label>
+          <InputNumber
+            id="setting-slskd-max-bit-depth"
+            v-model="form.search.quality_preferences.max_lossless_bit_depth"
+            :disabled="loading || !form.search.quality_preferences.enabled"
+            :min="0"
+            :max="32"
+          />
+          <span class="settings-form__help">0 = unlimited</span>
+        </div>
+
+        <div v-if="showCustomLosslessCaps" class="settings-form__field">
+          <label for="setting-slskd-max-sample-rate" class="settings-form__label">
+            Max Sample Rate (Hz)
+          </label>
+          <InputNumber
+            id="setting-slskd-max-sample-rate"
+            v-model="form.search.quality_preferences.max_lossless_sample_rate"
+            :disabled="loading || !form.search.quality_preferences.enabled"
+            :min="0"
+            :step="100"
+          />
+          <span class="settings-form__help">0 = unlimited</span>
+        </div>
+
+        <div class="settings-form__field">
+          <label for="setting-slskd-reject-high-res" class="settings-form__label">
+            Reject High-Res Lossless
+          </label>
+          <ToggleSwitch
+            id="setting-slskd-reject-high-res"
+            v-model="form.search.quality_preferences.reject_high_res_lossless"
+            :disabled="loading || !form.search.quality_preferences.enabled"
+          />
+          <span class="settings-form__help">
+            Hard-reject lossless files above the cap. When off, they are only
+            deprioritized.
+          </span>
         </div>
 
         <div class="settings-form__field settings-form__field--full">

@@ -81,12 +81,15 @@ export interface SlskdRetrySettings {
 }
 
 export interface SlskdQualitySettings {
-  enabled:            boolean;
-  preferred_formats:  string[];
-  min_bitrate:        number;
-  prefer_lossless:    boolean;
-  reject_low_quality: boolean;
-  reject_lossless:    boolean;
+  enabled:                  boolean;
+  preferred_formats:        string[];
+  min_bitrate:              number;
+  prefer_lossless:          boolean;
+  reject_low_quality:       boolean;
+  reject_lossless:          boolean;
+  max_lossless_bit_depth:   number;   // 0 = unlimited
+  max_lossless_sample_rate: number;   // 0 = unlimited (Hz)
+  reject_high_res_lossless: boolean;
 }
 
 export interface SlskdSelectionSettings {
