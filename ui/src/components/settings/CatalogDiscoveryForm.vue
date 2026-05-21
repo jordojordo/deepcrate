@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import type { CatalogDiscoverySettings, CatalogDiscoveryFormData, CatalogDiscoveryForm } from '@/types';
+import type {
+  CatalogDiscoverySettings,
+  CatalogDiscoveryFormData,
+  CatalogDiscoveryForm,
+  LibraryDuplicateSettings,
+  LibraryDuplicateFormData,
+} from '@/types';
 
 import { reactive, ref, watch, computed } from 'vue';
 import { useSettings } from '@/composables/useSettings';
@@ -13,13 +19,14 @@ import Tag from 'primevue/tag';
 import Message from 'primevue/message';
 
 const props = defineProps<{
-  settings: CatalogDiscoverySettings | undefined;
-  loading:  boolean;
-  saving:   boolean;
+  settings:         CatalogDiscoverySettings | undefined;
+  libraryDuplicate: LibraryDuplicateSettings | undefined;
+  loading:          boolean;
+  saving:           boolean;
 }>();
 
 const emit = defineEmits<{
-  save: [data: CatalogDiscoveryFormData];
+  save: [payload: { catalog: CatalogDiscoveryFormData; duplicate: LibraryDuplicateFormData }];
 }>();
 
 const { validateSection } = useSettings();
@@ -42,6 +49,11 @@ const form = reactive<CatalogDiscoveryForm>({
   similar_artist_limit: 10,
   albums_per_artist:    3,
   mode:                 'manual',
+});
+
+const duplicate = reactive<LibraryDuplicateFormData>({
+  enabled:     false,
+  auto_reject: false,
 });
 
 const errors = ref<Array<{ path: string; message: string }>>([]);
@@ -76,8 +88,25 @@ watch(
   { immediate: true }
 );
 
+watch(
+  () => props.libraryDuplicate,
+  (next) => {
+    if (!next) {
+      return;
+    }
+
+    duplicate.enabled = next.enabled;
+    duplicate.auto_reject = next.auto_reject ?? false;
+  },
+  { immediate: true }
+);
+
 const subsonicPasswordConfigured = computed(
   () => props.settings?.subsonic?.password?.configured ?? false
+);
+
+const subsonicConfigured = computed(
+  () => Boolean(form.subsonic?.host?.trim()) || subsonicPasswordConfigured.value
 );
 
 const lastfmKeyConfigured = computed(
@@ -141,7 +170,13 @@ async function handleSave() {
     return;
   }
 
-  emit('save', data);
+  emit('save', {
+    catalog:   data,
+    duplicate: {
+      enabled:     duplicate.enabled,
+      auto_reject: duplicate.auto_reject,
+    },
+  });
 }
 </script>
 
@@ -314,6 +349,39 @@ async function handleSave() {
             :min="1"
             :max="20"
           />
+        </div>
+      </div>
+    </details>
+
+    <details class="settings-form__section">
+      <summary class="settings-form__section-title">Duplicate Detection</summary>
+      <p class="settings-form__help settings-form__grid--with-margin">
+        Skips albums you already own by matching against your Subsonic library. It never
+        reads or writes your filesystem.
+      </p>
+
+      <div class="settings-form__grid settings-form__grid--with-margin">
+        <div class="settings-form__field">
+          <label for="setting-duplicate-enabled" class="settings-form__label">Enabled</label>
+          <ToggleSwitch
+            id="setting-duplicate-enabled"
+            v-model="duplicate.enabled"
+            :disabled="loading || !subsonicConfigured"
+          />
+        </div>
+
+        <div class="settings-form__field">
+          <label for="setting-duplicate-auto-reject" class="settings-form__label">
+            Auto-reject
+          </label>
+          <ToggleSwitch
+            id="setting-duplicate-auto-reject"
+            v-model="duplicate.auto_reject"
+            :disabled="loading || !duplicate.enabled || !subsonicConfigured"
+          />
+          <span class="settings-form__help">
+            Automatically reject pending items that already exist in your Subsonic library.
+          </span>
         </div>
       </div>
     </details>

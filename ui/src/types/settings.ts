@@ -213,6 +213,11 @@ export interface LibraryDuplicateSettings {
   auto_reject?: boolean;
 }
 
+export interface LibraryDuplicateFormData {
+  enabled:     boolean;
+  auto_reject: boolean;
+}
+
 export interface LibraryOrganizeSettings {
   enabled:           boolean;
   downloads_path?:   string;
