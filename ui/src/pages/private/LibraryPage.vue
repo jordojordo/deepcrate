@@ -94,9 +94,9 @@ onMounted(() => {
   <div class="library-page">
     <header class="library-page__header">
       <div>
-        <h1 class="library-page__title">Library</h1>
+        <h1 class="library-page__title">Organize</h1>
         <p class="library-page__subtitle">
-          Configure and run library organization.
+          Organize downloaded files into your library.
         </p>
       </div>
       <Button

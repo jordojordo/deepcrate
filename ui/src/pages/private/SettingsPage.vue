@@ -2,6 +2,7 @@
 import type {
   ListenBrainzFormData,
   CatalogDiscoveryFormData,
+  LibraryDuplicateFormData,
   SlskdFormData,
   PreviewFormData,
   ScoringFormData,
@@ -46,6 +47,7 @@ const {
   listenbrainz,
   slskd,
   catalogDiscovery,
+  libraryDuplicate,
   preview,
   scoring,
   webhooks,
@@ -53,6 +55,7 @@ const {
   uiPreferences,
   fetchSettings,
   updateSection,
+  updateSections,
   saveUIPreferences,
 } = useSettings();
 
@@ -64,8 +67,14 @@ async function handleListenBrainzSave(data: ListenBrainzFormData) {
   await updateSection('listenbrainz', data);
 }
 
-async function handleCatalogDiscoverySave(data: CatalogDiscoveryFormData) {
-  await updateSection('catalog_discovery', data);
+async function handleCatalogDiscoverySave(payload: {
+  catalog:   CatalogDiscoveryFormData;
+  duplicate: LibraryDuplicateFormData;
+}) {
+  await updateSections([
+    { section: 'catalog_discovery', data: payload.catalog },
+    { section: 'library_duplicate', data: payload.duplicate },
+  ]);
 }
 
 async function handleSlskdSave(data: SlskdFormData) {
@@ -142,6 +151,7 @@ function handleUIPreferencesSave(prefs: Partial<UIPreferences>) {
               </p>
               <CatalogDiscoveryForm
                 :settings="catalogDiscovery"
+                :library-duplicate="libraryDuplicate"
                 :loading="loading"
                 :saving="saving"
                 @save="handleCatalogDiscoverySave"

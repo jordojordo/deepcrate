@@ -48,6 +48,25 @@ export function useSettings() {
     return success;
   }
 
+  // Persist several sections from a single Save action, showing one toast.
+  async function updateSections(
+    updates: Array<{ section: SettingsSection; data: object }>
+  ): Promise<boolean> {
+    for (const { section, data } of updates) {
+      const res = await store.updateSection(section, data);
+
+      if (!res) {
+        showError(store.error || 'Failed to save settings');
+
+        return false;
+      }
+    }
+
+    showSuccess('Settings saved');
+
+    return true;
+  }
+
   async function validateSection<T extends object>(
     section: SettingsSection,
     data: T
@@ -79,6 +98,7 @@ export function useSettings() {
 
     fetchSettings,
     updateSection,
+    updateSections,
     validateSection,
     saveUIPreferences,
   };

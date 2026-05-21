@@ -53,7 +53,7 @@ export const useSidebarItems = () => {
       },
       {
         key:   ROUTE_NAMES.LIBRARY,
-        label: 'Library',
+        label: 'Organize',
         to:    ROUTE_PATHS.LIBRARY,
         icon:  'pi-folder-open',
         badge: stats.value?.unorganized ?? undefined,
