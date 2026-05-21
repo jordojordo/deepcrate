@@ -47,6 +47,13 @@ export const QUALITY_SCORES = {
 /** Default preferred audio formats for quality filtering */
 export const DEFAULT_PREFERRED_FORMATS = ['flac', 'wav', 'alac', 'mp3', 'm4a', 'ogg'] as const;
 
+/**
+ * Score penalty applied to lossless files that exceed the configured
+ * max lossless quality cap. Sized to cancel the prefer_lossless bonus (500)
+ * so over-cap files rank below compliant lossless when not hard-rejected.
+ */
+export const LOSSLESS_OVER_CAP_PENALTY = 500;
+
 /** Quality tier order from highest to lowest quality */
 export const QUALITY_TIER_ORDER = ['lossless', 'high', 'standard', 'low', 'unknown'] as const;
 

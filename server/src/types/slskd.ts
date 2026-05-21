@@ -30,12 +30,15 @@ export interface QualityInfo {
  * User preferences for audio quality filtering and scoring
  */
 export interface QualityPreferences {
-  enabled:          boolean;
-  preferredFormats: string[];
-  minBitrate:       number;
-  preferLossless:   boolean;
-  rejectLowQuality: boolean;
-  rejectLossless:   boolean;
+  enabled:               boolean;
+  preferredFormats:      string[];
+  minBitrate:            number;
+  preferLossless:        boolean;
+  rejectLowQuality:      boolean;
+  rejectLossless:        boolean;
+  maxLosslessBitDepth:   number;   // 0 = unlimited
+  maxLosslessSampleRate: number;   // 0 = unlimited (Hz)
+  rejectHighResLossless: boolean;
 }
 
 /**

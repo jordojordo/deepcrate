@@ -91,9 +91,15 @@ const SlskdQualityPreferencesSchema = z.object({
   preferred_formats:  z.array(z.string()).default([...DEFAULT_PREFERRED_FORMATS]),
   min_bitrate:        z.number().int().min(0).max(9999)
     .default(256),
-  prefer_lossless:    z.boolean().default(true),
-  reject_low_quality: z.boolean().default(false),
-  reject_lossless:    z.boolean().default(false),
+  prefer_lossless:        z.boolean().default(true),
+  reject_low_quality:     z.boolean().default(false),
+  reject_lossless:        z.boolean().default(false),
+  // Maximum accepted lossless quality (0 = unlimited). Files with unknown
+  // bit depth / sample rate are never rejected by these caps.
+  max_lossless_bit_depth:   z.number().int().min(0).max(32)
+    .default(0),
+  max_lossless_sample_rate: z.number().int().min(0).default(0),
+  reject_high_res_lossless: z.boolean().default(false),
 });
 
 const SlskdCompletenessSchema = z.object({

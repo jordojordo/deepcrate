@@ -133,6 +133,32 @@ registry.register('ActivityItem', activityItemSchema);
 
 // --- Settings schemas ---
 
+// Documents the shape of `slskd.search.quality_preferences`, which is otherwise
+// carried as an opaque object inside the settings response. Registered as a
+// standalone component so the fields surface in the API reference.
+const slskdQualityPreferencesSchema = z.object({
+  enabled: z.boolean()
+    .openapi({ description: 'Enable quality-based filtering and scoring', example: true }),
+  preferred_formats: z.array(z.string())
+    .openapi({ description: 'Formats to prioritize (bonus scoring)', example: ['flac', 'wav', 'alac', 'mp3', 'm4a', 'ogg'] }),
+  min_bitrate: z.number().int()
+    .openapi({ description: 'Minimum acceptable bitrate (kbps) for lossy formats', example: 256 }),
+  prefer_lossless: z.boolean()
+    .openapi({ description: 'Give lossless formats higher priority in scoring', example: true }),
+  reject_low_quality: z.boolean()
+    .openapi({ description: 'Hard reject files below min_bitrate (vs just deprioritize)', example: false }),
+  reject_lossless: z.boolean()
+    .openapi({ description: 'Hard reject lossless files (for users who only want lossy formats)', example: false }),
+  max_lossless_bit_depth: z.number().int()
+    .openapi({ description: 'Maximum accepted lossless bit depth (0 = unlimited, e.g. 16 for CD quality). Files with unknown bit depth are never rejected.', example: 16 }),
+  max_lossless_sample_rate: z.number().int()
+    .openapi({ description: 'Maximum accepted lossless sample rate in Hz (0 = unlimited, e.g. 44100 for CD quality). Files with unknown sample rate are never rejected.', example: 44100 }),
+  reject_high_res_lossless: z.boolean()
+    .openapi({ description: 'Hard reject lossless files above the caps (vs just deprioritize)', example: false }),
+});
+
+registry.register('SlskdQualityPreferences', slskdQualityPreferencesSchema);
+
 registry.register('GetSettingsResponse', GetSettingsResponseSchema);
 registry.register('GetSectionResponse', GetSectionResponseSchema);
 registry.register('UpdateSectionResponse', UpdateSectionResponseSchema);
