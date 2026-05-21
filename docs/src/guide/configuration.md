@@ -125,6 +125,11 @@ slskd:
       prefer_lossless: true       # Give lossless formats higher priority
       reject_low_quality: false   # Hard reject files below min_bitrate (vs just deprioritize)
       reject_lossless: false      # Hard reject lossless files (for users who only want lossy)
+      # Lossless quality caps. 0 = unlimited. Files with unknown bit depth /
+      # sample rate are never rejected by these caps.
+      max_lossless_bit_depth: 16        # Max lossless bit depth (e.g. 16 = CD quality)
+      max_lossless_sample_rate: 44100   # Max lossless sample rate in Hz (e.g. 44100 = CD quality)
+      reject_high_res_lossless: true    # Hard reject lossless above the caps (vs just deprioritize)
 
     # Completeness scoring (optional)
     # Score results based on track completeness using MusicBrainz/Deezer metadata
@@ -411,6 +416,9 @@ Optional quality preferences configuration under `slskd.search.quality_preferenc
 | `prefer_lossless` | bool | `true` | Give lossless formats higher priority in scoring |
 | `reject_low_quality` | bool | `false` | Hard reject files below min_bitrate (vs just deprioritize) |
 | `reject_lossless` | bool | `false` | Hard reject lossless files (for users who only want lossy formats) |
+| `max_lossless_bit_depth` | int | `0` | Maximum accepted lossless bit depth (`0` = unlimited, e.g. `16` for CD quality) |
+| `max_lossless_sample_rate` | int | `0` | Maximum accepted lossless sample rate in Hz (`0` = unlimited, e.g. `44100` for CD quality) |
+| `reject_high_res_lossless` | bool | `false` | Hard reject lossless files above the caps (vs just deprioritize) |
 
 **Quality Tiers:**
 - **Lossless** - FLAC, WAV, ALAC, AIFF (highest priority by default)
