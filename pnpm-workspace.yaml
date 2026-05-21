@@ -4,8 +4,8 @@ packages:
   - docs
 
 allowBuilds:
-  '@parcel/watcher': true
-  esbuild: true
+  '@parcel/watcher': false
+  esbuild: false
   sqlite3: true
 
 overrides:
