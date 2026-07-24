@@ -25,7 +25,12 @@ useThemeStore(pinia).initialize();
 
 app.use(router);
 app.use(PrimeVue, {
-  theme: {
+  // PrimeVue 5 demands a signed license token client-side because it costs money to maintain
+  // "enterprise" component libraries, so it goes... for now. This key is injected
+  // at build time but is still visible in the shipped bundle, that's inherent to
+  // client-side license checks, not a leak. See ui/.env.example.
+  license: import.meta.env.VITE_PRIMEUI_LICENSE,
+  theme:   {
     preset:  DeepCratePreset,
     options: {
       darkModeSelector: '.dark',
