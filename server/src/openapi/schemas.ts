@@ -170,6 +170,7 @@ const webhookEventSchema = z.enum([
   'download_completed',
   'queue_approved',
   'queue_rejected',
+  'wishlist_removed',
 ]);
 
 const webhookPayloadSchema = z.object({

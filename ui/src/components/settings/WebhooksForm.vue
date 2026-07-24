@@ -43,6 +43,7 @@ const eventOptions = [
   { label: 'Download Completed', value: 'download_completed' as WebhookEvent },
   { label: 'Queue Approved',     value: 'queue_approved' as WebhookEvent },
   { label: 'Queue Rejected',     value: 'queue_rejected' as WebhookEvent },
+  { label: 'Wishlist Removed',   value: 'wishlist_removed' as WebhookEvent },
 ];
 
 watch(

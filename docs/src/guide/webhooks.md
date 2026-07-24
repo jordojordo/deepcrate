@@ -9,6 +9,7 @@ DeepCrate can send HTTP webhooks when key events occur, letting you integrate wi
 | `download_completed` | An album or track finishes downloading via slskd |
 | `queue_approved` | A queue item is approved (moved to wishlist) |
 | `queue_rejected` | A queue item is rejected |
+| `wishlist_removed` | A wishlist item is removed because it already exists in your library (during a library sync) |
 
 ## Configuration
 

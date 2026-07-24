@@ -94,6 +94,8 @@ export async function fireEvent(
     (w) => w.enabled && w.events.includes(event),
   );
 
+  logger.debug(`[webhook] firing ${ event } to ${ webhooks.length } webhook(s)`);
+
   if (webhooks.length === 0) {
     return;
   }
