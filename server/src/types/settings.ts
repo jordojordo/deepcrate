@@ -209,7 +209,7 @@ const UpdateWebhooksRequestSchema = z.array(z.object({
   enabled:    z.boolean().optional(),
   url:        z.url(),
   secret:     z.string().optional(),
-  events:     z.array(z.enum(['download_completed', 'queue_approved', 'queue_rejected'])).min(1),
+  events:     z.array(z.enum(['download_completed', 'queue_approved', 'queue_rejected', 'wishlist_removed'])).min(1),
   timeout_ms: z.number().int().positive().max(30000)
     .optional(),
   retry:      z.number().int().min(0).max(5)

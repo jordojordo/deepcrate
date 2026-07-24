@@ -261,8 +261,9 @@ const CatalogDiscoverySettingsSchema = z.object({
 ]));
 
 const LibraryDuplicateSettingsSchema = z.object({
-  enabled:     z.boolean(),
-  auto_reject: z.boolean().optional().default(false),
+  enabled:                     z.boolean(),
+  auto_reject:                 z.boolean().optional().default(false),
+  remove_wishlist_duplicates:  z.boolean().optional().default(true),
 }).superRefine((value) => {
   if (!value.enabled) {
     return;
@@ -294,6 +295,7 @@ const WebhookEventSchema = z.enum([
   'download_completed',
   'queue_approved',
   'queue_rejected',
+  'wishlist_removed',
 ]);
 
 const WebhookSchema = z.object({

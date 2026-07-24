@@ -51,6 +51,17 @@ export async function librarySyncJob(): Promise<void> {
 
     logger.info(`Updated ${ updatedCount } queue items with library status`);
 
+    if (isJobCancelled(JOB_NAMES.LIBRARY_SYNC)) {
+      logger.info('Job cancelled before re-checking wishlist items');
+      throw new Error('Job cancelled');
+    }
+
+    const removed = await libraryService.recheckWishlistItems();
+
+    if (removed) {
+      logger.info(`Removed ${ removed.length } wishlist items already in library`);
+    }
+
     logger.info('Library sync job completed');
   } catch(error) {
     logger.error('Library sync job failed:', { error });

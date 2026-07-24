@@ -2,9 +2,12 @@ import { Op } from '@sequelize/core';
 
 import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
+import { withDbWrite } from '@server/config/db';
+import { fireEvent } from '@server/services/WebhookService';
 import { SubsonicClient } from '@server/services/clients/SubsonicClient';
 import LibraryAlbum from '@server/models/LibraryAlbum';
 import QueueItem from '@server/models/QueueItem';
+import WishlistItem from '@server/models/WishlistItem';
 
 /**
  * Normalize a string for comparison: lowercase and trim whitespace.
@@ -250,5 +253,62 @@ export class LibraryService {
     logger.info(`Library recheck complete: updated ${ updatedCount } queue items`);
 
     return updatedCount;
+  }
+
+  /**
+   * Checks all wishlist items against the library and removes any that now
+   * exist in it (e.g. albums the user added manually). A `wishlist_removed`
+   * webhook event is sent for each item removed.
+   *
+   */
+  async recheckWishlistItems(): Promise<WishlistItem[] | undefined> {
+    const config = getConfig();
+    const removeEnabled = config.library_duplicate?.remove_wishlist_duplicates ?? true;
+
+    if (!removeEnabled) {
+      return;
+    }
+
+    const allItems = await WishlistItem.findAll();
+    const items = allItems.filter((item) => item.album && item.album.trim() !== '');
+
+    if (items.length === 0) {
+      return;
+    }
+
+    const itemsToCheck = items.map((item) => ({
+      artist: item.artist,
+      album:  item.album,
+    }));
+
+    const libraryMatches = await this.checkBatch(itemsToCheck);
+
+    // Items that already exist in the library.
+    const matched = items.filter((item) => {
+      const key = createLookupKey(item.artist, item.album);
+
+      return libraryMatches.get(key) ?? false;
+    });
+
+    if (matched.length === 0) {
+      return;
+    }
+
+    const matchedIds = matched.map((item) => item.id);
+
+    await withDbWrite(() => WishlistItem.destroy({ where: { id: { [Op.in]: matchedIds } } }));
+
+    for (const item of matched) {
+      fireEvent('wishlist_removed', {
+        artist: item.artist,
+        album:  item.album,
+        mbid:   item.mbid ?? undefined,
+      });
+      logger.info(`Removed wishlist item already in library: ${ item.artist } - ${ item.album }`);
+    }
+
+    logger.info(`Wishlist recheck complete: removed ${ matched.length } items already in library`);
+
+    return matched;
   }
 }

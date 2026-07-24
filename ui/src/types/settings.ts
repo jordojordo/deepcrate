@@ -253,7 +253,8 @@ export interface ScoringFormData {
 export type WebhookEvent =
   | 'download_completed'
   | 'queue_approved'
-  | 'queue_rejected';
+  | 'queue_rejected'
+  | 'wishlist_removed';
 
 export interface WebhookConfig {
   name:       string;
