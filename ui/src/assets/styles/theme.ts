@@ -1,3 +1,5 @@
+import type { PaletteDesignToken } from '@primeuix/themes';
+
 import { definePreset } from '@primeuix/themes';
 import Aura from '@primeuix/themes/aura';
 
@@ -64,7 +66,7 @@ export const DeepCratePreset = definePreset(Aura, {
       800: '#181890',
       900: '#121270',
       950: '#0a0a50',
-    },
+    } as PaletteDesignToken,
     purple: {
       50:  '#faf5ff',
       100: '#f3e8ff',

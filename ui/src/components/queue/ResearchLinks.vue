@@ -107,7 +107,7 @@ function toggleMenu(event: Event) {
       :model="menuItems"
       :popup="true"
     >
-      <template #submenuheader>
+      <template #submenulabel>
         <span class="text-primary font-bold">Research links</span>
       </template>
       <template #item="{ item, props }">

@@ -20,7 +20,7 @@ const spinnerSize = computed(() => sizeMap[props.size || 'md']);
   <div class="flex justify-content-center align-items-center">
     <ProgressSpinner
       :style="{ width: spinnerSize, height: spinnerSize }"
-      strokeWidth="4"
+      :strokeWidth="4"
     />
   </div>
 </template>
