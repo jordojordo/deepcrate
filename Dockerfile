@@ -3,6 +3,10 @@ FROM node:24-alpine AS ui-builder
 WORKDIR /build
 ENV CI=true
 
+# If unset, the app just shows the "Invalid PrimeUI License" banner.
+ARG VITE_PRIMEUI_LICENSE
+ENV VITE_PRIMEUI_LICENSE=$VITE_PRIMEUI_LICENSE
+
 RUN corepack enable
 
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
