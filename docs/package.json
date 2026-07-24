@@ -15,16 +15,16 @@
     "format": "prettier --write .vitepress/ src/"
   },
   "devDependencies": {
-    "@eslint/markdown": "^8.0.1",
+    "@eslint/markdown": "^8.0.3",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@vue/eslint-config-prettier": "^10.2.0",
-    "@vue/eslint-config-typescript": "^14.7.0",
-    "eslint": "^10.4.0",
-    "eslint-plugin-oxlint": "^1.66.0",
-    "eslint-plugin-vue": "^10.9.1",
-    "oxlint": "^1.66.0",
-    "prettier": "^3.8.3",
-    "typescript": "~6.0.3",
+    "@vue/eslint-config-typescript": "^14.9.0",
+    "eslint": "^10.7.0",
+    "eslint-plugin-oxlint": "^1.75.0",
+    "eslint-plugin-vue": "^10.10.0",
+    "oxlint": "^1.75.0",
+    "prettier": "^3.9.6",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitepress": "2.0.0-alpha.17"
   }
 }
