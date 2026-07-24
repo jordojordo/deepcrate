@@ -287,5 +287,6 @@ webhooks:
       - download_completed
       - queue_approved
       - queue_rejected
+      - wishlist_removed
     timeout_ms: 10000               # max: 30000
     retry: 2                        # max: 5
