@@ -27,21 +27,21 @@
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^5.10.0",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "@vitejs/plugin-vue": "^6.0.8",
-    "@vitest/eslint-plugin": "^1.6.23",
+    "@vitest/eslint-plugin": "^1.6.26",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.9.0",
     "@vue/tsconfig": "^0.9.1",
-    "eslint": "^10.7.0",
+    "eslint": "^10.8.0",
     "eslint-plugin-cypress": "^6.4.3",
-    "eslint-plugin-oxlint": "^1.75.0",
+    "eslint-plugin-oxlint": "^1.77.0",
     "eslint-plugin-vue": "^10.10.0",
-    "oxlint": "^1.75.0",
+    "oxlint": "^1.77.0",
     "prettier": "^3.9.6",
-    "sass": "^1.101.6",
+    "sass": "^1.102.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vite": "^8.1.5",
-    "vue-tsc": "^3.3.8"
+    "vite": "^8.2.0",
+    "vue-tsc": "^3.3.9"
   }
 }
