@@ -49,8 +49,8 @@ importers:
         specifier: npm:@typescript/typescript6@^6.0.2
         version: '@typescript/typescript6@6.0.2'
       vitepress:
-        specifier: 2.0.0-alpha.18
-        version: 2.0.0-alpha.18(@types/node@26.1.2)(@typescript/typescript6@6.0.2)(esbuild@0.28.1)(jiti@2.7.0)(postcss@8.5.25)(sass@1.102.0)(tsx@4.23.5)(yaml@2.9.0)
+        specifier: 2.0.0-alpha.19
+        version: 2.0.0-alpha.19(@types/node@26.1.2)(@typescript/typescript6@6.0.2)(esbuild@0.28.1)(jiti@2.7.0)(postcss@8.5.25)(sass@1.102.0)(tsx@4.23.5)(yaml@2.9.0)
 
   server:
     dependencies:
@@ -1241,6 +1241,11 @@ packages:
 
   '@volar/typescript@2.4.28':
     resolution: {integrity: sha512-Ja6yvWrbis2QtN4ClAKreeUZPVYMARDYZl9LMEv1iQ1QdepB6wn0jTRxA9MftYmYa4DQ4k/DaSZpFPUfxl8giw==}
+    peerDependencies:
+      typescript: '*'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@vue-macros/common@3.1.4':
     resolution: {integrity: sha512-/5Fv+6DgIcM9ajY05ZmKBv+LMX1M9A0X+IUwDRVdt67ciw8OV9bvG2r34p3RiEadlsQybjhKPRKNXDC8Bp23cw==}
@@ -3212,8 +3217,8 @@ packages:
       yaml:
         optional: true
 
-  vitepress@2.0.0-alpha.18:
-    resolution: {integrity: sha512-Lk1G2/QqSf+MwNLICl9fmzWOtoCEwjZoWgaQy41QvWTfcGpLE9XwJDbcCyES/9rj6R2g1zFqFvLVkYKLLDALFw==}
+  vitepress@2.0.0-alpha.19:
+    resolution: {integrity: sha512-WnBsb0Bwr43kXKyiis+lld/7ri3hnMbthS8N3hpFtjjwsdLO4IRmiAE08D7aud4q6oMDf9uwRowxzNqRFe/amw==}
     hasBin: true
     peerDependencies:
       markdown-it-mathjax3: ^4
@@ -4359,11 +4364,13 @@ snapshots:
 
   '@volar/source-map@2.4.28': {}
 
-  '@volar/typescript@2.4.28':
+  '@volar/typescript@2.4.28(@typescript/typescript6@6.0.2)':
     dependencies:
       '@volar/language-core': 2.4.28
       path-browserify: 1.0.1
       vscode-uri: 3.1.0
+    optionalDependencies:
+      typescript: '@typescript/typescript6@6.0.2'
 
   '@vue-macros/common@3.1.4(vue@3.5.40(@typescript/typescript6@6.0.2))':
     dependencies:
@@ -6633,7 +6640,7 @@ snapshots:
       tsx: 4.23.5
       yaml: 2.9.0
 
-  vitepress@2.0.0-alpha.18(@types/node@26.1.2)(@typescript/typescript6@6.0.2)(esbuild@0.28.1)(jiti@2.7.0)(postcss@8.5.25)(sass@1.102.0)(tsx@4.23.5)(yaml@2.9.0):
+  vitepress@2.0.0-alpha.19(@types/node@26.1.2)(@typescript/typescript6@6.0.2)(esbuild@0.28.1)(jiti@2.7.0)(postcss@8.5.25)(sass@1.102.0)(tsx@4.23.5)(yaml@2.9.0):
     dependencies:
       '@docsearch/css': 4.7.0
       '@docsearch/js': 4.7.0
@@ -6761,7 +6768,7 @@ snapshots:
 
   vue-tsc@3.3.9(@typescript/typescript6@6.0.2):
     dependencies:
-      '@volar/typescript': 2.4.28
+      '@volar/typescript': 2.4.28(@typescript/typescript6@6.0.2)
       '@vue/language-core': 3.3.9
       typescript: '@typescript/typescript6@6.0.2'
 
