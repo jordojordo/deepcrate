@@ -124,7 +124,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Alternatives
 
-DeepCrate focuses on **curated discovery**, meaning you approve what enters your library. If you prefer fully automated weekly playlists, check out [Explo](https://github.com/LumePart/Explo). If you need to monitor known artists for new releases, [Lidarr](https://lidarr.audio/) is the standard. See [Comparison](docs/comparison.md) for a detailed breakdown.
+DeepCrate focuses on **curated discovery**, meaning you approve what enters your library. If you prefer fully automated weekly playlists, check out [Explo](https://github.com/LumePart/Explo). If you need to monitor known artists for new releases, [Lidarr](https://lidarr.audio/) is the standard. See [Comparison](https://jordojordo.github.io/deepcrate/guide/comparison) for a detailed breakdown.
 
 ## Related Projects
 
