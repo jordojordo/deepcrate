@@ -8,6 +8,7 @@ import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Tag from 'primevue/tag';
+import ToggleSwitch from 'primevue/toggleswitch';
 import Message from 'primevue/message';
 
 const props = defineProps<{
@@ -33,10 +34,11 @@ const sourceTypeOptions = [
 ];
 
 const form = reactive<ListenBrainzFormData>({
-  username:      '',
-  token:         undefined,
-  approval_mode: 'manual',
-  source_type:   'weekly_playlist',
+  username:             '',
+  token:                undefined,
+  approval_mode:        'manual',
+  source_type:          'weekly_playlist',
+  prefer_studio_albums: false,
 });
 
 const errors = ref<Array<{ path: string; message: string }>>([]);
@@ -51,6 +53,7 @@ watch(
     form.username = next.username;
     form.approval_mode = next.approval_mode;
     form.source_type = next.source_type;
+    form.prefer_studio_albums = next.prefer_studio_albums ?? false;
     // Don't set token - keep it undefined so we know user hasn't touched it
     form.token = undefined;
   },
@@ -63,9 +66,10 @@ async function handleSave() {
   errors.value = [];
 
   const data: ListenBrainzFormData = {
-    username:      form.username.trim(),
-    approval_mode: form.approval_mode,
-    source_type:   form.source_type,
+    username:             form.username.trim(),
+    approval_mode:        form.approval_mode,
+    source_type:          form.source_type,
+    prefer_studio_albums: form.prefer_studio_albums,
   };
 
   // Only include token if user entered a new one
@@ -173,6 +177,21 @@ async function handleSave() {
         />
         <span class="settings-form__help">
           Weekly playlists don't require a token. CF recommendations need one.
+        </span>
+      </div>
+
+      <div class="settings-form__field">
+        <label for="setting-listenbrainz-prefer-studio-albums" class="settings-form__label">
+          Prefer Studio Albums
+        </label>
+        <ToggleSwitch
+          id="setting-listenbrainz-prefer-studio-albums"
+          v-model="form.prefer_studio_albums"
+          :disabled="loading"
+        />
+        <span class="settings-form__help">
+          Album mode only. Replaces singles, EPs and compilations with the artist's own album.
+          Slower: adds MusicBrainz lookups per recommendation.
         </span>
       </div>
     </div>

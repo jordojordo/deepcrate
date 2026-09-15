@@ -294,6 +294,23 @@ describe('MusicBrainzClient', () => {
   });
 
   describe('getReleaseGroupTags', () => {
+    it('returns release group types so callers can spot compilations', async() => {
+      vi.mocked(fetchJson).mockResolvedValueOnce({
+        data: {
+          id:                'rg-comp',
+          tags:              [],
+          'primary-type':    'Album',
+          'secondary-types': ['Compilation'],
+        },
+        status: 200,
+      });
+
+      const result = await client.getReleaseGroupTags('rg-comp');
+
+      expect(result.primaryType).toBe('Album');
+      expect(result.secondaryTypes).toEqual(['Compilation']);
+    });
+
     it('returns tags sorted by count descending with null rating when no votes', async() => {
       vi.mocked(fetchJson).mockResolvedValueOnce({
         data: {

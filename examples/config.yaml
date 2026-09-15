@@ -34,6 +34,12 @@ listenbrainz:
   # collaborative: Uses CF recommendations based on listening history (requires token)
   source_type: "weekly_playlist"
 
+  # Album mode: which album a recommended track is queued under
+  # false: use the release ListenBrainz picks (default, fastest, one batched request)
+  # true:  check that pick against MusicBrainz and replace singles, EPs and
+  #        compilations with the artist's own album (adds MusicBrainz lookups)
+  # prefer_studio_albums: false
+
 # Recommendation mode: "album" or "track"
 # album: Resolve recommended tracks to their parent albums (recommended)
 # track: Download individual tracks only

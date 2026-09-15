@@ -127,6 +127,20 @@ export interface MBReleaseLookupResponse {
 
 /** GET /release-group/{mbid}?inc=tags+ratings */
 export interface MBReleaseGroupTagsResponse {
-  tags?:   Array<{ name: string; count: number }>;
-  rating?: { 'votes-count': number; value: number | null };
+  tags?:              Array<{ name: string; count: number }>;
+  rating?:            { 'votes-count': number; value: number | null };
+  'primary-type'?:    string | null;
+  'secondary-types'?: string[];
+}
+
+/**
+ * Tags, rating and type of a release group, from getReleaseGroupTags.
+ * Types are undefined when the lookup failed, so "unknown" can't be mistaken
+ * for "not an album".
+ */
+export interface ReleaseGroupTagsInfo {
+  tags:            string[];
+  rating:          number | null;
+  primaryType?:    string | null;
+  secondaryTypes?: string[];
 }

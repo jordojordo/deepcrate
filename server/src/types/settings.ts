@@ -29,10 +29,11 @@ export const SettingsSectionSchema = z.enum(SETTINGS_SECTIONS);
  */
 
 const SanitizedListenBrainzSchema = z.object({
-  username:      z.string(),
-  token:         SecretStatusSchema,
-  approval_mode: z.enum(['auto', 'manual']),
-  source_type:   z.enum(['collaborative', 'weekly_playlist']),
+  username:             z.string(),
+  token:                SecretStatusSchema,
+  approval_mode:        z.enum(['auto', 'manual']),
+  source_type:          z.enum(['collaborative', 'weekly_playlist']),
+  prefer_studio_albums: z.boolean(),
 });
 
 const SanitizedSlskdSchema = z.object({
@@ -149,10 +150,11 @@ export type ValidateResponse = z.infer<typeof ValidateResponseSchema>;
  */
 
 const UpdateListenBrainzRequestSchema = z.object({
-  username:      z.string().optional(),
-  token:         z.string().optional(),
-  approval_mode: z.enum(['auto', 'manual']).optional(),
-  source_type:   z.enum(['collaborative', 'weekly_playlist']).optional(),
+  username:             z.string().optional(),
+  token:                z.string().optional(),
+  approval_mode:        z.enum(['auto', 'manual']).optional(),
+  source_type:          z.enum(['collaborative', 'weekly_playlist']).optional(),
+  prefer_studio_albums: z.boolean().optional(),
 });
 
 const UpdateSlskdRequestSchema = z.object({
