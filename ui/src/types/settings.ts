@@ -23,17 +23,19 @@ export type SettingsSection =
  * ListenBrainz settings
  */
 export interface ListenBrainzSettings {
-  username:      string;
-  token:         SecretStatus;
-  approval_mode: 'auto' | 'manual';
-  source_type:   'collaborative' | 'weekly_playlist';
+  username:             string;
+  token:                SecretStatus;
+  approval_mode:        'auto' | 'manual';
+  source_type:          'collaborative' | 'weekly_playlist';
+  prefer_studio_albums: boolean;
 }
 
 export interface ListenBrainzFormData {
-  username:      string;
-  token?:        string;
-  approval_mode: 'auto' | 'manual';
-  source_type:   'collaborative' | 'weekly_playlist';
+  username:             string;
+  token?:               string;
+  approval_mode:        'auto' | 'manual';
+  source_type:          'collaborative' | 'weekly_playlist';
+  prefer_studio_albums: boolean;
 }
 
 /**

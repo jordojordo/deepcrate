@@ -1,5 +1,5 @@
 import {
-  describe, it, expect, afterEach, vi
+  describe, it, expect, afterEach, beforeEach, vi
 } from 'vitest';
 
 import { ListenBrainzClient } from './ListenBrainzClient';
@@ -446,6 +446,110 @@ describe('ListenBrainzClient', () => {
       const result = ListenBrainzClient.extractRecordingMbid(url);
 
       expect(result).toBeNull();
+    });
+  });
+});
+
+describe('ListenBrainzClient recording metadata', () => {
+  const client = new ListenBrainzClient({ baseDelayMs: 0, maxRetries: 1 });
+
+  const daftPunk = {
+    artist:    { name: 'Daft Punk', artists: [{ name: 'Daft Punk' }] },
+    recording: { name: 'Revolution 909' },
+    release:   {
+      name: 'Homework', mbid: 'rel-1', release_group_mbid: 'rg-1', year: 1997
+    },
+  };
+
+  // The suite above restores mocks without clearing recorded calls.
+  beforeEach(() => {
+    vi.mocked(fetchJson).mockReset();
+  });
+
+  describe('getRecordingMetadata', () => {
+    it('POSTs recording MBIDs with artist and release includes', async() => {
+      vi.mocked(fetchJson).mockResolvedValueOnce({ data: { 'rec-1': daftPunk }, status: 200 });
+
+      const result = await client.getRecordingMetadata(['rec-1', 'rec-unknown']);
+
+      const [url, options] = vi.mocked(fetchJson).mock.calls[0];
+
+      expect(url).toBe('https://api.listenbrainz.org/1/metadata/recording/');
+      expect(options?.method).toBe('POST');
+      expect(options?.body).toEqual({ recording_mbids: ['rec-1', 'rec-unknown'], inc: 'artist release' });
+      // Unknown recordings are just absent, so callers can fall back per MBID.
+      expect([...result.keys()]).toEqual(['rec-1']);
+    });
+
+    it('splits large lists into batches of 100', async() => {
+      vi.mocked(fetchJson).mockResolvedValue({ data: {}, status: 200 });
+
+      const mbids = Array.from({ length: 250 }, (_, i) => `rec-${ i }`);
+
+      await client.getRecordingMetadata(mbids);
+
+      const batchSizes = vi.mocked(fetchJson).mock.calls.map(([, options]) => (options?.body as { recording_mbids: string[] }).recording_mbids.length);
+
+      expect(batchSizes).toEqual([100, 100, 50]);
+    });
+
+    it('keeps results from successful batches when one fails', async() => {
+      vi.mocked(fetchJson)
+        .mockRejectedValueOnce(new HttpError('HTTP 500', 500))
+        .mockResolvedValueOnce({ data: { 'rec-150': daftPunk }, status: 200 });
+
+      const mbids = Array.from({ length: 150 }, (_, i) => `rec-${ i + 1 }`);
+      const result = await client.getRecordingMetadata(mbids);
+
+      expect([...result.keys()]).toEqual(['rec-150']);
+    });
+
+    it('makes no request for an empty list', async() => {
+      const result = await client.getRecordingMetadata([]);
+
+      expect(result.size).toBe(0);
+      expect(fetchJson).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('toAlbumInfo', () => {
+    it('maps the release ListenBrainz chose to AlbumInfo', () => {
+      expect(ListenBrainzClient.toAlbumInfo('rec-1', daftPunk)).toEqual({
+        artist:        'Daft Punk',
+        title:         'Homework',
+        mbid:          'rg-1',
+        recordingMbid: 'rec-1',
+        trackTitle:    'Revolution 909',
+        year:          1997,
+      });
+    });
+
+    it('joins multiple credited artists like MusicBrainzClient does', () => {
+      const collab = {
+        ...daftPunk,
+        artist: { name: 'A feat. B', artists: [{ name: 'A' }, { name: 'B' }] },
+      };
+
+      expect(ListenBrainzClient.toAlbumInfo('rec-1', collab)?.artist).toBe('A & B');
+    });
+
+    it('returns null without a release group', () => {
+      expect(ListenBrainzClient.toAlbumInfo('rec-1', { ...daftPunk, release: undefined })).toBeNull();
+    });
+  });
+
+  describe('toRecordingInfo', () => {
+    it('maps artist, title and release group for cover art', () => {
+      expect(ListenBrainzClient.toRecordingInfo('rec-1', daftPunk)).toEqual({
+        artist:           'Daft Punk',
+        title:            'Revolution 909',
+        mbid:             'rec-1',
+        releaseGroupMbid: 'rg-1',
+      });
+    });
+
+    it('returns null without a recording title', () => {
+      expect(ListenBrainzClient.toRecordingInfo('rec-1', { ...daftPunk, recording: undefined })).toBeNull();
     });
   });
 });

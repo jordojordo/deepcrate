@@ -72,10 +72,11 @@ const AuthSettingsSchema = z.object({
 const UISettingsSchema = z.object({ auth: AuthSettingsSchema });
 
 const ListenBrainzSettingsSchema = z.object({
-  username:      z.string(),
-  token:         z.string().optional(),
-  approval_mode: z.enum(['auto', 'manual']).default('manual'),
-  source_type:   z.enum(['collaborative', 'weekly_playlist']).default('weekly_playlist'),
+  username:             z.string(),
+  token:                z.string().optional(),
+  approval_mode:        z.enum(['auto', 'manual']).default('manual'),
+  source_type:          z.enum(['collaborative', 'weekly_playlist']).default('weekly_playlist'),
+  prefer_studio_albums: z.boolean().default(false),
 });
 
 const SlskdSearchRetrySchema = z.object({

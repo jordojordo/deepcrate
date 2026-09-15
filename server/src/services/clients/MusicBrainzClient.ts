@@ -12,6 +12,7 @@ import type {
   RecordingInfo,
   RecordingSearchResult,
   ReleaseGroup,
+  ReleaseGroupTagsInfo,
   ReleaseGroupTrack,
   RetryConfig,
   SearchResults,
@@ -423,7 +424,7 @@ export class MusicBrainzClient extends BaseClient {
   /**
    * Get genre tags and community rating for a release group by MBID.
    */
-  async getReleaseGroupTags(mbid: string): Promise<{ tags: string[]; rating: number | null }> {
+  async getReleaseGroupTags(mbid: string): Promise<ReleaseGroupTagsInfo> {
     const url = `${ MB_BASE_URL }/release-group/${ mbid }`;
 
     try {
@@ -443,7 +444,12 @@ export class MusicBrainzClient extends BaseClient {
       const ratingData = response.data.rating;
       const rating = (ratingData && ratingData['votes-count'] > 0) ? ratingData.value : null;
 
-      return { tags, rating };
+      return {
+        tags,
+        rating,
+        primaryType:    response.data['primary-type'],
+        secondaryTypes: response.data['secondary-types'],
+      };
     } catch(error) {
       logger.error(`Failed to get tags for release-group ${ mbid }: ${ error instanceof Error ? error.message : String(error) }`);
 

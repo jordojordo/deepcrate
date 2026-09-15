@@ -1,4 +1,5 @@
-import type { ListenBrainzRecommendation } from '@server/types/listenbrainz';
+import type { ListenBrainzRecommendation, ListenBrainzRecordingMetadata } from '@server/types/listenbrainz';
+import type { AlbumInfo, RecordingInfo, ReleaseGroupTagsInfo } from '@server/types/musicbrainz';
 import type { ListenBrainzSettings } from '@server/config/schemas';
 
 import logger from '@server/config/logger';
@@ -17,12 +18,25 @@ import { isJobCancelled } from '@server/plugins/jobs';
  * Context passed to processing helper functions
  */
 interface ProcessingContext {
-  mbClient:         MusicBrainzClient;
-  coverClient:      CoverArtArchiveClient;
-  queueService:     QueueService;
-  approvalMode:     string;
-  lastFmClient?:    LastFmClient;
-  applyRatingBonus: boolean;
+  lbClient:           ListenBrainzClient;
+  mbClient:           MusicBrainzClient;
+  coverClient:        CoverArtArchiveClient;
+  queueService:       QueueService;
+  approvalMode:       string;
+  lastFmClient?:      LastFmClient;
+  applyRatingBonus:   boolean;
+  preferStudioAlbums: boolean;
+  metadata:           Map<string, ListenBrainzRecordingMetadata>;
+}
+
+interface Candidate {
+  mbid:          string;
+  scorePercent?: number;
+}
+
+interface ResolvedAlbum {
+  album:    AlbumInfo;
+  details?: ReleaseGroupTagsInfo;
 }
 
 /**
@@ -103,12 +117,15 @@ export async function listenbrainzFetchJob(): Promise<void> {
 
   // Process recordings through shared logic
   const addedCount = await processRecordings(recs, mode, minScorePercent, {
+    lbClient,
     mbClient,
     coverClient,
     queueService,
     approvalMode,
     lastFmClient,
     applyRatingBonus,
+    preferStudioAlbums: lb.prefer_studio_albums ?? false,
+    metadata:           new Map(),
   });
 
   logger.info(`Added ${ addedCount } new items from ListenBrainz`);
@@ -209,28 +226,27 @@ async function processRecordings(
 ): Promise<number> {
   let addedCount = 0;
   const seenAlbums = new Set<string>();
+  const candidates = await selectCandidates(recs, minScorePercent);
 
-  for (const rec of recs) {
+  if (candidates.length === 0) {
+    return 0;
+  }
+
+  const batchCtx: ProcessingContext = {
+    ...ctx,
+    metadata: await ctx.lbClient.getRecordingMetadata(candidates.map((c) => c.mbid)),
+  };
+
+  logger.debug(`ListenBrainz metadata resolved ${ batchCtx.metadata.size }/${ candidates.length } recordings; the rest fall back to MusicBrainz`);
+
+  for (const { mbid, scorePercent } of candidates) {
     if (isJobCancelled(JOB_NAMES.LB_FETCH)) {
       logger.info('Job cancelled during processing');
       throw new Error('Job cancelled');
     }
 
-    const mbid = rec.recording_mbid;
-    const scorePercent = normalizeToPercent(rec.score);
-
-    if (scorePercent !== undefined && scorePercent < minScorePercent) {
-      continue;
-    }
-
     try {
-      const alreadyProcessed = await ProcessedRecording.findOne({ where: { mbid, source: 'listenbrainz' } });
-
-      if (alreadyProcessed) {
-        continue;
-      }
-
-      const result = mode === 'track' ? await processTrackMode(mbid, scorePercent, ctx) : await processAlbumMode(mbid, scorePercent, seenAlbums, ctx);
+      const result = mode === 'track' ? await processTrackMode(mbid, scorePercent, batchCtx) : await processAlbumMode(mbid, scorePercent, seenAlbums, batchCtx);
 
       if (result.added) {
         addedCount++;
@@ -244,6 +260,95 @@ async function processRecordings(
 }
 
 /**
+ * Drop recommendations below the score threshold, already processed in an
+ * earlier run, or repeated within this one.
+ */
+async function selectCandidates(recs: ListenBrainzRecommendation[], minScorePercent: number): Promise<Candidate[]> {
+  const candidates: Candidate[] = [];
+  const seen = new Set<string>();
+
+  for (const rec of recs) {
+    const mbid = rec.recording_mbid;
+    const scorePercent = normalizeToPercent(rec.score);
+
+    if (seen.has(mbid) || (scorePercent !== undefined && scorePercent < minScorePercent)) {
+      continue;
+    }
+    seen.add(mbid);
+
+    try {
+      const alreadyProcessed = await ProcessedRecording.findOne({ where: { mbid, source: 'listenbrainz' } });
+
+      if (!alreadyProcessed) {
+        candidates.push({ mbid, scorePercent });
+      }
+    } catch(error) {
+      logger.error(`Error checking processed state for ${ mbid }:`, { error });
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * Resolve a recording's artist/title from batch metadata, or MusicBrainz if
+ * ListenBrainz didn't know it.
+ */
+async function resolveTrack(mbid: string, ctx: ProcessingContext): Promise<RecordingInfo | null> {
+  const metadata = ctx.metadata.get(mbid);
+  const fromBatch = metadata ? ListenBrainzClient.toRecordingInfo(mbid, metadata) : null;
+
+  return fromBatch ?? ctx.mbClient.resolveRecording(mbid);
+}
+
+/**
+ * Pick the album a recording should be queued under.
+ *
+ * By default this is the release ListenBrainz chose, with no MusicBrainz call.
+ * With prefer_studio_albums, that pick is checked against MusicBrainz and a
+ * single/EP/compilation is swapped for MusicBrainzClient's choice, which
+ * prefers the artist's own album.
+ */
+async function resolveAlbum(mbid: string, ctx: ProcessingContext): Promise<ResolvedAlbum | null> {
+  const metadata = ctx.metadata.get(mbid);
+  const lbAlbum = metadata ? ListenBrainzClient.toAlbumInfo(mbid, metadata) : null;
+
+  if (!lbAlbum) {
+    const mbAlbum = await ctx.mbClient.resolveRecordingToAlbum(mbid);
+
+    return mbAlbum ? { album: mbAlbum } : null;
+  }
+
+  if (!ctx.preferStudioAlbums) {
+    return { album: lbAlbum };
+  }
+
+  const details = await ctx.mbClient.getReleaseGroupTags(lbAlbum.mbid);
+
+  if (!isNonStudioRelease(details)) {
+    return { album: lbAlbum, details };
+  }
+
+  const mbAlbum = await ctx.mbClient.resolveRecordingToAlbum(mbid);
+
+  // Same release group (the recording only exists on singles, say) or a failed
+  // lookup: keep ListenBrainz's pick and the details we already have.
+  if (!mbAlbum || mbAlbum.mbid === lbAlbum.mbid) {
+    return { album: lbAlbum, details };
+  }
+
+  return { album: mbAlbum };
+}
+
+function isNonStudioRelease(details: ReleaseGroupTagsInfo): boolean {
+  if (details.primaryType === undefined) {
+    return false;
+  }
+
+  return details.primaryType !== 'Album' || (details.secondaryTypes ?? []).includes('Compilation');
+}
+
+/**
  * Process a recording in track mode - adds tracks directly to queue
  */
 async function processTrackMode(
@@ -251,7 +356,7 @@ async function processTrackMode(
   scorePercent: number | undefined,
   ctx: ProcessingContext
 ): Promise<ProcessingResult> {
-  const trackInfo = await ctx.mbClient.resolveRecording(mbid);
+  const trackInfo = await resolveTrack(mbid, ctx);
 
   if (!trackInfo) {
     return { added: false };
@@ -301,11 +406,13 @@ async function processAlbumMode(
   seenAlbums: Set<string>,
   ctx: ProcessingContext
 ): Promise<ProcessingResult> {
-  const albumInfo = await ctx.mbClient.resolveRecordingToAlbum(mbid);
+  const resolved = await resolveAlbum(mbid, ctx);
 
-  if (!albumInfo) {
+  if (!resolved) {
     return { added: false };
   }
+
+  const albumInfo = resolved.album;
 
   const albumMbid = albumInfo.mbid;
 
@@ -337,7 +444,7 @@ async function processAlbumMode(
 
   const coverUrl = ctx.coverClient.getCoverUrl(albumMbid);
 
-  const { tags: mbTags, rating } = await ctx.mbClient.getReleaseGroupTags(albumMbid);
+  const { tags: mbTags, rating } = resolved.details ?? await ctx.mbClient.getReleaseGroupTags(albumMbid);
 
   // Fetch Last.fm artist tags and merge with MB tags
   const mergedGenres: string[] = [...mbTags];

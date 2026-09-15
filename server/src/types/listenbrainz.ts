@@ -91,3 +91,29 @@ export interface ListenBrainzSimilarArtist {
   name:        string;
   score:       number;  // 0-1 similarity score
 }
+
+/**
+ * Per-recording metadata from POST /1/metadata/recording/ with `inc: artist release`.
+ * Recordings ListenBrainz doesn't know are simply absent from the response.
+ * https://listenbrainz.readthedocs.io/en/latest/users/api/metadata.html
+ */
+export interface ListenBrainzRecordingMetadata {
+  artist?: {
+    name:     string;  // Full credit, including join phrases
+    artists?: Array<{ name: string; artist_mbid?: string }>;
+  };
+  recording?: {
+    name:    string;
+    length?: number;
+  };
+  release?: {
+    name:                string;
+    mbid:                string;
+    release_group_mbid?: string;
+    year?:               number;
+    album_artist_name?:  string;
+  };
+}
+
+/** Response from POST /1/metadata/recording/, keyed by recording MBID. */
+export type ListenBrainzRecordingMetadataResponse = Record<string, ListenBrainzRecordingMetadata>;

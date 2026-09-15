@@ -40,6 +40,10 @@ listenbrainz:
   # collaborative: Uses CF recommendations based on listening history (requires token)
   source_type: "weekly_playlist"
 
+  # Album mode: replace singles, EPs and compilations with the artist's own album
+  # (adds MusicBrainz lookups; default false uses the release ListenBrainz picks)
+  # prefer_studio_albums: false
+
 # Recommendation mode: "album" or "track"
 # album: Resolve recommended tracks to their parent albums (recommended)
 # track: Download individual tracks only
@@ -354,8 +358,11 @@ Note: Use double underscore `__` for nested keys.
 | `token` | string | No* | - | API token from LB settings |
 | `approval_mode` | string | No | `manual` | `auto` or `manual` |
 | `source_type` | string | No | `weekly_playlist` | `weekly_playlist` or `collaborative` |
+| `prefer_studio_albums` | bool | No | `false` | Album mode: replace singles, EPs and compilations with the artist's own album |
 
 \*Required if `source_type: collaborative`
+
+**Album selection:** In album mode, DeepCrate looks up all recommended tracks in one batched ListenBrainz request and queues the release ListenBrainz picks for each. With `prefer_studio_albums: true`, each pick is checked against MusicBrainz, and singles, EPs and compilations are replaced with the artist's own studio album when one exists. This adds MusicBrainz requests, which are limited to one per second, so fetches take longer.
 
 **Source Types:**
 - **weekly_playlist** (default) - Uses ListenBrainz's weekly exploration playlists. These are curated playlists generated for your profile based on collaborative filtering. No API token required.

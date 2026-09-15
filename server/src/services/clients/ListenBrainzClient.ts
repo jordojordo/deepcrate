@@ -1,10 +1,14 @@
 import type {
+  AlbumInfo,
   ListenBrainzPlaylistsCreatedForResponse,
   ListenBrainzPlaylistMetadata,
   ListenBrainzPlaylistResponse,
   ListenBrainzRecommendation,
   ListenBrainzRecommendationsResponse,
+  ListenBrainzRecordingMetadata,
+  ListenBrainzRecordingMetadataResponse,
   ListenBrainzSimilarArtist,
+  RecordingInfo,
   RetryConfig
 } from '@server/types';
 
@@ -12,7 +16,7 @@ import { BaseClient } from '@server/services/BaseClient';
 import { isTransientError } from '@server/utils/errorHandler';
 import logger from '@server/config/logger';
 
-import { LB_BASE_URL } from '@server/constants/clients';
+import { LB_BASE_URL, LB_METADATA_BATCH_SIZE } from '@server/constants/clients';
 
 /**
  * ListenBrainzClient provides access to ListenBrainz recommendation API.
@@ -174,6 +178,88 @@ export class ListenBrainzClient extends BaseClient {
 
       return [];
     }
+  }
+
+  /**
+   * Fetch artist and release metadata for many recordings in batched requests.
+   *
+   * Replaces a MusicBrainz lookup per recording. Recordings missing
+   * from the result (unknown to ListenBrainz, or a failed batch) should fall
+   * back to MusicBrainz.
+   */
+  async getRecordingMetadata(recordingMbids: string[]): Promise<Map<string, ListenBrainzRecordingMetadata>> {
+    const url = `${ LB_BASE_URL }/metadata/recording/`;
+    const metadata = new Map<string, ListenBrainzRecordingMetadata>();
+
+    for (let i = 0; i < recordingMbids.length; i += LB_METADATA_BATCH_SIZE) {
+      const batch = recordingMbids.slice(i, i + LB_METADATA_BATCH_SIZE);
+
+      try {
+        const response = await this.requestWithRetry<ListenBrainzRecordingMetadataResponse>('post', url, { timeout: 30000 }, {
+          recording_mbids: batch,
+          inc:             'artist release',
+        });
+
+        for (const [mbid, entry] of Object.entries(response.data ?? {})) {
+          metadata.set(mbid, entry);
+        }
+      } catch(error) {
+        logger.warn(`Failed to fetch ListenBrainz metadata for ${ batch.length } recordings, falling back to MusicBrainz: ${ error instanceof Error ? error.message : String(error) }`);
+      }
+    }
+
+    return metadata;
+  }
+
+  /**
+   * Convert batch metadata to the AlbumInfo shape MusicBrainzClient returns.
+   * Returns null when ListenBrainz has no release group for the recording.
+   */
+  static toAlbumInfo(recordingMbid: string, metadata: ListenBrainzRecordingMetadata): AlbumInfo | null {
+    const artist = ListenBrainzClient.artistName(metadata);
+    const release = metadata.release;
+
+    if (!artist || !release?.release_group_mbid || !release.name) {
+      return null;
+    }
+
+    return {
+      artist,
+      title:      release.name,
+      mbid:       release.release_group_mbid,
+      recordingMbid,
+      trackTitle: metadata.recording?.name ?? '',
+      year:       release.year ?? undefined,
+    };
+  }
+
+  /**
+   * Convert batch metadata to the RecordingInfo shape MusicBrainzClient returns.
+   */
+  static toRecordingInfo(recordingMbid: string, metadata: ListenBrainzRecordingMetadata): RecordingInfo | null {
+    const artist = ListenBrainzClient.artistName(metadata);
+    const title = metadata.recording?.name;
+
+    if (!artist || !title) {
+      return null;
+    }
+
+    return {
+      artist,
+      title,
+      mbid:             recordingMbid,
+      releaseGroupMbid: metadata.release?.release_group_mbid,
+    };
+  }
+
+  /**
+   * Join credited artist names with ' & ', matching MusicBrainzClient so the
+   * same recording yields the same artist string (and slskd search) either way.
+   */
+  private static artistName(metadata: ListenBrainzRecordingMetadata): string {
+    const names = (metadata.artist?.artists ?? []).map((a) => a.name).filter(Boolean);
+
+    return names.length > 0 ? names.join(' & ') : (metadata.artist?.name ?? '');
   }
 
   /**
