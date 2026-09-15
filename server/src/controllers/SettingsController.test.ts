@@ -1,5 +1,20 @@
 import request from 'supertest';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// Isolate from the local config.yaml (e.g. ui.auth.enabled would 401 every request)
+vi.mock('@server/config/settings', async(importOriginal) => {
+  const actual = await importOriginal<typeof import('@server/config/settings')>();
+
+  return {
+    ...actual,
+    getConfig: vi.fn().mockReturnValue({
+      ui:                { auth: { enabled: false } },
+      slskd:             {},
+      library_organize:  {},
+      catalog_discovery: {},
+    }),
+  };
+});
 
 import app from '@server/plugins/app';
 

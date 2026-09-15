@@ -19,7 +19,7 @@ import type {
 
 import logger from '@server/config/logger';
 import { BaseClient } from '@server/services/BaseClient';
-import { MB_BASE_URL, MB_USER_AGENT } from '@server/constants/clients';
+import { MB_BASE_URL } from '@server/constants/clients';
 
 /**
  * MusicBrainzClient provides access to MusicBrainz metadata API.
@@ -39,7 +39,6 @@ export class MusicBrainzClient extends BaseClient {
 
     try {
       const response = await this.requestWithRetry<MBRecordingLookupResponse>('get', url, {
-        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           inc: 'artists+releases+release-groups',
           fmt: 'json',
@@ -107,7 +106,6 @@ export class MusicBrainzClient extends BaseClient {
 
     try {
       const response = await this.requestWithRetry<MBRecordingLookupResponse>('get', url, {
-        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           inc: 'artists+releases+release-groups',
           fmt: 'json',
@@ -208,7 +206,6 @@ export class MusicBrainzClient extends BaseClient {
 
     try {
       const response = await this.requestWithRetry<MBReleaseGroupSearchResponse>('get', url, {
-        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query:  `artist:"${ artist }" AND type:${ type }`,
           limit,
@@ -236,7 +233,6 @@ export class MusicBrainzClient extends BaseClient {
 
     try {
       const response = await this.requestWithRetry<MBReleaseGroupSearchResponse>('get', url, {
-        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query,
           limit,
@@ -282,7 +278,6 @@ export class MusicBrainzClient extends BaseClient {
 
     try {
       const response = await this.requestWithRetry<MBRecordingSearchResponse>('get', url, {
-        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query,
           limit,
@@ -335,7 +330,6 @@ export class MusicBrainzClient extends BaseClient {
 
     try {
       const response = await this.requestWithRetry<MBArtistSearchResponse>('get', url, {
-        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           query,
           limit,
@@ -381,7 +375,6 @@ export class MusicBrainzClient extends BaseClient {
 
     try {
       const response = await this.requestWithRetry<MBReleaseBrowseResponse>('get', url, {
-        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           'release-group': mbid,
           status:          'official',
@@ -435,7 +428,6 @@ export class MusicBrainzClient extends BaseClient {
 
     try {
       const response = await this.requestWithRetry<MBReleaseGroupTagsResponse>('get', url, {
-        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           inc: 'tags+ratings',
           fmt: 'json',
@@ -468,7 +460,6 @@ export class MusicBrainzClient extends BaseClient {
 
     try {
       const releasesResponse = await this.requestWithRetry<MBReleaseBrowseResponse>('get', releasesUrl, {
-        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           'release-group': mbid,
           limit:           1,
@@ -491,7 +482,6 @@ export class MusicBrainzClient extends BaseClient {
       // Now get the full release with recordings
       const releaseUrl = `${ MB_BASE_URL }/release/${ releaseId }`;
       const releaseResponse = await this.requestWithRetry<MBReleaseLookupResponse>('get', releaseUrl, {
-        headers: { 'User-Agent': MB_USER_AGENT },
         params:  {
           inc: 'recordings',
           fmt: 'json',
