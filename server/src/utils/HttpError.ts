@@ -8,6 +8,7 @@ export class HttpError extends Error {
     public readonly status?: number, // eslint-disable-line no-unused-vars
     public readonly data?: unknown, // eslint-disable-line no-unused-vars
     public readonly code?: string, // eslint-disable-line no-unused-vars
+    public readonly headers: Record<string, string> = {}, // eslint-disable-line no-unused-vars
   ) {
     super(message);
     this.name = 'HttpError';

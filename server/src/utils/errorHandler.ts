@@ -71,6 +71,19 @@ export function isTransientError(error: unknown): boolean {
 }
 
 /**
+ * MusicBrainz sheds load across *all* clients with a 503 tagged
+ * `x-ratelimit-zone: global`, which says nothing about our own request rate.
+ * Used only to label retry logs, so these aren't mistaken for limits we tripped.
+ *
+ * https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting#Global
+ */
+export function isGlobalLoadShed(error: unknown): boolean {
+  return error instanceof HttpError &&
+    error.status === 503 &&
+    error.headers['x-ratelimit-zone'] === 'global';
+}
+
+/**
  * Send database busy error response (503 Service Unavailable).
  */
 function sendDatabaseBusyError(

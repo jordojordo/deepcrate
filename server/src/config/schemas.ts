@@ -317,6 +317,7 @@ export const ConfigSchema = z.object({
   mode:              z.enum(['album', 'track']),
   fetch_count:       z.number().int().positive(),
   min_score:         z.number().min(0).max(100),
+  contact:           z.union([z.url(), z.email()]).optional(),
   listenbrainz:      ListenBrainzSettingsSchema.optional(),
   slskd:             SlskdSettingsSchema.optional(),
   catalog_discovery: CatalogDiscoverySettingsSchema,

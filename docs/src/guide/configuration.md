@@ -16,6 +16,12 @@ DeepCrate is configured via a YAML file mounted at `/config/config.yaml`.
 # Enable debug logging/features (optional)
 debug: false
 
+# Maintainer contact advertised in the User-Agent header (optional)
+# MusicBrainz and ListenBrainz block clients they can't trace back to an owner.
+# Defaults to the DeepCrate repo URL; set a URL or email of your own so MetaBrainz
+# can reach you instead of the project.
+# contact: "you@example.com"
+
 listenbrainz:
   # Your ListenBrainz username
   username: "your_username"

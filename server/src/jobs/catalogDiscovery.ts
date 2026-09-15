@@ -149,7 +149,6 @@ export async function catalogDiscoveryJob(): Promise<void> {
           throw new Error('Job cancelled');
         }
 
-        await sleep(1000); // MusicBrainz rate limit: 1 req/sec
         const { results } = await mbClient.searchArtists(artist.name, 1);
 
         if (results.length > 0) {
@@ -199,10 +198,6 @@ export async function catalogDiscoveryJob(): Promise<void> {
         }
 
         processedCount++;
-
-        if (processedCount > 1) {
-          await sleep(1000);
-        }
 
         const cachedMbid = artist.mbid ?? undefined;
         const results = await fetchSimilarFromAllProviders(
@@ -311,9 +306,6 @@ export async function catalogDiscoveryJob(): Promise<void> {
         `weighted: ${ weightedScore?.toFixed(2) ?? 'n/a' }%, sources: ${ artist.sourceCount }, providers: ${ providerList })`
       );
 
-      // Rate limiting for MusicBrainz (1 request/second)
-      await sleep(1000);
-
       // Fetch albums
       const albums = await mbClient.searchReleaseGroups(artist.name, 'Album', albumsPerArtist);
 
@@ -328,8 +320,6 @@ export async function catalogDiscoveryJob(): Promise<void> {
           continue;
         }
 
-        // Get cover art
-        await sleep(500); // Be nice to Cover Art Archive
         const coverUrl = coverClient.getCoverUrl(albumMbid);
 
         // Extract year
@@ -345,7 +335,6 @@ export async function catalogDiscoveryJob(): Promise<void> {
         }
 
         // Fetch genre tags and community rating
-        await sleep(1000);
         const { tags: mbTags, rating } = await mbClient.getReleaseGroupTags(albumMbid);
 
         // Fetch Last.fm artist tags and merge with MB tags
@@ -455,13 +444,6 @@ export async function fetchSimilarFromAllProviders(
   }
 
   return results;
-}
-
-/**
- * Sleep helper for rate limiting
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**

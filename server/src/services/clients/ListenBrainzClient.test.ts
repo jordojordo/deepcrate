@@ -1,5 +1,5 @@
 import {
-  describe, it, expect, afterEach, vi 
+  describe, it, expect, afterEach, vi
 } from 'vitest';
 
 import { ListenBrainzClient } from './ListenBrainzClient';
@@ -355,7 +355,7 @@ describe('ListenBrainzClient', () => {
   });
 
   describe('retry behavior', () => {
-    const retryClient = new ListenBrainzClient({ baseDelayMs: 0 });
+    const retryClient = new ListenBrainzClient({ baseDelayMs: 0, maxRetries: 3 });
 
     it('retries on transient error then succeeds', async() => {
       vi.mocked(fetchJson)

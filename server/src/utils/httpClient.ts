@@ -1,4 +1,6 @@
 import { HttpError } from './HttpError';
+import { getUserAgent } from './userAgent';
+import { acquireHostSlot } from './rateLimiter';
 
 export interface RequestOptions {
   method?:  'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -53,6 +55,10 @@ async function fetchRaw(url: string, options: RequestOptions = {}): Promise<Resp
   const requestHeaders: Record<string, string> = { ...headers };
   let requestBody: string | undefined;
 
+  if (!Object.keys(requestHeaders).some((h) => h.toLowerCase() === 'user-agent')) {
+    requestHeaders['User-Agent'] = getUserAgent();
+  }
+
   if (body !== undefined) {
     if (typeof body === 'string') {
       requestBody = body;
@@ -61,6 +67,8 @@ async function fetchRaw(url: string, options: RequestOptions = {}): Promise<Resp
       requestHeaders['Content-Type'] ??= 'application/json';
     }
   }
+
+  await acquireHostSlot(requestUrl, signal, timeout);
 
   const response = await fetch(requestUrl, {
     method,
@@ -83,6 +91,8 @@ async function fetchRaw(url: string, options: RequestOptions = {}): Promise<Resp
       `HTTP ${ response.status }: ${ response.statusText }`,
       response.status,
       data,
+      undefined,
+      response.headers ? Object.fromEntries(response.headers) : {},
     );
   }
 

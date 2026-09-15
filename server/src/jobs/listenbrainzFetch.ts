@@ -230,9 +230,6 @@ async function processRecordings(
         continue;
       }
 
-      // Rate limit: MusicBrainz requests (1 request/second)
-      await sleep(1000);
-
       const result = mode === 'track' ? await processTrackMode(mbid, scorePercent, ctx) : await processAlbumMode(mbid, scorePercent, seenAlbums, ctx);
 
       if (result.added) {
@@ -340,7 +337,6 @@ async function processAlbumMode(
 
   const coverUrl = ctx.coverClient.getCoverUrl(albumMbid);
 
-  await sleep(1000);
   const { tags: mbTags, rating } = await ctx.mbClient.getReleaseGroupTags(albumMbid);
 
   // Fetch Last.fm artist tags and merge with MB tags
@@ -393,13 +389,6 @@ async function processAlbumMode(
   }));
 
   return { added: true };
-}
-
-/**
- * Sleep helper for rate limiting
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
