@@ -1,4 +1,4 @@
-FROM node:24-alpine AS ui-builder
+FROM node:26-alpine AS ui-builder
 
 WORKDIR /build
 ENV CI=true
@@ -7,7 +7,7 @@ ENV CI=true
 ARG VITE_PRIMEUI_LICENSE
 ENV VITE_PRIMEUI_LICENSE=$VITE_PRIMEUI_LICENSE
 
-RUN corepack enable
+RUN npm install -g corepack && corepack enable
 
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY ui/package.json ./ui/
@@ -19,12 +19,12 @@ COPY ui/ ./ui/
 
 RUN pnpm --filter @deepcrate/ui run build
 
-FROM node:24-alpine AS server-builder
+FROM node:26-alpine AS server-builder
 
 WORKDIR /build
 ENV CI=true
 
-RUN corepack enable
+RUN npm install -g corepack && corepack enable
 
 # Build tools for Sequelize SQLite
 RUN apk add --no-cache python3 make g++ sqlite-dev
@@ -46,13 +46,13 @@ COPY server/tsconfig.json server/tsconfig.build.json ./server/
 
 RUN pnpm --filter @deepcrate/server run build
 
-FROM node:24-alpine AS production
+FROM node:26-alpine AS production
 
 ARG APP_VERSION=dev
 WORKDIR /app
 ENV CI=true
 
-RUN corepack enable && apk add --no-cache curl su-exec
+RUN npm install -g corepack && corepack enable && apk add --no-cache curl su-exec
 
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY server/package.json ./server/
