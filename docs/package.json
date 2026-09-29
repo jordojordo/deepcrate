@@ -19,11 +19,11 @@
     "@stylistic/eslint-plugin": "^5.10.0",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.9.0",
-    "eslint": "^10.10.0",
-    "eslint-plugin-oxlint": "^1.82.0",
-    "eslint-plugin-vue": "^10.11.0",
-    "oxlint": "^1.83.0",
-    "prettier": "^3.9.6",
+    "eslint": "^10.11.0",
+    "eslint-plugin-oxlint": "^1.85.0",
+    "eslint-plugin-vue": "^10.11.1",
+    "oxlint": "^1.86.0",
+    "prettier": "^3.9.9",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitepress": "2.0.0-alpha.19"
   }
