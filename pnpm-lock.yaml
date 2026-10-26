@@ -188,7 +188,7 @@ importers:
         version: 10.2.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(prettier@3.9.9)
       '@vue/eslint-config-typescript':
         specifier: ^14.9.0
-        version: 14.9.0(@typescript/typescript6@6.0.2)(eslint-plugin-vue@10.11.1(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)
+        version: 14.9.0(@typescript/typescript6@6.0.2)(eslint-plugin-vue@10.12.0(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)
       eslint:
         specifier: ^10.11.0
         version: 10.11.0(jiti@2.7.0)(supports-color@5.5.0)
@@ -197,7 +197,7 @@ importers:
         version: 1.85.0(oxlint@1.86.0)
       eslint-plugin-vue:
         specifier: ^10.11.1
-        version: 10.11.1(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))
+        version: 10.12.0(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))
       oxlint:
         specifier: ^1.86.0
         version: 1.86.0
@@ -358,7 +358,7 @@ importers:
         version: 10.2.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(prettier@3.9.9)
       '@vue/eslint-config-typescript':
         specifier: ^14.9.0
-        version: 14.9.0(@typescript/typescript6@6.0.2)(eslint-plugin-vue@10.11.1(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)
+        version: 14.9.0(@typescript/typescript6@6.0.2)(eslint-plugin-vue@10.12.0(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)
       '@vue/tsconfig':
         specifier: ^0.9.1
         version: 0.9.1(@typescript/typescript6@6.0.2)(vue@3.5.43(@typescript/typescript6@6.0.2))
@@ -373,7 +373,7 @@ importers:
         version: 1.85.0(oxlint@1.86.0)
       eslint-plugin-vue:
         specifier: ^10.11.1
-        version: 10.11.1(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))
+        version: 10.12.0(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))
       oxlint:
         specifier: ^1.86.0
         version: 1.86.0
@@ -1926,8 +1926,8 @@ packages:
       eslint-config-prettier:
         optional: true
 
-  eslint-plugin-vue@10.11.1:
-    resolution: {integrity: sha512-pasVXhl7wUmIvhujoqs/m0mJ9r59QW1IR9XXYKGR0FETzSM+Hhlf4qKIYgWiDDP+9YKv4YfbwskD7LqIdVcgQw==}
+  eslint-plugin-vue@10.12.0:
+    resolution: {integrity: sha512-YsrHHtMaxjWqmxr/Kv9yXUfakUlbTCWtIBvr9eounzj6ZsGJdz1I4UuTIHkhzKHes793Cwo3PGTcvsoBqNyzCA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       '@stylistic/eslint-plugin': ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0
@@ -4414,11 +4414,11 @@ snapshots:
     transitivePeerDependencies:
       - '@types/eslint'
 
-  '@vue/eslint-config-typescript@14.9.0(@typescript/typescript6@6.0.2)(eslint-plugin-vue@10.11.1(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)':
+  '@vue/eslint-config-typescript@14.9.0(@typescript/typescript6@6.0.2)(eslint-plugin-vue@10.12.0(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)':
     dependencies:
       '@typescript-eslint/utils': 8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)
       eslint: 10.11.0(jiti@2.7.0)(supports-color@5.5.0)
-      eslint-plugin-vue: 10.11.1(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))
+      eslint-plugin-vue: 10.12.0(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))
       fast-glob: 3.3.3
       typescript-eslint: 8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)
       vue-eslint-parser: 10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)
@@ -4889,7 +4889,7 @@ snapshots:
     optionalDependencies:
       eslint-config-prettier: 10.1.8(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))
 
-  eslint-plugin-vue@10.11.1(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)):
+  eslint-plugin-vue@10.12.0(@stylistic/eslint-plugin@5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0)))(@typescript-eslint/parser@8.70.1(@typescript/typescript6@6.0.2)(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0))(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(vue-eslint-parser@10.4.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))(supports-color@5.5.0)):
     dependencies:
       '@eslint-community/eslint-utils': 4.10.1(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))
       eslint: 10.11.0(jiti@2.7.0)(supports-color@5.5.0)
