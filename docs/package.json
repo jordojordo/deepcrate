@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@eslint/markdown": "^8.0.3",
-    "@stylistic/eslint-plugin": "^5.10.0",
+    "@stylistic/eslint-plugin": "^6.0.0",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.9.0",
     "eslint": "^10.11.0",
