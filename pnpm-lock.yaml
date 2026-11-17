@@ -178,8 +178,8 @@ importers:
   docs:
     devDependencies:
       '@eslint/markdown':
-        specifier: ^8.0.3
-        version: 8.0.3(supports-color@5.5.0)
+        specifier: ^9.0.0
+        version: 9.0.0(supports-color@5.5.0)
       '@stylistic/eslint-plugin':
         specifier: ^5.10.0
         version: 5.10.0(eslint@10.11.0(jiti@2.7.0)(supports-color@5.5.0))
@@ -634,8 +634,8 @@ packages:
       eslint:
         optional: true
 
-  '@eslint/markdown@8.0.3':
-    resolution: {integrity: sha512-rBTSSShrq7e4O+PWfeE4azH4/CWPNrC+VGxBXiW00o3vYVJnznsZiDayj3KC9JztIMVRZxZHn2nrDIUau/4j7A==}
+  '@eslint/markdown@9.0.0':
+    resolution: {integrity: sha512-287jt3NwhChN7TLsWq44IB5vUAKwwNXafzLlR1CMcQK5/4mAwbwwAzqr/S7gCYRRJOSHCgGXzIV9uPCh1P810A==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
   '@eslint/object-schema@3.0.5':
@@ -3649,7 +3649,7 @@ snapshots:
     optionalDependencies:
       eslint: 10.11.0(jiti@2.7.0)(supports-color@5.5.0)
 
-  '@eslint/markdown@8.0.3(supports-color@5.5.0)':
+  '@eslint/markdown@9.0.0(supports-color@5.5.0)':
     dependencies:
       '@eslint/core': 1.2.1
       '@eslint/plugin-kit': 0.7.3
