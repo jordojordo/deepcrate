@@ -208,8 +208,8 @@ importers:
         specifier: npm:@typescript/typescript6@^6.0.2
         version: '@typescript/typescript6@6.0.2'
       vitepress:
-        specifier: 2.0.0-alpha.19
-        version: 2.0.0-alpha.19(@types/node@26.6.6)(@typescript/typescript6@6.0.2)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1)
+        specifier: 2.0.0-alpha.21
+        version: 2.0.0-alpha.21(@types/node@26.6.6)(@typescript/typescript6@6.0.2)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1)
 
   server:
     dependencies:
@@ -1530,18 +1530,20 @@ packages:
       vue:
         optional: true
 
-  '@vueuse/core@14.4.0':
-    resolution: {integrity: sha512-X4WHz1HlCzCBoYXesUkifzzWBAcZgXG8Fi5iNPQg/epdzOB3gu8Fawj3hvuwYR1nGcXGnvxwYYcUC/71++svtQ==}
+  '@vueuse/core@15.0.0':
+    resolution: {integrity: sha512-Zv67h5mrk7YHDJsRObx+DXaCBz6RKBUpxqLesJ+3xZNPG6yuQs7ja7kg3veFrrouYLWAqydQ7CwGEbLVxB43Ng==}
+    engines: {node: '>=22'}
     peerDependencies:
       vue: ^3.5.0
 
-  '@vueuse/integrations@14.4.0':
-    resolution: {integrity: sha512-oJz9qTgczvA7L1nXQFRU7h8tQbOCoiceqvMMhT9XYMyOGTqLJ2rEa09PON+nD2t48sZUfeOmg4eaWJXV4sZb/w==}
+  '@vueuse/integrations@15.0.0':
+    resolution: {integrity: sha512-uWC1608pEocJPeRk1IqrEA3uYHhAGTJNibcMAdxgdK2Sy2Hypc6b+VdNO9KekCxyPc4VXK8SKDp8vsXefR/ZFg==}
+    engines: {node: '>=22'}
     peerDependencies:
       async-validator: ^4
       axios: ^1
       change-case: ^5
-      drauu: ^0.4
+      drauu: ^1 || ^0.4
       focus-trap: ^7 || ^8
       fuse.js: ^7
       idb-keyval: ^6
@@ -1577,11 +1579,13 @@ packages:
       universal-cookie:
         optional: true
 
-  '@vueuse/metadata@14.4.0':
-    resolution: {integrity: sha512-swx/255R6JyHZFJhx845iz5CRWDZdCfvkZOpACWc5+c5WHcG24mv8gUT1WIdFQaHt6dq79rvILd9QnCWiyVm9g==}
+  '@vueuse/metadata@15.0.0':
+    resolution: {integrity: sha512-sfWE5LADAKJ0KnjtGliMdSN8Ij/L7uP6rXIZlgPloAI4zvvefbw6H5Lt7KJA6RqQOYgVqWF5Guj50HHMIzygBg==}
+    engines: {node: '>=22'}
 
-  '@vueuse/shared@14.4.0':
-    resolution: {integrity: sha512-JRgY90Sz8DDtPMsaDflvPMp9xYk69JZAmbuDvAquUVXKr2gEjqtzGNTTthLfckH0BzBqvnu31gb4a8TGLRe79g==}
+  '@vueuse/shared@15.0.0':
+    resolution: {integrity: sha512-vbNXhGrbV53xPOMSyOzMHQRvhMgZf7oNDw2RChUetVxwTIEkInQ1joZ9JbT0G3z2n2AJNjvmCWeM9ySYrnvogA==}
+    engines: {node: '>=22'}
     peerDependencies:
       vue: ^3.5.0
 
@@ -3388,8 +3392,8 @@ packages:
       yaml:
         optional: true
 
-  vitepress@2.0.0-alpha.19:
-    resolution: {integrity: sha512-WnBsb0Bwr43kXKyiis+lld/7ri3hnMbthS8N3hpFtjjwsdLO4IRmiAE08D7aud4q6oMDf9uwRowxzNqRFe/amw==}
+  vitepress@2.0.0-alpha.21:
+    resolution: {integrity: sha512-b2PFPIw2mVfxDi490FhSq4AlkFi17b9lofLCqWfH4uPKz/dF4oy2C9vBpP2r7l7hl2hc5BG7OTRPvRFfRzF7MA==}
     hasBin: true
     peerDependencies:
       markdown-it-mathjax3: ^4
@@ -4608,24 +4612,24 @@ snapshots:
       typescript: '@typescript/typescript6@6.0.2'
       vue: 3.5.45(@typescript/typescript6@6.0.2)
 
-  '@vueuse/core@14.4.0(vue@3.5.45(@typescript/typescript6@6.0.2))':
+  '@vueuse/core@15.0.0(vue@3.5.45(@typescript/typescript6@6.0.2))':
     dependencies:
       '@types/web-bluetooth': 0.0.21
-      '@vueuse/metadata': 14.4.0
-      '@vueuse/shared': 14.4.0(vue@3.5.45(@typescript/typescript6@6.0.2))
+      '@vueuse/metadata': 15.0.0
+      '@vueuse/shared': 15.0.0(vue@3.5.45(@typescript/typescript6@6.0.2))
       vue: 3.5.45(@typescript/typescript6@6.0.2)
 
-  '@vueuse/integrations@14.4.0(focus-trap@8.2.5)(vue@3.5.45(@typescript/typescript6@6.0.2))':
+  '@vueuse/integrations@15.0.0(focus-trap@8.2.5)(vue@3.5.45(@typescript/typescript6@6.0.2))':
     dependencies:
-      '@vueuse/core': 14.4.0(vue@3.5.45(@typescript/typescript6@6.0.2))
-      '@vueuse/shared': 14.4.0(vue@3.5.45(@typescript/typescript6@6.0.2))
+      '@vueuse/core': 15.0.0(vue@3.5.45(@typescript/typescript6@6.0.2))
+      '@vueuse/shared': 15.0.0(vue@3.5.45(@typescript/typescript6@6.0.2))
       vue: 3.5.45(@typescript/typescript6@6.0.2)
     optionalDependencies:
       focus-trap: 8.2.5
 
-  '@vueuse/metadata@14.4.0': {}
+  '@vueuse/metadata@15.0.0': {}
 
-  '@vueuse/shared@14.4.0(vue@3.5.45(@typescript/typescript6@6.0.2))':
+  '@vueuse/shared@15.0.0(vue@3.5.45(@typescript/typescript6@6.0.2))':
     dependencies:
       vue: 3.5.45(@typescript/typescript6@6.0.2)
 
@@ -6706,21 +6710,19 @@ snapshots:
       tsx: 4.23.15
       yaml: 2.9.1
 
-  vitepress@2.0.0-alpha.19(@types/node@26.6.6)(@typescript/typescript6@6.0.2)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1):
+  vitepress@2.0.0-alpha.21(@types/node@26.6.6)(@typescript/typescript6@6.0.2)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1):
     dependencies:
       '@docsearch/css': 4.7.1
       '@docsearch/js': 4.7.1
       '@docsearch/sidepanel-js': 4.7.1
       '@iconify-json/simple-icons': 1.2.103
-      '@shikijs/core': 4.6.0
       '@shikijs/transformers': 4.6.0
-      '@shikijs/types': 4.6.0
       '@types/markdown-it': 14.2.0
       '@vitejs/plugin-vue': 6.0.11(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.45(@typescript/typescript6@6.0.2))
       '@vue/devtools-api': 8.2.1
       '@vue/shared': 3.5.45
-      '@vueuse/core': 14.4.0(vue@3.5.45(@typescript/typescript6@6.0.2))
-      '@vueuse/integrations': 14.4.0(focus-trap@8.2.5)(vue@3.5.45(@typescript/typescript6@6.0.2))
+      '@vueuse/core': 15.0.0(vue@3.5.45(@typescript/typescript6@6.0.2))
+      '@vueuse/integrations': 15.0.0(focus-trap@8.2.5)(vue@3.5.45(@typescript/typescript6@6.0.2))
       focus-trap: 8.2.5
       mark.js: 8.11.1
       minisearch: 7.2.0
