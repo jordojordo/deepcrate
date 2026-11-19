@@ -17,6 +17,8 @@ import Tag from 'primevue/tag';
 import AutoComplete from 'primevue/autocomplete';
 import Message from 'primevue/message';
 
+const HOST_PLACEHOLDER = 'https://slskd.example.com';
+
 const props = defineProps<{
   settings: SlskdSettings | undefined;
   loading:  boolean;
@@ -269,7 +271,7 @@ function searchFallbackQueries(event: { query: string }) {
           id="setting-slskd-host"
           v-model="form.host"
           :disabled="loading"
-          placeholder="https://slskd.example.com"
+          :placeholder="HOST_PLACEHOLDER"
         />
       </div>
 

@@ -13,6 +13,8 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import MultiSelect from 'primevue/multiselect';
 import Password from 'primevue/password';
 
+const HOST_PLACEHOLDER = 'https://example.com/webhook';
+
 const props = defineProps<{
   settings: WebhookConfig[] | undefined;
   loading:  boolean;
@@ -194,7 +196,7 @@ function handleSave() {
             :id="`webhook-url-${index}`"
             v-model="webhook.url"
             :disabled="loading"
-            placeholder="https://example.com/webhook"
+            :placeholder="HOST_PLACEHOLDER"
           />
         </div>
 
