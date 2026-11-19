@@ -18,6 +18,8 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import Tag from 'primevue/tag';
 import Message from 'primevue/message';
 
+const HOST_PLACEHOLDER = 'https://music.example.com';
+
 const props = defineProps<{
   settings:         CatalogDiscoverySettings | undefined;
   libraryDuplicate: LibraryDuplicateSettings | undefined;
@@ -226,7 +228,7 @@ async function handleSave() {
             id="setting-catalog-subsonic-host"
             v-model="form.subsonic.host"
             :disabled="loading || !form.enabled"
-            placeholder="https://music.example.com"
+            :placeholder="HOST_PLACEHOLDER"
           />
         </div>
 
