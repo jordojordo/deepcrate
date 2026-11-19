@@ -17,31 +17,31 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@primeuix/themes": "^3.0.1",
-    "pinia": "^4.0.3",
+    "@primeuix/themes": "^3.1.1",
+    "pinia": "^4.1.0",
     "primeicons": "^8.0.2",
-    "primevue": "^5.0.1",
+    "primevue": "^5.0.5",
     "socket.io-client": "^4.8.4",
-    "vue": "^3.5.43",
-    "vue-router": "^5.3.1"
+    "vue": "^3.5.45",
+    "vue-router": "^5.5.1"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin": "^5.10.0",
-    "@types/node": "^26.6.3",
-    "@vitejs/plugin-vue": "^6.0.9",
-    "@vitest/eslint-plugin": "^1.6.27",
+    "@stylistic/eslint-plugin": "^6.0.1",
+    "@types/node": "^26.6.6",
+    "@vitejs/plugin-vue": "^6.0.11",
+    "@vitest/eslint-plugin": "^1.6.28",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.9.0",
     "@vue/tsconfig": "^0.9.1",
-    "eslint": "^10.11.0",
-    "eslint-plugin-cypress": "^7.0.2",
-    "eslint-plugin-oxlint": "^1.85.0",
-    "eslint-plugin-vue": "^10.11.1",
-    "oxlint": "^1.86.0",
-    "prettier": "^3.9.9",
-    "sass": "^1.105.0",
+    "eslint": "^10.15.0",
+    "eslint-plugin-cypress": "^7.0.5",
+    "eslint-plugin-oxlint": "^1.94.0",
+    "eslint-plugin-vue": "^10.12.1",
+    "oxlint": "^1.94.0",
+    "prettier": "^3.10.1",
+    "sass": "^1.108.2",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vite": "^8.3.1",
-    "vue-tsc": "^3.3.11"
+    "vite": "^8.3.8",
+    "vue-tsc": "^3.3.14"
   }
 }
